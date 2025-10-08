@@ -12,6 +12,7 @@ import { install } from './commands/install.js';
 import { status } from './commands/status.js';
 import { config } from './commands/config.js';
 import { setup } from './commands/setup.js';
+import { docs } from './commands/docs.js';
 import { loadConfig, applyConfigToEnvironment } from './config/loader.js';
 
 // Load and apply configuration at startup
@@ -48,6 +49,7 @@ program
           { name: '🆕 新しいプロジェクトを作成', value: 'init' },
           { name: '📦 既存プロジェクトに追加', value: 'install' },
           { name: '📊 ステータス確認', value: 'status' },
+          { name: '📚 ドキュメント生成', value: 'docs' },
           { name: '⚙️  設定', value: 'config' },
           { name: '❌ 終了', value: 'exit' },
         ],
@@ -120,6 +122,38 @@ program
           ]);
 
           await status({ watch });
+          break;
+        }
+
+        case 'docs': {
+          const { inputDir, outputFile, watch, training } = await inquirer.prompt([
+            {
+              type: 'input',
+              name: 'inputDir',
+              message: 'ソースディレクトリを指定してください:',
+              default: './scripts',
+            },
+            {
+              type: 'input',
+              name: 'outputFile',
+              message: '出力ファイル名を指定してください:',
+              default: './docs/API.md',
+            },
+            {
+              type: 'confirm',
+              name: 'watch',
+              message: 'ウォッチモード（自動更新）を有効にしますか？',
+              default: false,
+            },
+            {
+              type: 'confirm',
+              name: 'training',
+              message: 'トレーニング資料も生成しますか？',
+              default: false,
+            },
+          ]);
+
+          await docs({ input: inputDir, output: outputFile, watch, training });
           break;
         }
 
