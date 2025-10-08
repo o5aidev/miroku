@@ -174,7 +174,7 @@ export class WorkflowOrchestrator {
   // Workflow Templates
   // ============================================================================
 
-  private getFeatureWorkflow(issueState: any): WorkflowStep[] {
+  private getFeatureWorkflow(_issueState: any): WorkflowStep[] {
     return [
       {
         name: 'Analyze Requirements',
@@ -221,7 +221,7 @@ export class WorkflowOrchestrator {
     ];
   }
 
-  private getBugfixWorkflow(issueState: any): WorkflowStep[] {
+  private getBugfixWorkflow(_issueState: any): WorkflowStep[] {
     return [
       {
         name: 'Reproduce Bug',
@@ -256,7 +256,7 @@ export class WorkflowOrchestrator {
     ];
   }
 
-  private getRefactorWorkflow(issueState: any): WorkflowStep[] {
+  private getRefactorWorkflow(_issueState: any): WorkflowStep[] {
     return [
       {
         name: 'Identify Code Smells',
@@ -387,7 +387,7 @@ export class WorkflowOrchestrator {
   // Utilities
   // ============================================================================
 
-  private async waitForDependencies(workflow: Workflow, dependencies: string[]): Promise<void> {
+  private async waitForDependencies(_workflow: Workflow, dependencies: string[]): Promise<void> {
     console.log(`   ⏳ Waiting for dependencies: ${dependencies.join(', ')}`);
     // In real implementation, check if dependent steps are completed
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -522,5 +522,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     process.exit(1);
   });
 }
-
-export { WorkflowOrchestrator, Workflow, Task, WorkflowStep };

@@ -6,7 +6,7 @@
  * Generates JSON data for GitHub Pages dashboard
  */
 
-import { getProjectInfo, getProjectItems } from './projects-graphql.js';
+import { getProjectItems } from './projects-graphql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -91,7 +91,7 @@ if (!GITHUB_TOKEN) {
 async function generateMetrics(): Promise<DashboardData> {
   console.log('📊 Fetching project data...');
 
-  const items = await getProjectItems(GITHUB_OWNER, PROJECT_NUMBER, GITHUB_TOKEN);
+  const items = await getProjectItems(GITHUB_OWNER, PROJECT_NUMBER, GITHUB_TOKEN!);
 
   console.log(`✅ Fetched ${items.length} items`);
 
@@ -119,7 +119,7 @@ async function generateMetrics(): Promise<DashboardData> {
     );
     const durations = agentItems
       .map((item) => {
-        const durationField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Duration');
+        const durationField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Duration');
         return (durationField as any)?.number || null;
       })
       .filter((d) => d !== null);

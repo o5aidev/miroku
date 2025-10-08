@@ -10,7 +10,6 @@
  * - KPI data collection
  */
 
-import { Octokit } from '@octokit/rest';
 import { graphql } from '@octokit/graphql';
 
 interface ProjectV2Config {
@@ -47,13 +46,11 @@ interface CustomField {
 }
 
 export class ProjectsV2Client {
-  private octokit: Octokit;
   private graphqlClient: typeof graphql;
   private config: ProjectV2Config;
   private projectId?: string;
 
   constructor(token: string, config: ProjectV2Config) {
-    this.octokit = new Octokit({ auth: token });
     this.graphqlClient = graphql.defaults({
       headers: {
         authorization: `token ${token}`,

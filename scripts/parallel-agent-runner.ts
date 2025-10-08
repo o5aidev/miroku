@@ -12,7 +12,7 @@
  * Phase I: Issue #5 - Scalability & Performance Optimization
  */
 
-import { AgentConfig, Task, AgentResult, AgentType } from '../agents/types/index.js';
+import { Task, AgentResult, AgentType } from '../agents/types/index.js';
 import { PerformanceOptimizer, createPerformanceOptimizer } from './performance-optimizer.js';
 import { Octokit } from '@octokit/rest';
 
@@ -92,7 +92,6 @@ export class ParallelAgentRunner {
   private healthCheckTimer?: NodeJS.Timeout;
 
   constructor(
-    private config: AgentConfig,
     private poolConfig: WorkerPoolConfig,
     private distributionStrategy: TaskDistributionStrategy,
     private retryConfig: RetryConfig,
@@ -753,7 +752,6 @@ export class ParallelAgentRunner {
  * Create a parallel agent runner instance
  */
 export function createParallelAgentRunner(
-  config: AgentConfig,
   poolConfig?: Partial<WorkerPoolConfig>,
   distributionStrategy?: Partial<TaskDistributionStrategy>,
   retryConfig?: Partial<RetryConfig>,
@@ -783,7 +781,6 @@ export function createParallelAgentRunner(
   };
 
   return new ParallelAgentRunner(
-    config,
     { ...defaultPoolConfig, ...poolConfig },
     { ...defaultDistributionStrategy, ...distributionStrategy },
     { ...defaultRetryConfig, ...retryConfig },

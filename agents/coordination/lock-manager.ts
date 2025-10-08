@@ -30,7 +30,6 @@ export class LockManager {
   private locks: Map<string, FileLock> = new Map();
   private lockDir: string;
   private lockTimeout: number = 60 * 60 * 1000; // 60 minutes
-  private heartbeatInterval: number = 5 * 60 * 1000; // 5 minutes
 
   constructor(lockDir: string = '.task-locks') {
     this.lockDir = lockDir;

@@ -70,7 +70,7 @@ export class TaskOrchestrator {
   /**
    * Get available tasks for a worker
    */
-  getAvailableTasks(workerId: string, workerSkills: string[]): Task[] {
+  getAvailableTasks(_workerId: string, workerSkills: string[]): Task[] {
     return this.taskQueue.filter(task => {
       // Must be pending
       if (task.status !== 'pending') return false;
