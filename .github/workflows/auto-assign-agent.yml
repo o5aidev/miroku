@@ -1,0 +1,79 @@
+name: Auto Assign Agent
+
+# When specific labels are added, automatically trigger agent workflow
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  trigger-agent:
+    runs-on: ubuntu-latest
+    name: Trigger agent based on label
+    # Only run for specific labels
+    if: |
+      github.event.label.name == 'agent:codegen' ||
+      github.event.label.name == 'agent:review' ||
+      github.event.label.name == 'agent:docs' ||
+      github.event.label.name == 'ready'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine Agent Type
+        id: agent
+        run: |
+          LABEL="${{ github.event.label.name }}"
+
+          case "$LABEL" in
+            "agent:codegen"|"ready")
+              echo "agent=CodeGenAgent" >> $GITHUB_OUTPUT
+              echo "task=implement_task" >> $GITHUB_OUTPUT
+              ;;
+            "agent:review")
+              echo "agent=ReviewAgent" >> $GITHUB_OUTPUT
+              echo "task=review_code" >> $GITHUB_OUTPUT
+              ;;
+            "agent:docs")
+              echo "agent=DocsAgent" >> $GITHUB_OUTPUT
+              echo "task=update_docs" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              echo "agent=UnknownAgent" >> $GITHUB_OUTPUT
+              echo "task=unknown" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+      - name: Add Comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const agent = '${{ steps.agent.outputs.agent }}';
+            const task = '${{ steps.agent.outputs.task }}';
+
+            const comment = `🤖 **${agent}** has been assigned to this issue.
+
+**Task**: \`${task}\`
+**Priority**: Based on labels
+**Status**: Queued
+
+The agent will process this issue according to the parallel work coordination protocol.
+
+_Note: Full agent execution will be available once the parallel work system (Issue #6) is implemented._`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
+
+      - name: Summary
+        run: |
+          echo "### 🤖 Agent Assigned" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Agent**: ${{ steps.agent.outputs.agent }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Task**: ${{ steps.agent.outputs.task }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Issue**: #${{ github.event.issue.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "_Agent task queued for execution_" >> $GITHUB_STEP_SUMMARY
