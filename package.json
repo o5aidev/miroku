@@ -24,6 +24,7 @@
     "state:check": "tsx scripts/label-state-machine.ts check",
     "state:transition": "tsx scripts/label-state-machine.ts transition",
     "state:assign-agent": "tsx scripts/label-state-machine.ts assign-agent",
+    "ai:label": "tsx scripts/ai-label-issue.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
