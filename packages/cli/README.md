@@ -76,6 +76,37 @@ npx miyabi status
 npx miyabi status --watch
 ```
 
+#### `sprint start <sprint-name>`
+
+Start a new sprint with interactive planning and task management.
+
+```bash
+npx miyabi sprint start "Sprint-2025-Q1"
+
+# With custom duration (default: 14 days)
+npx miyabi sprint start "Sprint-Jan" -d 7
+
+# Initialize project structure (directories and starter files)
+npx miyabi sprint start "Sprint-Jan" --init
+
+# Dry run (preview without creating)
+npx miyabi sprint start "Sprint-Jan" --dry-run
+```
+
+**What it does:**
+- ✅ Creates GitHub milestone with due date
+- ✅ Interactive task planning (title, description, priority, type)
+- ✅ Batch creates Issues with proper labels
+- ✅ Links all issues to the sprint milestone
+- ✅ Optional: Initialize project structure (src/, tests/, docs/, etc.)
+
+**After sprint start:**
+```bash
+# AI agents automatically start working on sprint tasks
+npx miyabi status
+# → View real-time progress
+```
+
 ## Features
 
 ### Zero Learning Cost

@@ -18,6 +18,7 @@ import { dirname, join } from 'path';
 import { init } from './commands/init.js';
 import { install } from './commands/install.js';
 import { status } from './commands/status.js';
+import { sprintStart } from './commands/sprint.js';
 
 // Get package.json path
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +89,38 @@ program
   });
 
 // ============================================================================
+// Command: sprint start
+// ============================================================================
+
+program
+  .command('sprint')
+  .description('Sprint management commands')
+  .action(() => {
+    console.log(chalk.yellow('\n💡 Available sprint commands:\n'));
+    console.log(chalk.cyan('  miyabi sprint start <sprint-name>'));
+    console.log(chalk.gray('    → Start a new sprint with interactive planning\n'));
+  });
+
+program
+  .command('sprint start <sprint-name>')
+  .description('Start a new sprint with interactive planning')
+  .option('-d, --duration <days>', 'Sprint duration in days', '14')
+  .option('--init', 'Initialize project structure (directories and starter files)', false)
+  .option('--dry-run', 'Show what would be created without making changes', false)
+  .action(async (sprintName: string, options) => {
+    try {
+      await sprintStart(sprintName, {
+        duration: parseInt(options.duration, 10),
+        initProject: options.init,
+        dryRun: options.dryRun,
+      });
+    } catch (error) {
+      console.error(chalk.red.bold('\n❌ Sprint start failed:'), error);
+      process.exit(1);
+    }
+  });
+
+// ============================================================================
 // Interactive Mode (Default)
 // ============================================================================
 
@@ -103,6 +136,7 @@ async function interactiveMode() {
       choices: [
         { name: '🆕 新しいプロジェクトを作成', value: 'init' },
         { name: '📦 既存プロジェクトに追加', value: 'install' },
+        { name: '🚀 スプリント開始', value: 'sprint' },
         { name: '📊 ステータス確認', value: 'status' },
         { name: '❌ 終了', value: 'exit' },
       ],
@@ -156,6 +190,45 @@ async function interactiveMode() {
 
         console.log(chalk.cyan.bold('\n🔍 プロジェクト解析中...\n'));
         await install({ dryRun });
+        break;
+      }
+
+      case 'sprint': {
+        const { sprintName, duration, initProject } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'sprintName',
+            message: 'スプリント名:',
+            default: `Sprint-${new Date().toISOString().slice(0, 10)}`,
+            validate: (input: string) => {
+              if (!input) return 'スプリント名を入力してください';
+              return true;
+            },
+          },
+          {
+            type: 'input',
+            name: 'duration',
+            message: 'スプリント期間（日数）:',
+            default: '14',
+            validate: (input: string) => {
+              const num = parseInt(input, 10);
+              if (isNaN(num) || num <= 0) return '正の数値を入力してください';
+              return true;
+            },
+          },
+          {
+            type: 'confirm',
+            name: 'initProject',
+            message: 'プロジェクト構造を初期化しますか？（ディレクトリと初期ファイルを作成）',
+            default: false,
+          },
+        ]);
+
+        console.log(chalk.cyan.bold('\n🚀 スプリント開始...\n'));
+        await sprintStart(sprintName, {
+          duration: parseInt(duration, 10),
+          initProject,
+        });
         break;
       }
 

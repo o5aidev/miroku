@@ -90,6 +90,8 @@ export async function setupLabels(
  */
 async function loadLabelsFromTemplate(): Promise<Label[]> {
   // Get template path (relative to this file)
+  // In dist, __dirname points to dist/setup, templates are at project root
+  // dist/setup -> dist -> project root -> templates
   const templatePath = path.join(__dirname, '../../templates/labels.yml');
 
   if (!fs.existsSync(templatePath)) {
@@ -97,7 +99,7 @@ async function loadLabelsFromTemplate(): Promise<Label[]> {
     const rootPath = path.join(process.cwd(), '.github', 'labels.yml');
 
     if (!fs.existsSync(rootPath)) {
-      throw new Error('labels.yml template not found');
+      throw new Error(`labels.yml template not found at ${templatePath} or ${rootPath}`);
     }
 
     const content = fs.readFileSync(rootPath, 'utf-8');

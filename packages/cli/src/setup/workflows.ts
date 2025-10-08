@@ -7,6 +7,11 @@
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface DeployOptions {
   skipExisting?: boolean; // Skip if workflow already exists
@@ -24,7 +29,14 @@ export async function deployWorkflows(
   const octokit = new Octokit({ auth: token });
 
   // Get workflow files from templates
-  const templatesDir = path.join(__dirname, '../templates/workflows');
+  // In dist, __dirname points to dist/setup, templates are in templates/workflows
+  // So we need to go up two levels: dist/setup -> dist -> project root -> templates
+  const templatesDir = path.join(__dirname, '../../templates/workflows');
+
+  if (!fs.existsSync(templatesDir)) {
+    throw new Error(`Templates directory not found: ${templatesDir}`);
+  }
+
   const workflowFiles = fs.readdirSync(templatesDir).filter((file) => file.endsWith('.yml'));
 
   let deployed = 0;
