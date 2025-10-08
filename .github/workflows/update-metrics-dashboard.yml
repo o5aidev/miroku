@@ -1,0 +1,79 @@
+name: 📊 Update Metrics Dashboard
+
+# Phase G: Real-time Metrics & Observability
+# Updates dashboard every 15 minutes with latest Projects V2 data
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/generate-realtime-metrics.ts'
+      - 'scripts/projects-graphql.ts'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+    name: Generate Metrics
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate metrics
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          PROJECT_NUMBER: 1
+        run: |
+          echo "📊 Generating real-time metrics..."
+          npx tsx scripts/generate-realtime-metrics.ts
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet docs/metrics.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit metrics
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/metrics.json
+          git commit -m "chore: Update dashboard metrics [skip ci]
+
+          📊 Automated metrics update
+          - Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - Triggered by: ${{ github.event_name }}
+
+          🤖 Generated with [Claude Code](https://claude.com/claude-code)"
+          git push
+
+      - name: Summary
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          echo "✅ Dashboard metrics updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 View dashboard: https://${{ github.repository_owner }}.github.io/$(basename ${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
