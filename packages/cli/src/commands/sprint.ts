@@ -255,7 +255,7 @@ async function getRepositoryInfo(): Promise<{ owner: string; repo: string; token
  * Initialize project structure with directories and starter files
  */
 async function initializeProjectStructure(projectRoot: string): Promise<void> {
-  const { mkdirSync, writeFileSync, existsSync } = await import('fs');
+  const { mkdirSync, writeFileSync } = await import('fs');
   const { join } = await import('path');
 
   // Define project structure
