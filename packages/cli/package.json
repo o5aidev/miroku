@@ -1,0 +1,69 @@
+{
+  "name": "miyabi",
+  "version": "0.2.0",
+  "description": "Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
+  "type": "module",
+  "bin": {
+    "miyabi": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "autonomous",
+    "cli",
+    "github",
+    "automation",
+    "workflow",
+    "devops",
+    "claude",
+    "anthropic"
+  ],
+  "author": "Shunsuke Hayashi <supernovasyun@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/ShunsukeHayashi/Autonomous-Operations#readme",
+  "bugs": {
+    "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations/issues"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.0.0",
+    "@octokit/graphql": "^7.0.2",
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12",
+    "ora": "^8.0.1",
+    "open": "^10.0.3",
+    "dotenv": "^16.3.1",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

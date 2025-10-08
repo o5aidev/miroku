@@ -1,0 +1,21 @@
+# Development files
+*.test.ts
+*.test.js
+__tests__
+coverage
+.github
+docs
+
+# Build artifacts
+*.map
+
+# Config files
+tsconfig.json
+vitest.config.ts
+.eslintrc*
+.prettierrc*
+
+# Misc
+.env*
+.DS_Store
+*.log
