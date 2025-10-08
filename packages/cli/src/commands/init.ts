@@ -70,15 +70,16 @@ export async function init(projectName: string, options: InitOptions = {}) {
     throw error;
   }
 
-  // Step 4: Create Projects V2
+  // Step 4: Create Projects V2 (optional - requires additional scopes)
   spinner.start('Setting up GitHub Projects V2...');
 
   try {
     const project = await createProjectV2(repo.owner.login, repo.name, token);
     spinner.succeed(chalk.green(`Projects V2 created: ${chalk.cyan(project.url)}`));
   } catch (error) {
-    spinner.fail(chalk.red('Projects V2 creation failed'));
-    throw error;
+    spinner.warn(chalk.yellow('Projects V2 creation skipped (requires read:org scope)'));
+    console.log(chalk.gray('  You can create Projects manually later at:'));
+    console.log(chalk.gray(`  ${repo.html_url}/projects\n`));
   }
 
   // Step 5: Deploy workflows
@@ -88,8 +89,8 @@ export async function init(projectName: string, options: InitOptions = {}) {
     const workflowCount = await deployWorkflows(repo.owner.login, repo.name, token);
     spinner.succeed(chalk.green(`${workflowCount} workflows deployed`));
   } catch (error) {
-    spinner.fail(chalk.red('Workflow deployment failed'));
-    throw error;
+    spinner.warn(chalk.yellow('Workflow deployment skipped'));
+    console.log(chalk.gray('  You can add workflows manually later\n'));
   }
 
   // Step 6: Clone and setup locally
@@ -101,8 +102,8 @@ export async function init(projectName: string, options: InitOptions = {}) {
     });
     spinner.succeed(chalk.green('Local setup complete'));
   } catch (error) {
-    spinner.fail(chalk.red('Local setup failed'));
-    throw error;
+    spinner.warn(chalk.yellow('Local setup skipped'));
+    console.log(chalk.gray(`  Clone manually: git clone ${repo.clone_url}\n`));
   }
 
   // Step 7: Create welcome Issue
@@ -112,8 +113,8 @@ export async function init(projectName: string, options: InitOptions = {}) {
     const issue = await createWelcomeIssue(repo.owner.login, repo.name, token);
     spinner.succeed(chalk.green(`Welcome Issue created: ${chalk.cyan(issue.html_url)}`));
   } catch (error) {
-    spinner.fail(chalk.red('Welcome Issue creation failed'));
-    throw error;
+    spinner.warn(chalk.yellow('Welcome Issue skipped'));
+    console.log(chalk.gray('  You can create Issues manually\n'));
   }
 
   // Success!

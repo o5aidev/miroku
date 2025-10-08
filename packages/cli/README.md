@@ -1,22 +1,36 @@
-# @agentic-os/cli
+# ✨ Miyabi
 
-Zero-learning-cost CLI for Agentic OS - Autonomous development framework.
+**一つのコマンドで全てが完結する自律型開発フレームワーク**
+
+Zero-learning-cost CLI for autonomous development - AI agents handle your GitHub Issues automatically.
 
 ## Installation
 
 ```bash
-npx agentic-os init my-project
+npx miyabi
 ```
 
 That's it! No configuration needed.
 
 ## Commands
 
-### `init <project-name>`
-
-Create a new project with full Agentic OS automation (5 min setup).
+### Interactive Mode (Recommended)
 
 ```bash
+npx miyabi
+```
+
+Simply run `miyabi` and follow the interactive prompts!
+
+### Direct Commands
+
+#### `init <project-name>`
+
+Create a new project with full automation (5 min setup).
+
+```bash
+npx miyabi init my-awesome-project
+# or
 npx agentic-os init my-awesome-project
 ```
 
@@ -35,13 +49,13 @@ gh issue create --title "Add feature X" --body "Description"
 # → AI agents automatically create PR within minutes
 ```
 
-### `install`
+#### `install`
 
-Install Agentic OS into an existing project (non-destructive).
+Install automation into an existing project (non-destructive).
 
 ```bash
 cd existing-project
-npx agentic-os install
+npx miyabi install
 ```
 
 **What it does:**
@@ -51,15 +65,15 @@ npx agentic-os install
 - ✅ Deploys workflows (skips conflicts)
 - ✅ Links to Projects V2
 
-### `status`
+#### `status`
 
 Check agent status and recent activity.
 
 ```bash
-npx agentic-os status
+npx miyabi status
 
 # Watch mode (auto-refresh every 10s)
-npx agentic-os status --watch
+npx miyabi status --watch
 ```
 
 ## Features
@@ -104,6 +118,38 @@ npx agentic-os status --watch
 - git CLI
 - gh CLI (GitHub CLI)
 
+## Configuration
+
+### GitHub OAuth Setup (Required for Maintainers)
+
+If you're forking this project or setting up your own instance, you need to create a GitHub OAuth App:
+
+1. **Create OAuth App**
+   - Go to https://github.com/settings/developers
+   - Click "OAuth Apps" → "New OAuth App"
+
+2. **Configure OAuth App**
+   ```
+   Application name: Your CLI Name
+   Homepage URL: https://github.com/YOUR_USERNAME/YOUR_REPO
+   Authorization callback URL: http://localhost
+   ```
+
+3. **Enable Device Flow**
+   - ✅ Check "Enable Device Flow" in your OAuth App settings
+   - This is required for CLI authentication
+
+4. **Set Environment Variable**
+   ```bash
+   # For development
+   export AGENTIC_OS_CLIENT_ID=your_client_id_here
+
+   # Or add to .env file
+   echo "AGENTIC_OS_CLIENT_ID=your_client_id_here" >> .env
+   ```
+
+**Note:** The official `miyabi` package has OAuth pre-configured. You only need this if you're building your own CLI.
+
 ## Development Status
 
 **Current Version:** 0.1.0 (Beta)
@@ -112,13 +158,18 @@ npx agentic-os status --watch
 - [x] CLI structure
 - [x] Command framework
 - [x] GitHub OAuth (Device Flow)
-- [ ] Repository setup
-- [ ] Labels deployment
+- [x] Repository setup
+- [x] Labels deployment (53 labels)
+- [x] Local project setup
 - [ ] Workflows deployment
-- [ ] Projects V2 integration
-- [ ] Local project setup
+- [ ] Projects V2 integration (requires read:org scope)
 - [ ] Auto-labeling AI
-- [ ] npm package publication
+
+**Tested & Working:**
+- ✅ OAuth authentication flow
+- ✅ Repository creation
+- ✅ Label state machine setup
+- ✅ Welcome Issue creation
 
 ## License
 

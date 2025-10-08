@@ -20,8 +20,8 @@ import { Octokit } from '@octokit/rest';
 import open from 'open';
 
 // GitHub OAuth App credentials
-// TODO: Register official Agentic OS GitHub App
-const CLIENT_ID = process.env.AGENTIC_OS_CLIENT_ID || 'Iv1.placeholder';
+// Official Miyabi CLI OAuth App
+const CLIENT_ID = process.env.AGENTIC_OS_CLIENT_ID || 'Ov23liiMr5kSJLGJFNyn';
 
 export interface DeviceCodeResponse {
   device_code: string;
@@ -101,12 +101,15 @@ async function requestDeviceCode(): Promise<DeviceCodeResponse> {
     },
     body: JSON.stringify({
       client_id: CLIENT_ID,
-      scope: 'repo workflow read:project write:project',
+      scope: 'repo workflow',
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to request device code: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('Response status:', response.status);
+    console.error('Response body:', errorText);
+    throw new Error(`Failed to request device code: ${response.statusText} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -196,6 +199,9 @@ async function verifyRequiredScopes(token: string): Promise<void> {
 
     const requiredScopes = ['repo', 'workflow'];
     const missingScopes = requiredScopes.filter((scope) => !scopes.includes(scope));
+
+    // Note: project scope is only available for GitHub Apps, not OAuth Apps
+    // For Projects V2, we use repo scope which includes basic project access
 
     if (missingScopes.length > 0) {
       console.log(chalk.yellow('\n⚠️  Warning: Missing recommended scopes:'));

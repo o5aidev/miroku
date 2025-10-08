@@ -7,9 +7,14 @@
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 
 // @ts-ignore - yaml is an ESM-only module
 import { parse as parseYaml } from 'yaml';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface Label {
   name: string;

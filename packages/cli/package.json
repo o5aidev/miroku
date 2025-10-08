@@ -1,14 +1,16 @@
 {
-  "name": "agentic-os",
-  "version": "1.0.0",
-  "description": "Zero-learning-cost autonomous development framework - AI agents handle your Issues automatically",
+  "name": "miyabi",
+  "version": "0.1.0",
+  "description": "✨ Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
+    "miyabi": "./dist/index.js",
     "agentic-os": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
-    "dist/**/*",
+    "dist",
+    "templates",
     "README.md",
     "LICENSE"
   ],
@@ -63,5 +65,8 @@
     "type": "git",
     "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations.git",
     "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
