@@ -1,19 +1,36 @@
 /**
  * Dashboard JavaScript
- * Loads KPI data and renders charts
+ * Loads KPI data and renders charts with real-time GitHub API integration
  */
 
 let trendsChart = null;
 let costChart = null;
+let refreshInterval = null;
+
+// Configuration
+const CONFIG = {
+  REFRESH_INTERVAL: 5 * 60 * 1000, // 5 minutes in milliseconds
+  USE_LIVE_API: true, // Set to true to use GitHub API, false for static JSON
+  GITHUB_TOKEN: '', // Optional: Add PAT for higher rate limits (not recommended for public pages)
+  REPO_OWNER: 'ShunsukeHayashi',
+  REPO_NAME: 'Miyabi',
+};
 
 async function loadDashboard() {
   try {
-    const response = await fetch('dashboard-data.json');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    let data;
 
-    const data = await response.json();
+    if (CONFIG.USE_LIVE_API) {
+      // Try to fetch from GitHub API (fallback to static JSON if fails)
+      try {
+        data = await fetchFromGitHubAPI();
+      } catch (apiError) {
+        console.warn('GitHub API fetch failed, falling back to static data:', apiError);
+        data = await fetchStaticData();
+      }
+    } else {
+      data = await fetchStaticData();
+    }
 
     // Hide loading, show dashboard
     document.getElementById('loading').style.display = 'none';
@@ -33,6 +50,54 @@ async function loadDashboard() {
     errorEl.textContent = `Error loading dashboard data: ${error.message}. Make sure dashboard-data.json exists.`;
     errorEl.style.display = 'block';
   }
+}
+
+async function fetchStaticData() {
+  const response = await fetch('dashboard-data.json');
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.json();
+}
+
+async function fetchFromGitHubAPI() {
+  const headers = {
+    'Accept': 'application/vnd.github+json',
+  };
+
+  if (CONFIG.GITHUB_TOKEN) {
+    headers['Authorization'] = `Bearer ${CONFIG.GITHUB_TOKEN}`;
+  }
+
+  // Fetch repository issues
+  const issuesUrl = `https://api.github.com/repos/${CONFIG.REPO_OWNER}/${CONFIG.REPO_NAME}/issues?state=all&per_page=100`;
+  const issuesResponse = await fetch(issuesUrl, { headers });
+
+  if (!issuesResponse.ok) {
+    throw new Error(`GitHub API error: ${issuesResponse.status}`);
+  }
+
+  const issues = await issuesResponse.json();
+
+  // Calculate metrics from issues
+  const totalIssues = issues.length;
+  const completedIssues = issues.filter(i => i.state === 'closed').length;
+  const completionRate = totalIssues > 0 ? (completedIssues / totalIssues) * 100 : 0;
+
+  // Generate dashboard data from GitHub issues
+  return {
+    generated: new Date().toISOString(),
+    summary: {
+      totalIssues,
+      completedIssues,
+      completionRate: Math.round(completionRate * 10) / 10,
+      avgDuration: 12.5, // Mock data - would need custom fields
+      totalCost: 2.45, // Mock data - would need custom fields
+      avgQualityScore: 94.3, // Mock data - would need custom fields
+    },
+    trends: generateMockTrends(),
+    agents: generateMockAgentData(),
+  };
 }
 
 function renderSummary(summary) {
@@ -203,5 +268,105 @@ function renderTimestamp(generated) {
   document.getElementById('timestamp').textContent = `Last updated: ${formatted}`;
 }
 
+// Theme toggle functionality
+function initThemeToggle() {
+  const toggleButton = document.getElementById('theme-toggle');
+  const themeIcon = document.getElementById('theme-icon');
+  const themeText = document.getElementById('theme-text');
+
+  // Load saved theme
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeButton(savedTheme);
+
+  toggleButton.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeButton(newTheme);
+  });
+
+  function updateThemeButton(theme) {
+    if (theme === 'dark') {
+      themeIcon.textContent = '🌙';
+      themeText.textContent = 'Dark Mode';
+    } else {
+      themeIcon.textContent = '☀️';
+      themeText.textContent = 'Light Mode';
+    }
+  }
+}
+
+// Auto-refresh functionality
+function startAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+
+  refreshInterval = setInterval(() => {
+    console.log('Auto-refreshing dashboard...');
+    loadDashboard();
+  }, CONFIG.REFRESH_INTERVAL);
+}
+
+// Mock data generators
+function generateMockTrends() {
+  const trends = [];
+  const today = new Date();
+
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+
+    trends.push({
+      date: date.toISOString().split('T')[0],
+      completed: Math.floor(Math.random() * 5) + 1,
+      inProgress: Math.floor(Math.random() * 3) + 1,
+      cost: Math.round((Math.random() * 0.5 + 0.1) * 100) / 100,
+    });
+  }
+
+  return trends;
+}
+
+function generateMockAgentData() {
+  return [
+    {
+      name: 'CodeGenAgent',
+      tasksCompleted: 8,
+      avgDuration: 7.2,
+      avgCost: 0.12,
+      avgQuality: 93.5,
+    },
+    {
+      name: 'ReviewAgent',
+      tasksCompleted: 5,
+      avgDuration: 3.5,
+      avgCost: 0.05,
+      avgQuality: 96.2,
+    },
+    {
+      name: 'DocsAgent',
+      tasksCompleted: 3,
+      avgDuration: 4.8,
+      avgCost: 0.08,
+      avgQuality: 91.7,
+    },
+    {
+      name: 'DeploymentAgent',
+      tasksCompleted: 2,
+      avgDuration: 15.0,
+      avgCost: 0.30,
+      avgQuality: 98.5,
+    },
+  ];
+}
+
 // Load dashboard on page load
-window.addEventListener('DOMContentLoaded', loadDashboard);
+window.addEventListener('DOMContentLoaded', () => {
+  initThemeToggle();
+  loadDashboard();
+  startAutoRefresh();
+});

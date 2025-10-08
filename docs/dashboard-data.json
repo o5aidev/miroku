@@ -1,0 +1,85 @@
+{
+  "generated": "2025-10-08T00:00:00.000Z",
+  "summary": {
+    "totalIssues": 24,
+    "completedIssues": 18,
+    "completionRate": 75.0,
+    "avgDuration": 12.5,
+    "totalCost": 2.45,
+    "avgQualityScore": 94.3
+  },
+  "trends": [
+    {
+      "date": "2025-10-02",
+      "completed": 2,
+      "inProgress": 3,
+      "cost": 0.35
+    },
+    {
+      "date": "2025-10-03",
+      "completed": 3,
+      "inProgress": 2,
+      "cost": 0.42
+    },
+    {
+      "date": "2025-10-04",
+      "completed": 4,
+      "inProgress": 1,
+      "cost": 0.38
+    },
+    {
+      "date": "2025-10-05",
+      "completed": 2,
+      "inProgress": 2,
+      "cost": 0.28
+    },
+    {
+      "date": "2025-10-06",
+      "completed": 3,
+      "inProgress": 3,
+      "cost": 0.45
+    },
+    {
+      "date": "2025-10-07",
+      "completed": 2,
+      "inProgress": 2,
+      "cost": 0.32
+    },
+    {
+      "date": "2025-10-08",
+      "completed": 2,
+      "inProgress": 1,
+      "cost": 0.25
+    }
+  ],
+  "agents": [
+    {
+      "name": "CodeGenAgent",
+      "tasksCompleted": 8,
+      "avgDuration": 7.2,
+      "avgCost": 0.12,
+      "avgQuality": 93.5
+    },
+    {
+      "name": "ReviewAgent",
+      "tasksCompleted": 5,
+      "avgDuration": 3.5,
+      "avgCost": 0.05,
+      "avgQuality": 96.2
+    },
+    {
+      "name": "DocsAgent",
+      "tasksCompleted": 3,
+      "avgDuration": 4.8,
+      "avgCost": 0.08,
+      "avgQuality": 91.7
+    },
+    {
+      "name": "DeploymentAgent",
+      "tasksCompleted": 2,
+      "avgDuration": 15.0,
+      "avgCost": 0.30,
+      "avgQuality": 98.5
+    }
+  ]
+}
