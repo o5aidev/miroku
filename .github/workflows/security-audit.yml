@@ -1,0 +1,317 @@
+name: Security Audit
+
+on:
+  # 毎日実行
+  schedule:
+    - cron: '0 0 * * *'  # 毎日午前0時(UTC)に実行
+
+  # プッシュ時に実行（mainブランチ）
+  push:
+    branches:
+      - main
+      - develop
+
+  # プルリクエスト時に実行
+  pull_request:
+    branches:
+      - main
+      - develop
+
+  # 手動実行を許可
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: 'Create GitHub Issue for report'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+  security-events: write
+  pull-requests: write
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 完全な履歴を取得
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type check
+        run: npm run typecheck
+        continue-on-error: true
+
+      # ============================================================================
+      # Dependency Vulnerability Scan
+      # ============================================================================
+
+      - name: Run npm audit
+        id: npm-audit
+        run: |
+          npm audit --json > audit-report.json || true
+          npm audit
+        continue-on-error: true
+
+      - name: Parse audit results
+        id: parse-audit
+        run: |
+          if [ -f audit-report.json ]; then
+            CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' audit-report.json)
+            HIGH=$(jq '.metadata.vulnerabilities.high // 0' audit-report.json)
+            MODERATE=$(jq '.metadata.vulnerabilities.moderate // 0' audit-report.json)
+            LOW=$(jq '.metadata.vulnerabilities.low // 0' audit-report.json)
+
+            echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+            echo "high=$HIGH" >> $GITHUB_OUTPUT
+            echo "moderate=$MODERATE" >> $GITHUB_OUTPUT
+            echo "low=$LOW" >> $GITHUB_OUTPUT
+
+            echo "### Vulnerability Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- Critical: $CRITICAL" >> $GITHUB_STEP_SUMMARY
+            echo "- High: $HIGH" >> $GITHUB_STEP_SUMMARY
+            echo "- Moderate: $MODERATE" >> $GITHUB_STEP_SUMMARY
+            echo "- Low: $LOW" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "critical=0" >> $GITHUB_OUTPUT
+            echo "high=0" >> $GITHUB_OUTPUT
+            echo "moderate=0" >> $GITHUB_OUTPUT
+            echo "low=0" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================================================
+      # Secret Scanning
+      # ============================================================================
+
+      - name: Secret scanning with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Run custom secret scanner
+        id: secret-scan
+        run: |
+          npx tsx scripts/security-manager.ts scan-secrets > secret-scan.log 2>&1 || true
+
+          if grep -q "Found.*potential secrets" secret-scan.log; then
+            echo "secrets_found=true" >> $GITHUB_OUTPUT
+            echo "### ⚠️ Secrets Detected" >> $GITHUB_STEP_SUMMARY
+            cat secret-scan.log >> $GITHUB_STEP_SUMMARY
+          else
+            echo "secrets_found=false" >> $GITHUB_OUTPUT
+            echo "### ✅ No Secrets Detected" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================================================
+      # SBOM Generation
+      # ============================================================================
+
+      - name: Generate SBOM
+        run: |
+          npx tsx scripts/security-manager.ts sbom
+          echo "### 📋 SBOM Generated" >> $GITHUB_STEP_SUMMARY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: reports/sbom.json
+          retention-days: 90
+
+      # ============================================================================
+      # CodeQL Analysis
+      # ============================================================================
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      # ============================================================================
+      # CODEOWNERS Validation
+      # ============================================================================
+
+      - name: Validate CODEOWNERS
+        run: |
+          if [ ! -f "CODEOWNERS" ]; then
+            echo "### ⚠️ CODEOWNERS file missing" >> $GITHUB_STEP_SUMMARY
+            echo "Generating CODEOWNERS file..."
+            npx tsx scripts/security-manager.ts codeowners
+            echo "codeowners_missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "### ✅ CODEOWNERS file exists" >> $GITHUB_STEP_SUMMARY
+            echo "codeowners_missing=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================================================
+      # Security Policy Check
+      # ============================================================================
+
+      - name: Check security policy
+        id: security-policy
+        run: |
+          if [ ! -f "SECURITY.md" ]; then
+            echo "### ⚠️ SECURITY.md missing" >> $GITHUB_STEP_SUMMARY
+            echo "security_md_missing=true" >> $GITHUB_OUTPUT
+          else
+            echo "### ✅ SECURITY.md exists" >> $GITHUB_STEP_SUMMARY
+            echo "security_md_missing=false" >> $GITHUB_OUTPUT
+          fi
+
+      # ============================================================================
+      # Comprehensive Security Report
+      # ============================================================================
+
+      - name: Generate security report
+        id: generate-report
+        run: |
+          npx tsx scripts/security-manager.ts audit > audit-results.log 2>&1 || true
+
+          echo "### 📊 Security Audit Results" >> $GITHUB_STEP_SUMMARY
+          cat audit-results.log >> $GITHUB_STEP_SUMMARY
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================================================
+      # Post Security Report as Issue
+      # ============================================================================
+
+      - name: Post security report as issue
+        if: |
+          github.event_name == 'schedule' ||
+          (github.event_name == 'workflow_dispatch' && inputs.create_issue == 'true')
+        run: |
+          npx tsx scripts/security-manager.ts report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ============================================================================
+      # Fail on Critical Issues
+      # ============================================================================
+
+      - name: Check for critical security issues
+        if: steps.parse-audit.outputs.critical > 0 || steps.secret-scan.outputs.secrets_found == 'true'
+        run: |
+          echo "❌ Critical security issues detected!"
+          echo "- Critical vulnerabilities: ${{ steps.parse-audit.outputs.critical }}"
+          echo "- Secrets found: ${{ steps.secret-scan.outputs.secrets_found }}"
+          exit 1
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check licenses
+        run: |
+          npx license-checker --summary > license-summary.txt || true
+
+          echo "### 📜 License Summary" >> $GITHUB_STEP_SUMMARY
+          cat license-summary.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report-${{ github.sha }}
+          path: license-summary.txt
+          retention-days: 30
+
+  security-scorecard:
+    name: OpenSSF Scorecard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [security-scan, dependency-review, license-check]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🔒 Security Audit Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Review: ${{ needs.dependency-review.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- License Check: ${{ needs.license-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📅 Scan Date: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 Workflow Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY

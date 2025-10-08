@@ -1,0 +1,65 @@
+# CODEOWNERS - Code ownership and review requirements
+#
+# Each line represents a file pattern and the owners who should review changes
+# Patterns follow the same syntax as .gitignore files
+#
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ============================================================================
+# Global Owners (Default reviewers for everything)
+# ============================================================================
+* @ShunsukeHayashi
+
+# ============================================================================
+# Agent Code (AI Agents)
+# ============================================================================
+/agents/**                       @ShunsukeHayashi
+/agents/coordinator/**           @ShunsukeHayashi
+/agents/codegen/**               @ShunsukeHayashi
+/agents/review/**                @ShunsukeHayashi
+/agents/issue/**                 @ShunsukeHayashi
+/agents/pr/**                    @ShunsukeHayashi
+/agents/deployment/**            @ShunsukeHayashi
+
+# ============================================================================
+# Scripts and Automation
+# ============================================================================
+/scripts/**                      @ShunsukeHayashi
+/scripts/security-manager.ts     @ShunsukeHayashi
+
+# ============================================================================
+# Workflows and CI/CD
+# ============================================================================
+/.github/workflows/**            @ShunsukeHayashi
+/.github/workflows/security-audit.yml @ShunsukeHayashi
+
+# ============================================================================
+# Security and Configuration
+# ============================================================================
+/SECURITY.md                     @ShunsukeHayashi
+/CODEOWNERS                      @ShunsukeHayashi
+/.github/dependabot.yml          @ShunsukeHayashi
+
+# ============================================================================
+# Documentation
+# ============================================================================
+/docs/**                         @ShunsukeHayashi
+/README.md                       @ShunsukeHayashi
+/CONTRIBUTING.md                 @ShunsukeHayashi
+
+# ============================================================================
+# Package and Dependencies
+# ============================================================================
+/package.json                    @ShunsukeHayashi
+/package-lock.json               @ShunsukeHayashi
+/tsconfig.json                   @ShunsukeHayashi
+
+# ============================================================================
+# Knowledge Base
+# ============================================================================
+/knowledge-base/**               @ShunsukeHayashi
+
+# ============================================================================
+# Reports and Metrics
+# ============================================================================
+/reports/**                      @ShunsukeHayashi
