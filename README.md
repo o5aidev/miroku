@@ -1,11 +1,11 @@
-# Hashira ⛩️
+# Miyabi ✨
 
 **一つのコマンドで全てが完結する自律型開発フレームワーク**
 
 ## クイックスタート
 
 ```bash
-npx hashira
+npx miyabi
 ```
 
 たったこれだけ。全て自動で完結します。
@@ -15,13 +15,13 @@ npx hashira
 ### ステップ1: コマンドを実行
 
 ```bash
-npx hashira
+npx miyabi
 ```
 
 ### ステップ2: メニューから選択
 
 ```
-⛩️ Hashira
+✨ Miyabi
 
 一つのコマンドで全てが完結
 
@@ -45,7 +45,7 @@ AIエージェントが自動で:
 
 ## 特徴
 
-- **一つのコマンド**: `hashira`だけ覚えればOK
+- **一つのコマンド**: `miyabi`だけ覚えればOK
 - **対話形式**: 必要な情報を質問形式で聞きます
 - **完全自動**: Issue作成からPR作成まで全自動
 - **6つのAIエージェント**: 自律的にタスクを処理
@@ -65,7 +65,7 @@ AIエージェントが自動で:
 ### 新規プロジェクト作成
 
 ```bash
-$ npx hashira
+$ npx miyabi
 
 ? 何をしますか？ 🆕 新しいプロジェクトを作成
 ? プロジェクト名: my-app
@@ -85,7 +85,7 @@ $ npx hashira
 
 ```bash
 $ cd my-existing-project
-$ npx hashira
+$ npx miyabi
 
 ? 何をしますか？ 📦 既存プロジェクトに追加
 ? ドライランで確認しますか？ Yes
@@ -105,12 +105,12 @@ $ npx hashira
 ### ステータス確認
 
 ```bash
-$ npx hashira
+$ npx miyabi
 
 ? 何をしますか？ 📊 ステータス確認
 ? ウォッチモードを有効にしますか？ No
 
-📊 Hashira ステータス
+📊 Miyabi ステータス
 
 State         Count  Status
 ───────────────────────────
@@ -147,7 +147,7 @@ MIT
 **覚えるコマンドは一つだけ。**
 
 ```bash
-npx hashira
+npx miyabi
 ```
 
 🤖 Powered by Claude AI

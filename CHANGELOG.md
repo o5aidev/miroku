@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Hashira will be documented in this file.
+All notable changes to Miyabi will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,12 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **BREAKING**: Renamed from "Agentic OS" to "Hashira" ⛩️
-- **BREAKING**: Package name changed from `@agentic-os/cli` to `hashira`
-- **BREAKING**: Command changed from `agentic-os` to `hashira`
+- **BREAKING**: Renamed from "Agentic OS" to "Miyabi" ✨
+- **BREAKING**: Package name changed from `@agentic-os/cli` to `miyabi`
+- **BREAKING**: Command changed from `agentic-os` to `miyabi`
 - Simplified to single command interface (interactive menu)
 - Full Japanese UI support
-- Single command: `npx hashira` for everything
+- Single command: `npx miyabi` for everything
 
 ## [0.1.0] - 2025-10-08
 

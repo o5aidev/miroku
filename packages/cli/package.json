@@ -1,10 +1,10 @@
 {
-  "name": "hashira",
+  "name": "miyabi",
   "version": "0.1.0",
-  "description": "Hashira - 一つのコマンドで全てが完結する自律型開発フレームワーク",
+  "description": "Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
-    "hashira": "./dist/index.js"
+    "miyabi": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
