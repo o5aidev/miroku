@@ -1,5 +1,8 @@
 # Miyabi ✨
 
+[![npm version](https://badge.fury.io/js/miyabi.svg)](https://www.npmjs.com/package/miyabi)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **一つのコマンドで全てが完結する自律型開発フレームワーク**
 
 ## クイックスタート
@@ -9,6 +12,17 @@ npx miyabi
 ```
 
 たったこれだけ。全て自動で完結します。
+
+## インストール
+
+```bash
+# npxで直接実行（推奨）
+npx miyabi
+
+# グローバルインストール
+npm install -g miyabi
+miyabi
+```
 
 ## 使い方
 
