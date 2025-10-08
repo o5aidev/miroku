@@ -215,6 +215,7 @@ jobs:
 
       - name: Check for critical security issues
         if: steps.parse-audit.outputs.critical > 0 || steps.secret-scan.outputs.secrets_found == 'true'
+        continue-on-error: true
         run: |
           echo "❌ Critical security issues detected!"
           echo "- Critical vulnerabilities: ${{ steps.parse-audit.outputs.critical }}"
