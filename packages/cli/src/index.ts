@@ -177,8 +177,19 @@ program.parse(process.argv);
 
 // Run interactive mode if no command provided
 if (!process.argv.slice(2).length) {
-  interactiveMode().catch((error) => {
-    console.error(chalk.red.bold('\n❌ エラー:'), error);
-    process.exit(1);
-  });
+  // Check if stdin is a TTY (interactive terminal)
+  if (process.stdin.isTTY) {
+    interactiveMode().catch((error) => {
+      console.error(chalk.red.bold('\n❌ エラー:'), error);
+      process.exit(1);
+    });
+  } else {
+    // Non-interactive environment, show help
+    program.outputHelp();
+    console.log('\n💡 Quick start:');
+    console.log(chalk.cyan('  npx miyabi init my-project'));
+    console.log(chalk.gray('  → Creates new project with full automation\n'));
+    console.log(chalk.cyan('  cd existing-project && npx miyabi install'));
+    console.log(chalk.gray('  → Adds automation to existing project\n'));
+  }
 }
