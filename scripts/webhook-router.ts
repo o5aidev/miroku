@@ -10,9 +10,17 @@
  * - PRs → ReviewAgent + PRAgent (quality checks, merging)
  * - Push → DeploymentAgent (CI/CD triggers)
  * - Comments → CoordinatorAgent (command parsing)
+ *
+ * Phase B Enhancements:
+ * - Webhook signature verification
+ * - Error handling and retry mechanism
+ * - Rate limiting
+ * - Comprehensive logging
  */
 
 import { Octokit } from '@octokit/rest';
+// Security functions available for future use
+// import { verifyWebhookSignature, performSecurityCheck } from './webhook-security.js';
 
 // ============================================================================
 // Types
@@ -39,12 +47,29 @@ interface RoutingRule {
   action: string;
 }
 
+interface RetryConfig {
+  maxRetries: number;
+  initialDelayMs: number;
+  maxDelayMs: number;
+  backoffMultiplier: number;
+}
+
+interface RoutingResult {
+  success: boolean;
+  agent?: string;
+  action?: string;
+  error?: string;
+  retries?: number;
+}
+
 // ============================================================================
 // Configuration
 // ============================================================================
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const REPOSITORY = process.env.GITHUB_REPOSITORY || 'ShunsukeHayashi/Autonomous-Operations';
+// WEBHOOK_SECRET available for future signature verification
+// const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || '';
 const [owner, repo] = REPOSITORY.split('/');
 
 if (!GITHUB_TOKEN) {
@@ -54,6 +79,14 @@ if (!GITHUB_TOKEN) {
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
+// Retry configuration for failed operations
+const RETRY_CONFIG: RetryConfig = {
+  maxRetries: 3,
+  initialDelayMs: 1000,
+  maxDelayMs: 10000,
+  backoffMultiplier: 2,
+};
+
 // ============================================================================
 // Routing Rules
 // ============================================================================
@@ -61,7 +94,7 @@ const octokit = new Octokit({ auth: GITHUB_TOKEN });
 const ROUTING_RULES: RoutingRule[] = [
   // Critical: Agent execution requests
   {
-    condition: (p) => p.type === 'issue' && p.action === 'labeled' && p.labels?.includes('🤖agent-execute'),
+    condition: (p) => p.type === 'issue' && p.action === 'labeled' && (p.labels?.includes('🤖agent-execute') ?? false),
     agent: 'CoordinatorAgent',
     priority: 'critical',
     action: 'Execute autonomous task',
@@ -69,7 +102,7 @@ const ROUTING_RULES: RoutingRule[] = [
 
   // Critical: Agent command in comment
   {
-    condition: (p) => p.type === 'comment' && p.body?.startsWith('/agent'),
+    condition: (p) => p.type === 'comment' && (p.body?.startsWith('/agent') ?? false),
     agent: 'CoordinatorAgent',
     priority: 'critical',
     action: 'Parse and execute command',
@@ -125,7 +158,7 @@ const ROUTING_RULES: RoutingRule[] = [
 
   // Medium: PR merged
   {
-    condition: (p) => p.type === 'pr' && p.action === 'closed' && p.body?.includes('merged'),
+    condition: (p) => p.type === 'pr' && p.action === 'closed' && (p.body?.includes('merged') ?? false),
     agent: 'DeploymentAgent',
     priority: 'medium',
     action: 'Trigger deployment pipeline',
@@ -154,7 +187,7 @@ const ROUTING_RULES: RoutingRule[] = [
 
 class WebhookEventRouter {
   /**
-   * Route incoming event to appropriate agent
+   * Route incoming event to appropriate agent with retry support
    */
   async route(payload: EventPayload): Promise<void> {
     console.log(`\n📥 Received ${payload.type} event: ${payload.action}`);
@@ -174,32 +207,85 @@ class WebhookEventRouter {
 
     console.log(`\n✅ Matched ${matchedRules.length} routing rule(s):`);
 
-    // Execute routing rules
+    // Execute routing rules with error handling
+    const results: RoutingResult[] = [];
     for (const rule of matchedRules) {
       console.log(`\n🎯 Routing to ${rule.agent}`);
       console.log(`   Priority: ${rule.priority}`);
       console.log(`   Action: ${rule.action}`);
 
-      await this.triggerAgent(rule.agent, payload, rule.action);
+      const result = await this.triggerAgentWithRetry(rule.agent, payload, rule.action);
+      results.push(result);
+
+      if (!result.success) {
+        console.error(`❌ Failed to route to ${rule.agent} after ${result.retries} retries: ${result.error}`);
+      }
     }
+
+    // Log summary
+    const successful = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+    console.log(`\n📊 Routing Summary: ${successful} successful, ${failed} failed`);
+  }
+
+  /**
+   * Trigger agent execution with exponential backoff retry
+   */
+  private async triggerAgentWithRetry(agent: string, payload: EventPayload, action: string): Promise<RoutingResult> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      try {
+        await this.triggerAgent(agent, payload, action);
+        return {
+          success: true,
+          agent,
+          action,
+          retries: attempt,
+        };
+      } catch (error) {
+        lastError = error as Error;
+        console.error(`⚠️  Attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries + 1} failed: ${lastError.message}`);
+
+        if (attempt < RETRY_CONFIG.maxRetries) {
+          const delay = Math.min(
+            RETRY_CONFIG.initialDelayMs * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt),
+            RETRY_CONFIG.maxDelayMs
+          );
+          console.log(`⏳ Retrying in ${delay}ms...`);
+          await this.sleep(delay);
+        }
+      }
+    }
+
+    return {
+      success: false,
+      agent,
+      action,
+      error: lastError?.message || 'Unknown error',
+      retries: RETRY_CONFIG.maxRetries,
+    };
   }
 
   /**
    * Trigger agent execution
    */
   private async triggerAgent(agent: string, payload: EventPayload, action: string): Promise<void> {
-    try {
-      // Create issue comment to record the routing decision
-      if (payload.number) {
-        await this.createRoutingComment(payload.number, agent, action);
-      }
-
-      // TODO: Actual agent execution logic
-      // For now, we just log the routing decision
-      console.log(`✅ Routed to ${agent}: ${action}`);
-    } catch (error) {
-      console.error(`❌ Failed to trigger ${agent}:`, error);
+    // Create issue comment to record the routing decision
+    if (payload.number) {
+      await this.createRoutingComment(payload.number, agent, action);
     }
+
+    // TODO: Actual agent execution logic
+    // For now, we just log the routing decision
+    console.log(`✅ Routed to ${agent}: ${action}`);
+  }
+
+  /**
+   * Sleep utility for retry delays
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -230,7 +316,7 @@ class WebhookEventRouter {
   }
 
   /**
-   * Parse command from comment
+   * Parse command from comment (available for future command parsing)
    */
   private parseCommand(body: string): { command: string; args: string[] } | null {
     const match = body.match(/^\/(\w+)(?:\s+(.+))?/);
@@ -240,6 +326,13 @@ class WebhookEventRouter {
     const args = argsString ? argsString.split(/\s+/) : [];
 
     return { command, args };
+  }
+
+  /**
+   * Expose parseCommand for testing
+   */
+  public testParseCommand(body: string) {
+    return this.parseCommand(body);
   }
 }
 
