@@ -81,9 +81,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@agentic-os/core':
-        specifier: workspace:*
-        version: link:../core
       '@octokit/graphql':
         specifier: ^7.0.2
         version: 7.1.1
@@ -161,6 +158,25 @@ importers:
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
+
+  packages/github-projects:
+    dependencies:
+      '@octokit/graphql':
+        specifier: ^7.0.2
+        version: 7.1.1
+      '@octokit/rest':
+        specifier: ^20.0.0
+        version: 20.1.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.19
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.4(@types/node@20.19.19)(tsx@4.20.6)(yaml@2.8.1)
 
 packages:
 
