@@ -1,10 +1,10 @@
 {
-  "name": "@agentic-os/cli",
+  "name": "origami",
   "version": "0.1.0",
-  "description": "Zero-learning-cost CLI for Agentic OS - Autonomous development framework",
+  "description": "Origami - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
-    "agentic-os": "./dist/index.js"
+    "origami": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

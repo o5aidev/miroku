@@ -1,85 +1,153 @@
-# Agentic OS
+# Origami 🎨
 
-**Autonomous AI development framework. Zero configuration. Zero learning curve.**
+**一つのコマンドで全てが完結する自律型開発フレームワーク**
 
-## Quick Start
-
-```bash
-npx agentic-os init my-project
-```
-
-That's it. You now have a fully automated AI development environment.
-
-## What You Get
-
-- **6 AI agents** that automatically handle your Issues
-- **Automatic Issue → PR pipeline** (no manual coding needed)
-- **AI-powered labeling** (no manual categorization)
-- **Real-time monitoring** via GitHub Projects
-
-## How to Use
-
-### 1. Create an Issue
+## クイックスタート
 
 ```bash
-gh issue create --title "Add user authentication" --body "Email/password login"
+npx origami
 ```
 
-### 2. Wait
+たったこれだけ。全て自動で完結します。
 
-The agents automatically:
-- Analyze and label the Issue
-- Break down into tasks
-- Implement the feature
-- Review code quality
-- Create Pull Request
+## 使い方
 
-### 3. Review and Merge
-
-A PR appears within 10-15 minutes. Review, approve, merge. Done.
-
-## Commands
+### ステップ1: コマンドを実行
 
 ```bash
-# Create new project
-npx agentic-os init my-project
-
-# Add to existing project
-npx agentic-os install
-
-# Monitor agents
-npx agentic-os status --watch
+npx origami
 ```
 
-## Advanced Features
+### ステップ2: メニューから選択
+
+```
+🎨 Origami
+
+一つのコマンドで全てが完結
+
+? 何をしますか？
+  🆕 新しいプロジェクトを作成
+  📦 既存プロジェクトに追加
+  📊 ステータス確認
+  ❌ 終了
+```
+
+### ステップ3: あとは待つだけ
+
+AIエージェントが自動で:
+- Issueを分析してラベル付け
+- タスクに分解
+- コードを実装
+- コード品質をレビュー
+- PRを作成
+
+10-15分でPRが完成。レビューして、マージするだけ。
+
+## 特徴
+
+- **一つのコマンド**: `origami`だけ覚えればOK
+- **対話形式**: 必要な情報を質問形式で聞きます
+- **完全自動**: Issue作成からPR作成まで全自動
+- **6つのAIエージェント**: 自律的にタスクを処理
+- **日本語対応**: UIは完全日本語
+
+## 何が得られるか
+
+- ✅ 自動Issue分析とラベル付け
+- ✅ 自動コード実装
+- ✅ 自動テスト作成
+- ✅ 自動PR作成
+- ✅ リアルタイム進捗確認
+- ✅ GitHub Projects連携
+
+## 使用例
+
+### 新規プロジェクト作成
 
 ```bash
-# Auto-create Issue from commit
-git commit -m "feat: New feature #auto"
+$ npx origami
 
-# Auto-create Issue from PR comment
-# Comment: @agentic-os test this component
+? 何をしますか？ 🆕 新しいプロジェクトを作成
+? プロジェクト名: my-app
+? プライベートリポジトリにしますか？ No
+
+🚀 セットアップ開始...
+✓ GitHubリポジトリ作成
+✓ ラベル設定（53個）
+✓ ワークフロー配置（10+個）
+✓ Projects設定
+✓ ローカルにクローン
+
+完了！🎉
 ```
 
-## Documentation
+### 既存プロジェクトに追加
 
-- [Getting Started](docs/GETTING_STARTED.md) - 5-minute guide
-- [Architecture](docs/system-architecture.puml) - System design
-- [CLI Reference](packages/cli/README.md) - Command details
+```bash
+$ cd my-existing-project
+$ npx origami
 
-## Requirements
+? 何をしますか？ 📦 既存プロジェクトに追加
+? ドライランで確認しますか？ Yes
+
+🔍 プロジェクト解析中...
+✓ 言語検出: JavaScript/TypeScript
+✓ フレームワーク: Next.js
+✓ ビルドツール: Vite
+✓ パッケージマネージャー: pnpm
+
+インストール予定:
+  - 53個のラベル
+  - 10+個のワークフロー
+  - Projects V2連携
+```
+
+### ステータス確認
+
+```bash
+$ npx origami
+
+? 何をしますか？ 📊 ステータス確認
+? ウォッチモードを有効にしますか？ No
+
+📊 Origami ステータス
+
+State         Count  Status
+───────────────────────────
+Pending       2      ⏳ 待機中
+Implementing  3      ⚡ 作業中
+Reviewing     1      🔍 レビュー中
+Done          15     ✓ 完了
+
+📝 最近のPR:
+#42 ユーザーダッシュボード追加
+#41 ログインリダイレクト修正
+#40 APIエンドポイントのドキュメント化
+```
+
+## ドキュメント
+
+- [セットアップガイド](docs/GETTING_STARTED.md)
+- [使用例](docs/CLI_USAGE_EXAMPLES.md)
+- [パブリッシュガイド](docs/PUBLICATION_GUIDE.md)
+
+## 必要要件
 
 - Node.js >= 18
-- GitHub account
+- GitHubアカウント
 - git CLI
 - gh CLI
 
-## License
+## ライセンス
 
 MIT
 
 ---
 
-**That's all you need to know.** Create Issues, get PRs.
+**覚えるコマンドは一つだけ。**
+
+```bash
+npx origami
+```
 
 🤖 Powered by Claude AI
