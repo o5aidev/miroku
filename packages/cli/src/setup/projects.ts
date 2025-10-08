@@ -78,9 +78,9 @@ export async function createProjectV2(
  * Link existing repository to existing Projects V2
  */
 export async function linkToProject(
-  owner: string,
-  repo: string,
-  token: string
+  _owner: string,
+  _repo: string,
+  _token: string
 ): Promise<void> {
   // This is handled automatically by the project-sync.yml workflow
   // No manual linking needed

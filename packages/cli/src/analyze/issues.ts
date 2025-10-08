@@ -6,7 +6,7 @@
 
 import { Octokit } from '@octokit/rest';
 
-interface Issue {
+export interface Issue {
   number: number;
   title: string;
   body: string | null;

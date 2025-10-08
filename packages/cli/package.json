@@ -7,10 +7,18 @@
     "agentic-os": "./dist/index.js"
   },
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "prepublishOnly": "npm run build"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "ai",
@@ -18,12 +26,19 @@
     "autonomous",
     "cli",
     "github",
-    "automation"
+    "automation",
+    "workflow",
+    "devops",
+    "claude",
+    "anthropic"
   ],
-  "author": "Agentic OS Team",
+  "author": "Shunsuke Hayashi <supernovasyun@gmail.com>",
   "license": "MIT",
+  "homepage": "https://github.com/ShunsukeHayashi/Autonomous-Operations#readme",
+  "bugs": {
+    "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations/issues"
+  },
   "dependencies": {
-    "@agentic-os/core": "workspace:*",
     "@octokit/rest": "^20.0.0",
     "@octokit/graphql": "^7.0.2",
     "chalk": "^5.3.0",
@@ -48,5 +63,8 @@
     "type": "git",
     "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations.git",
     "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

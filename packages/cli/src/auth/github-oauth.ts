@@ -136,10 +136,10 @@ async function pollForToken(deviceCode: DeviceCodeResponse): Promise<string> {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as any;
 
       if (data.access_token) {
-        return data.access_token;
+        return data.access_token as string;
       }
 
       if (data.error === 'authorization_pending') {
@@ -154,7 +154,7 @@ async function pollForToken(deviceCode: DeviceCodeResponse): Promise<string> {
       }
 
       if (data.error) {
-        throw new Error(`OAuth error: ${data.error} - ${data.error_description}`);
+        throw new Error(`OAuth error: ${data.error} - ${data.error_description || ''}`);
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('OAuth error')) {
