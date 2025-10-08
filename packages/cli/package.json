@@ -1,6 +1,6 @@
 {
   "name": "miyabi",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "✨ Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
