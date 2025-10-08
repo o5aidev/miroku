@@ -1,91 +1,85 @@
-# 🤖 Agentic OS
+# Agentic OS
 
-**Create an Issue. Get a PR. That's it.**
-
-[![NPM](https://img.shields.io/npm/v/agentic-os)](https://www.npmjs.com/package/agentic-os)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+**Autonomous AI development framework. Zero configuration. Zero learning curve.**
 
 ## Quick Start
 
 ```bash
-# New project
 npx agentic-os init my-project
-
-# Existing project
-cd your-project
-npx agentic-os install
 ```
 
-Then just **create Issues**. AI agents handle the rest.
+That's it. You now have a fully automated AI development environment.
 
 ## What You Get
 
-- 🚀 **5-minute setup** (vs 1-2 hours traditional)
-- 🤖 **6 AI agents** working in parallel
-- 💰 **$50/day cost limit** (automatic circuit breaker)
-- 📊 **Real-time dashboard**
-- ✅ **Zero learning curve**
+- **6 AI agents** that automatically handle your Issues
+- **Automatic Issue → PR pipeline** (no manual coding needed)
+- **AI-powered labeling** (no manual categorization)
+- **Real-time monitoring** via GitHub Projects
 
-## How It Works
+## How to Use
 
-```
-You:  Create GitHub Issue
-      ↓
-AI:   Analyzes & labels automatically
-      ↓
-Agents: Fix bugs, add features, write tests, deploy
-      ↓
-You:  Review PR (5-10 min later)
-```
-
-## Example
+### 1. Create an Issue
 
 ```bash
-# 1. Setup (once)
-npx agentic-os init my-app
-cd my-app
+gh issue create --title "Add user authentication" --body "Email/password login"
+```
 
-# 2. Create Issue (in GitHub UI)
-Title: "Add dark mode"
-Body: "Toggle between light/dark themes"
+### 2. Wait
 
-# 3. Wait 10 minutes
-# ✅ PR created with full implementation
-# ✅ Tests included
-# ✅ Documentation updated
+The agents automatically:
+- Analyze and label the Issue
+- Break down into tasks
+- Implement the feature
+- Review code quality
+- Create Pull Request
+
+### 3. Review and Merge
+
+A PR appears within 10-15 minutes. Review, approve, merge. Done.
+
+## Commands
+
+```bash
+# Create new project
+npx agentic-os init my-project
+
+# Add to existing project
+npx agentic-os install
+
+# Monitor agents
+npx agentic-os status --watch
+```
+
+## Advanced Features
+
+```bash
+# Auto-create Issue from commit
+git commit -m "feat: New feature #auto"
+
+# Auto-create Issue from PR comment
+# Comment: @agentic-os test this component
 ```
 
 ## Documentation
 
-- 📖 [Full Documentation](docs/)
-- 🎯 [Getting Started](docs/GETTING_STARTED.md) (3 min read)
-- 🏗️ [Architecture](docs/PARALLEL_WORK_ARCHITECTURE.md)
-- 🤝 [Contributing](CONTRIBUTING.md)
-
-## Features
-
-| Feature | Status |
-|---------|--------|
-| AI Auto-Labeling | ✅ |
-| Parallel Workers | ✅ |
-| Cost Control | ✅ |
-| GitHub Projects V2 | ✅ |
-| Real-time Dashboard | ✅ |
-| Economic Circuit Breaker | ✅ |
+- [Getting Started](docs/GETTING_STARTED.md) - 5-minute guide
+- [Architecture](docs/system-architecture.puml) - System design
+- [CLI Reference](packages/cli/README.md) - Command details
 
 ## Requirements
 
-- Node.js 20+
-- GitHub Account
-- Anthropic API Key (for AI features)
+- Node.js >= 18
+- GitHub account
+- git CLI
+- gh CLI
 
 ## License
 
-MIT © 2025
+MIT
 
 ---
 
-**Want to contribute?** See [CONTRIBUTING.md](CONTRIBUTING.md)
+**That's all you need to know.** Create Issues, get PRs.
 
-**Need help?** [Create an issue](https://github.com/ShunsukeHayashi/Autonomous-Operations/issues/new)
+🤖 Powered by Claude AI
