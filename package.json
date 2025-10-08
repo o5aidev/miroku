@@ -9,6 +9,7 @@
     "task": "tsx scripts/execute-task.ts",
     "demo": "tsx scripts/demo-rich-cli.ts",
     "setup:token": "tsx scripts/setup-github-token.ts",
+    "setup:project": "tsx scripts/setup-github-project.ts",
     "agents:parallel:exec": "tsx scripts/parallel-executor.ts",
     "agents:parallel:issues": "npm run agents:parallel:exec --",
     "agents:parallel:todos": "npm run agents:parallel:exec --",

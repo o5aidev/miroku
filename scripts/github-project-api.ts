@@ -11,7 +11,6 @@
  * Issue #5 Phase A: Data Persistence Layer
  */
 
-import { Octokit } from '@octokit/rest';
 import { graphql } from '@octokit/graphql';
 
 // ============================================================================
@@ -73,12 +72,10 @@ export interface WeeklyReport {
 // ============================================================================
 
 export class GitHubProjectAPI {
-  private octokit: Octokit;
   private graphqlClient: typeof graphql;
   private config: ProjectConfig;
 
   constructor(token: string, config: ProjectConfig) {
-    this.octokit = new Octokit({ auth: token });
     this.graphqlClient = graphql.defaults({
       headers: { authorization: `token ${token}` },
     });
