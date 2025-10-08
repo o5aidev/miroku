@@ -334,19 +334,29 @@ npm install
 `,
   };
 
-  // Create directories
+  // Create directories (avoid TOCTOU with try-catch)
   for (const dir of directories) {
     const dirPath = join(projectRoot, dir);
-    if (!existsSync(dirPath)) {
+    try {
       mkdirSync(dirPath, { recursive: true });
+    } catch (error: any) {
+      // Ignore error if directory already exists
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
     }
   }
 
-  // Create files
+  // Create files (avoid TOCTOU with wx flag)
   for (const [filePath, content] of Object.entries(files)) {
     const fullPath = join(projectRoot, filePath);
-    if (!existsSync(fullPath)) {
-      writeFileSync(fullPath, content, 'utf-8');
+    try {
+      writeFileSync(fullPath, content, { encoding: 'utf-8', flag: 'wx' });
+    } catch (error: any) {
+      // Skip if file already exists
+      if (error.code !== 'EEXIST') {
+        throw error;
+      }
     }
   }
 }

@@ -1,0 +1,217 @@
+name: "Weekly Security Report"
+
+# Automatically generates and posts weekly security reports
+# - Runs npm audit for dependency vulnerabilities
+# - Collects Dependabot alerts
+# - Gathers CodeQL scan results
+# - Checks for secret scanning alerts
+# - Creates GitHub issue with comprehensive report
+
+on:
+  schedule:
+    # Every Monday at 9:00 AM JST (00:00 UTC)
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      create_issue:
+        description: 'Create GitHub issue with report'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  contents: read
+  issues: write
+  security-events: read
+  pull-requests: read
+
+jobs:
+  generate-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm ci
+        if [ -d "packages/cli" ]; then
+          cd packages/cli
+          npm ci
+          cd ../..
+        fi
+
+    - name: Generate security report
+      id: report
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+      run: |
+        # Run security report script
+        echo "Running security report generation..."
+
+        # Create reports directory
+        mkdir -p reports
+
+        # Generate report and save to file
+        npm run security:report -- --save || echo "Report generated with warnings"
+
+        # Get the latest report file
+        REPORT_FILE=$(ls -t reports/security-report-*.md | head -1)
+
+        if [ -f "$REPORT_FILE" ]; then
+          echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
+          echo "✅ Report generated: $REPORT_FILE"
+        else
+          echo "⚠️ Report file not found"
+          exit 1
+        fi
+
+    - name: Upload report as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: reports/security-report-*.md
+        retention-days: 90
+
+    - name: Display report summary
+      if: always()
+      run: |
+        if [ -f "${{ steps.report.outputs.report_file }}" ]; then
+          echo "📊 Security Report Summary:"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          # Extract summary section from report
+          sed -n '/## 📊 Summary/,/## 📦/p' "${{ steps.report.outputs.report_file }}" | head -n -1
+        fi
+
+    - name: Check for critical vulnerabilities
+      id: check_critical
+      run: |
+        # Parse report for critical vulnerabilities
+        if grep -q "Critical | [1-9]" "${{ steps.report.outputs.report_file }}"; then
+          echo "has_critical=true" >> $GITHUB_OUTPUT
+          echo "🚨 CRITICAL vulnerabilities detected!"
+        else
+          echo "has_critical=false" >> $GITHUB_OUTPUT
+          echo "✅ No critical vulnerabilities"
+        fi
+
+    - name: Create GitHub issue
+      if: |
+        (github.event_name == 'schedule' ||
+         github.event.inputs.create_issue == 'true') &&
+        steps.report.outputs.report_file != ''
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs');
+          const reportFile = '${{ steps.report.outputs.report_file }}';
+          const reportContent = fs.readFileSync(reportFile, 'utf8');
+
+          // Extract security score
+          const scoreMatch = reportContent.match(/\*\*Security Score\*\*: (\d+)\/100/);
+          const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+
+          // Determine priority label
+          const hasCritical = '${{ steps.check_critical.outputs.has_critical }}' === 'true';
+          const labels = ['security', 'automated', 'report'];
+
+          if (hasCritical) {
+            labels.push('priority:critical');
+          } else if (score < 80) {
+            labels.push('priority:high');
+          } else if (score < 90) {
+            labels.push('priority:medium');
+          }
+
+          // Create issue
+          const date = new Date().toISOString().split('T')[0];
+          const title = `🔒 Weekly Security Report - ${date} (Score: ${score}/100)`;
+
+          const { data: issue } = await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: reportContent,
+            labels: labels,
+          });
+
+          console.log(`✅ Created issue #${issue.number}: ${issue.html_url}`);
+
+          // Add comment with quick actions
+          const quickActions = `## 🎯 Quick Actions
+
+          ${hasCritical ? '- [ ] 🚨 **URGENT**: Review and fix critical vulnerabilities\n' : ''}
+          - [ ] 📦 Review and merge Dependabot PRs
+          - [ ] 🔍 Review CodeQL findings
+          - [ ] 🔐 Verify no secrets are exposed
+          - [ ] 📊 Update security metrics dashboard
+
+          ---
+          💡 **Tip**: Use \`npm audit fix\` to automatically fix vulnerabilities where possible.
+          `;
+
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: issue.number,
+            body: quickActions,
+          });
+
+    - name: Notify on critical vulnerabilities
+      if: steps.check_critical.outputs.has_critical == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          // Post warning comment to latest PR if exists
+          const { data: pulls } = await github.rest.pulls.list({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            sort: 'updated',
+            direction: 'desc',
+            per_page: 1,
+          });
+
+          if (pulls.length > 0) {
+            const pr = pulls[0];
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: '🚨 **SECURITY ALERT**: Critical vulnerabilities detected in weekly security scan. Please review the security report issue.',
+            });
+          }
+
+    - name: Update security dashboard
+      if: always()
+      run: |
+        echo "📊 Updating security metrics..."
+        # This would update a security dashboard or metrics file
+        # For now, just log the action
+        echo "Security report generated and logged"
+
+    - name: Fail job on critical vulnerabilities
+      if: steps.check_critical.outputs.has_critical == 'true'
+      run: |
+        echo "🚨 Job failed due to critical vulnerabilities"
+        echo "Please review the security report and take immediate action"
+        exit 1
+
+    - name: Success summary
+      if: steps.check_critical.outputs.has_critical == 'false'
+      run: |
+        echo "✅ Security check passed"
+        echo "No critical vulnerabilities detected"
+        echo "Report has been generated and saved"

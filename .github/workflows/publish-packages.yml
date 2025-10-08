@@ -1,0 +1,147 @@
+name: Publish Packages
+
+on:
+  push:
+    tags:
+      - '@miyabi/agent-sdk@*'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to publish'
+        required: true
+        type: choice
+        options:
+          - '@miyabi/agent-sdk'
+          - 'all'
+      version:
+        description: 'Version to publish (e.g., 0.1.0)'
+        required: false
+        type: string
+
+jobs:
+  publish-agent-sdk:
+    name: Publish Agent SDK
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/@miyabi/agent-sdk@')) ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.package == '@miyabi/agent-sdk' || github.event.inputs.package == 'all'))
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@miyabi'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Agent SDK
+        run: |
+          cd packages/miyabi-agent-sdk
+          pnpm run build
+
+      - name: Run type check
+        run: |
+          cd packages/miyabi-agent-sdk
+          pnpm run typecheck
+
+      - name: Set package version
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+        run: |
+          cd packages/miyabi-agent-sdk
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+
+      - name: Publish to GitHub Packages
+        run: |
+          cd packages/miyabi-agent-sdk
+          npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release notes
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const packageJson = JSON.parse(
+              fs.readFileSync('packages/miyabi-agent-sdk/package.json', 'utf8')
+            );
+            const version = packageJson.version;
+            const tagName = `@miyabi/agent-sdk@${version}`;
+
+            github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tagName,
+              name: `@miyabi/agent-sdk v${version}`,
+              body: `## @miyabi/agent-sdk v${version}\n\nPublished to GitHub Packages.\n\n### Installation\n\n\`\`\`bash\nnpm install @miyabi/agent-sdk@${version}\n\`\`\`\n\n### Changes\n\nSee [CHANGELOG.md](../../CHANGELOG.md) for details.`,
+              draft: false,
+              prerelease: version.includes('-') || version.includes('alpha') || version.includes('beta'),
+            });
+
+  publish-all:
+    name: Publish All Packages
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.package == 'all')
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@miyabi'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r run build
+
+      - name: Type check all packages
+        run: pnpm -r run typecheck
+
+      - name: Publish all packages
+        run: |
+          # Publish Agent SDK
+          cd packages/miyabi-agent-sdk
+          npm publish
+          cd ../..
+
+          # Add more packages here as needed
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create summary
+        run: |
+          echo "## Published Packages" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- @miyabi/agent-sdk" >> $GITHUB_STEP_SUMMARY

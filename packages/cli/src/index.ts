@@ -14,6 +14,13 @@ import { config } from './commands/config.js';
 import { setup } from './commands/setup.js';
 import { docs } from './commands/docs.js';
 import { loadConfig, applyConfigToEnvironment } from './config/loader.js';
+import {
+  reportIssueToMiyabi,
+  gatherEnvironmentInfo,
+  gatherProjectContext,
+  inferUserIntent,
+  type FeedbackContext,
+} from './feedback/issue-reporter.js';
 
 // Load and apply configuration at startup
 try {
@@ -168,6 +175,9 @@ program
       if (error instanceof Error) {
         console.log(chalk.red(`原因: ${error.message}\n`));
 
+        // 自動Issue起票（一周 - 人の手が必要な問題として報告）
+        await handleErrorAndReport(action, error);
+
         // エラーの種類に応じた対処法を表示
         if (error.message.includes('authentication') || error.message.includes('OAuth')) {
           console.log(chalk.yellow('💡 対処法:'));
@@ -208,5 +218,45 @@ program
       process.exit(1);
     }
   });
+
+/**
+ * Handle error and report to Miyabi repository
+ * 一周（人の手が必要な問題）として自動起票
+ */
+async function handleErrorAndReport(action: string, error: Error): Promise<void> {
+  try {
+    // Gather context
+    const context: FeedbackContext = {
+      command: `miyabi ${action}`,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      userIntent: inferUserIntent(`miyabi ${action}`),
+      environment: gatherEnvironmentInfo(),
+      projectContext: gatherProjectContext(),
+    };
+
+    // Try to get GitHub token from environment
+    const token = process.env.GITHUB_TOKEN;
+
+    if (token) {
+      console.log(chalk.gray('📤 自動的にMiyabiプロジェクトに問題を報告しています...\n'));
+
+      const result = await reportIssueToMiyabi(context, token);
+
+      if (result.created && result.issueUrl) {
+        console.log(chalk.green(`✓ 問題を報告しました（一周 - 人の手が必要）: ${result.issueUrl}\n`));
+        console.log(chalk.gray('  開発チームが対応します。進捗はGitHub Issueで確認できます。\n'));
+      } else if (result.reason === 'Similar issue already exists' && result.issueUrl) {
+        console.log(chalk.yellow(`⚠ 類似の問題が既に報告されています: ${result.issueUrl}\n`));
+        console.log(chalk.gray('  こちらのIssueで進捗を確認できます。\n'));
+      }
+    } else {
+      console.log(chalk.gray('💡 この問題を自動報告するには GITHUB_TOKEN を設定してください\n'));
+    }
+  } catch (reportError) {
+    // Issue報告自体が失敗しても、元のエラー処理は続行
+    console.log(chalk.gray('（自動報告をスキップしました）\n'));
+  }
+}
 
 program.parse(process.argv);

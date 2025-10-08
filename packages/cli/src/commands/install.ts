@@ -17,6 +17,7 @@ import { githubOAuth } from '../auth/github-oauth.js';
 import { setupLabels } from '../setup/labels.js';
 import { autoLabelIssues } from '../analyze/issues.js';
 import { deployWorkflows } from '../setup/workflows.js';
+import { deployClaudeConfig, verifyClaudeConfig } from '../setup/claude-config.js';
 
 // @ts-ignore - inquirer is an ESM-only module
 import inquirer from 'inquirer';
@@ -160,6 +161,33 @@ export async function install(options: InstallOptions = {}) {
       throw new Error(`Projects V2 connection failed: ${error.message}`);
     }
     throw new Error('Projects V2 connection failed: Unknown error');
+  }
+
+  // Step 7: Deploy Claude Code configuration
+  spinner.start('Deploying Claude Code configuration...');
+
+  try {
+    await deployClaudeConfig({
+      projectPath: process.cwd(),
+      projectName: analysis.repo,
+    });
+
+    const verification = await verifyClaudeConfig(process.cwd());
+
+    if (verification.claudeDirExists && verification.claudeMdExists) {
+      spinner.succeed(
+        chalk.green(
+          `Claude Code configured: ${verification.agentsCount} agents, ${verification.commandsCount} commands`
+        )
+      );
+      console.log(chalk.gray('  ✓ .claude/ directory created'));
+      console.log(chalk.gray('  ✓ CLAUDE.md context file created'));
+    } else {
+      spinner.warn(chalk.yellow('Claude Code configuration incomplete'));
+    }
+  } catch (error) {
+    spinner.warn(chalk.yellow('Claude Code configuration skipped'));
+    console.log(chalk.gray('  You can add .claude/ manually later\n'));
   }
 
   // Success!

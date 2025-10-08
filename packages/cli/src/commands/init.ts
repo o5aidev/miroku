@@ -21,6 +21,7 @@ import { createProjectV2 } from '../setup/projects.js';
 import { deployWorkflows } from '../setup/workflows.js';
 import { cloneAndSetup } from '../setup/local.js';
 import { createWelcomeIssue } from '../setup/welcome.js';
+import { deployClaudeConfig, verifyClaudeConfig } from '../setup/claude-config.js';
 
 export interface InitOptions {
   private?: boolean;
@@ -116,14 +117,46 @@ export async function init(projectName: string, options: InitOptions = {}) {
   // Step 6: Clone and setup locally
   spinner.start('Setting up local project...');
 
+  let projectPath: string | undefined;
+
   try {
     await cloneAndSetup(repo.clone_url, projectName, {
       skipInstall: options.skipInstall || false,
     });
+    projectPath = `./${projectName}`;
     spinner.succeed(chalk.green('Local setup complete'));
   } catch (error) {
     spinner.warn(chalk.yellow('Local setup skipped'));
     console.log(chalk.gray(`  Clone manually: git clone ${repo.clone_url}\n`));
+  }
+
+  // Step 6.5: Deploy Claude Code configuration
+  if (projectPath) {
+    spinner.start('Deploying Claude Code configuration...');
+
+    try {
+      await deployClaudeConfig({
+        projectPath,
+        projectName,
+      });
+
+      const verification = await verifyClaudeConfig(projectPath);
+
+      if (verification.claudeDirExists && verification.claudeMdExists) {
+        spinner.succeed(
+          chalk.green(
+            `Claude Code configured: ${verification.agentsCount} agents, ${verification.commandsCount} commands`
+          )
+        );
+        console.log(chalk.gray('  ✓ .claude/ directory created'));
+        console.log(chalk.gray('  ✓ CLAUDE.md context file created'));
+      } else {
+        spinner.warn(chalk.yellow('Claude Code configuration incomplete'));
+      }
+    } catch (error) {
+      spinner.warn(chalk.yellow('Claude Code configuration skipped'));
+      console.log(chalk.gray('  You can add .claude/ manually later\n'));
+    }
   }
 
   // Step 7: Create welcome Issue

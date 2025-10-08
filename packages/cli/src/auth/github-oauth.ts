@@ -271,13 +271,20 @@ function loadTokenFromEnv(): string | null {
 
 /**
  * Save token to .env file
+ * Uses atomic write operation to avoid TOCTOU race condition
  */
 async function saveTokenToEnv(token: string): Promise<void> {
+  // Validate token format before writing (防御的プログラミング)
+  if (!token || typeof token !== 'string' || !token.startsWith('gho_') && !token.startsWith('ghp_')) {
+    throw new Error('Invalid GitHub token format');
+  }
+
   const envPath = path.join(process.cwd(), '.env');
+  const tempPath = `${envPath}.tmp`;
   let content = '';
 
-  // Read existing .env if it exists
-  if (fs.existsSync(envPath)) {
+  // Read existing .env if it exists (atomic read)
+  try {
     content = fs.readFileSync(envPath, 'utf-8');
 
     // Remove existing GITHUB_TOKEN line
@@ -290,13 +297,20 @@ async function saveTokenToEnv(token: string): Promise<void> {
     if (content && !content.endsWith('\n')) {
       content += '\n';
     }
+  } catch (error: any) {
+    // File doesn't exist, start with empty content
+    if (error.code !== 'ENOENT') {
+      throw error;
+    }
   }
 
   // Append new token
   content += `GITHUB_TOKEN=${token}\n`;
 
-  // Write to file
-  fs.writeFileSync(envPath, content, 'utf-8');
+  // Atomic write: write to temp file, then rename
+  // This avoids TOCTOU and ensures atomicity
+  fs.writeFileSync(tempPath, content, { encoding: 'utf-8', mode: 0o600 }); // 600 = rw-------
+  fs.renameSync(tempPath, envPath);
 
   console.log(chalk.gray(`\n✓ Token saved to ${envPath}`));
 }

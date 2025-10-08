@@ -146,13 +146,29 @@ yarn-error.log*
 
   const gitignorePath = path.join(projectPath, '.gitignore');
 
-  // Append to existing .gitignore if it exists
-  if (fs.existsSync(gitignorePath)) {
+  // Safely handle .gitignore (avoid TOCTOU race condition)
+  try {
+    // Try to read existing file
     const existing = fs.readFileSync(gitignorePath, 'utf-8');
     if (!existing.includes('# Agentic OS')) {
-      fs.appendFileSync(gitignorePath, '\n# Agentic OS\n' + gitignore);
+      // Append atomically using temp file + rename
+      const tempPath = `${gitignorePath}.tmp`;
+      fs.writeFileSync(tempPath, existing + '\n# Agentic OS\n' + gitignore, 'utf-8');
+      fs.renameSync(tempPath, gitignorePath);
     }
-  } else {
-    fs.writeFileSync(gitignorePath, gitignore);
+  } catch (error: any) {
+    // File doesn't exist, create new one
+    if (error.code === 'ENOENT') {
+      try {
+        fs.writeFileSync(gitignorePath, gitignore, { encoding: 'utf-8', flag: 'wx' });
+      } catch (writeError: any) {
+        // Another process created it, ignore
+        if (writeError.code !== 'EEXIST') {
+          throw writeError;
+        }
+      }
+    } else {
+      throw error;
+    }
   }
 }

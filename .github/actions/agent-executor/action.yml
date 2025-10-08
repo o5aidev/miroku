@@ -1,0 +1,273 @@
+name: 'Miyabi Agent Executor'
+description: 'Execute a Miyabi autonomous agent with specified configuration'
+author: 'Miyabi Team'
+
+branding:
+  icon: 'zap'
+  color: 'blue'
+
+inputs:
+  agent:
+    description: 'Agent to execute (e.g., "coordinator", "developer", "reviewer", "deployment")'
+    required: true
+  issue-number:
+    description: 'GitHub issue number to process'
+    required: false
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+  config-file:
+    description: 'Path to agent configuration file'
+    required: false
+    default: '.miyabi.yml'
+  timeout:
+    description: 'Agent execution timeout in minutes'
+    required: false
+    default: '30'
+  retry-attempts:
+    description: 'Number of retry attempts on failure'
+    required: false
+    default: '3'
+  escalate-on-failure:
+    description: 'Create escalation issue on failure'
+    required: false
+    default: 'true'
+  docker-image:
+    description: 'Docker image to use for agent execution'
+    required: false
+    default: 'ghcr.io/${{ github.repository }}:latest'
+  use-docker:
+    description: 'Execute agent in Docker container'
+    required: false
+    default: 'false'
+
+outputs:
+  status:
+    description: 'Agent execution status (success, failure, timeout)'
+    value: ${{ steps.execute.outputs.status }}
+  message:
+    description: 'Agent execution message'
+    value: ${{ steps.execute.outputs.message }}
+  duration-ms:
+    description: 'Execution duration in milliseconds'
+    value: ${{ steps.execute.outputs.duration_ms }}
+  artifacts-path:
+    description: 'Path to execution artifacts'
+    value: ${{ steps.execute.outputs.artifacts_path }}
+  report-url:
+    description: 'URL to execution report'
+    value: ${{ steps.execute.outputs.report_url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "${{ inputs.agent }}" ]; then
+          echo "Error: agent input is required"
+          exit 1
+        fi
+
+        echo "Agent: ${{ inputs.agent }}"
+        echo "Issue: ${{ inputs.issue-number }}"
+        echo "Timeout: ${{ inputs.timeout }} minutes"
+        echo "Use Docker: ${{ inputs.use-docker }}"
+
+    - name: Setup Node.js (if not using Docker)
+      if: inputs.use-docker != 'true'
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install pnpm (if not using Docker)
+      if: inputs.use-docker != 'true'
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Install dependencies (if not using Docker)
+      if: inputs.use-docker != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Execute agent (native)
+      if: inputs.use-docker != 'true'
+      id: execute-native
+      shell: bash
+      timeout-minutes: ${{ fromJSON(inputs.timeout) }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        ISSUE_NUMBER: ${{ inputs.issue-number }}
+        AGENT_NAME: ${{ inputs.agent }}
+        CONFIG_FILE: ${{ inputs.config-file }}
+        RETRY_ATTEMPTS: ${{ inputs.retry-attempts }}
+      run: |
+        echo "Starting agent execution..."
+        START_TIME=$(date +%s%3N)
+
+        # Execute agent based on type
+        case "${{ inputs.agent }}" in
+          coordinator)
+            npm run start
+            ;;
+          developer)
+            npm run agents:parallel:exec -- --agent developer --issue "${{ inputs.issue-number }}"
+            ;;
+          reviewer)
+            npm run agents:parallel:exec -- --agent reviewer --issue "${{ inputs.issue-number }}"
+            ;;
+          deployment)
+            npm run agents:parallel:exec -- --agent deployment --issue "${{ inputs.issue-number }}"
+            ;;
+          *)
+            echo "Unknown agent: ${{ inputs.agent }}"
+            exit 1
+            ;;
+        esac
+
+        EXIT_CODE=$?
+        END_TIME=$(date +%s%3N)
+        DURATION=$((END_TIME - START_TIME))
+
+        # Set outputs
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "message=Agent executed successfully" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "message=Agent execution failed with exit code $EXIT_CODE" >> $GITHUB_OUTPUT
+        fi
+
+        echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+        echo "artifacts_path=.ai/agent-runs" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE
+
+    - name: Execute agent (Docker)
+      if: inputs.use-docker == 'true'
+      id: execute-docker
+      shell: bash
+      timeout-minutes: ${{ fromJSON(inputs.timeout) }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        ISSUE_NUMBER: ${{ inputs.issue-number }}
+        AGENT_NAME: ${{ inputs.agent }}
+      run: |
+        echo "Starting agent execution in Docker..."
+        START_TIME=$(date +%s%3N)
+
+        docker run --rm \
+          -e GITHUB_TOKEN="${{ inputs.github-token }}" \
+          -e GITHUB_REPOSITORY="${{ github.repository }}" \
+          -e GITHUB_REPOSITORY_OWNER="${{ github.repository_owner }}" \
+          -e ISSUE_NUMBER="${{ inputs.issue-number }}" \
+          -e AGENT_NAME="${{ inputs.agent }}" \
+          -v "${{ github.workspace }}:/app/workspace" \
+          ${{ inputs.docker-image }} \
+          npm run start
+
+        EXIT_CODE=$?
+        END_TIME=$(date +%s%3N)
+        DURATION=$((END_TIME - START_TIME))
+
+        # Set outputs
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "message=Agent executed successfully in Docker" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "message=Docker agent execution failed with exit code $EXIT_CODE" >> $GITHUB_OUTPUT
+        fi
+
+        echo "duration_ms=$DURATION" >> $GITHUB_OUTPUT
+        echo "artifacts_path=.ai/agent-runs" >> $GITHUB_OUTPUT
+
+        exit $EXIT_CODE
+
+    - name: Set outputs
+      id: execute
+      shell: bash
+      run: |
+        if [ "${{ inputs.use-docker }}" == "true" ]; then
+          echo "status=${{ steps.execute-docker.outputs.status }}" >> $GITHUB_OUTPUT
+          echo "message=${{ steps.execute-docker.outputs.message }}" >> $GITHUB_OUTPUT
+          echo "duration_ms=${{ steps.execute-docker.outputs.duration_ms }}" >> $GITHUB_OUTPUT
+          echo "artifacts_path=${{ steps.execute-docker.outputs.artifacts_path }}" >> $GITHUB_OUTPUT
+        else
+          echo "status=${{ steps.execute-native.outputs.status }}" >> $GITHUB_OUTPUT
+          echo "message=${{ steps.execute-native.outputs.message }}" >> $GITHUB_OUTPUT
+          echo "duration_ms=${{ steps.execute-native.outputs.duration_ms }}" >> $GITHUB_OUTPUT
+          echo "artifacts_path=${{ steps.execute-native.outputs.artifacts_path }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-execution-artifacts-${{ inputs.agent }}-${{ github.run_id }}
+        path: .ai/agent-runs/
+        retention-days: 30
+
+    - name: Create execution summary
+      if: always()
+      shell: bash
+      run: |
+        echo "## Agent Execution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Agent:** ${{ inputs.agent }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ${{ steps.execute.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Duration:** ${{ steps.execute.outputs.duration_ms }}ms" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ inputs.issue-number }}" ]; then
+          echo "**Issue:** #${{ inputs.issue-number }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Message:** ${{ steps.execute.outputs.message }}" >> $GITHUB_STEP_SUMMARY
+
+    - name: Create escalation issue
+      if: failure() && inputs.escalate-on-failure == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const agent = '${{ inputs.agent }}';
+          const issueNumber = '${{ inputs.issue-number }}';
+          const status = '${{ steps.execute.outputs.status }}';
+          const message = '${{ steps.execute.outputs.message }}';
+
+          const body = `## Agent Execution Failed
+
+          **Agent:** ${agent}
+          **Original Issue:** ${issueNumber ? `#${issueNumber}` : 'N/A'}
+          **Status:** ${status}
+          **Message:** ${message}
+
+          ### Action Required
+
+          The ${agent} agent failed to execute. Please investigate and take appropriate action.
+
+          ### Execution Details
+
+          - **Workflow Run:** [#${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - **Triggered by:** ${{ github.actor }}
+          - **Timestamp:** ${new Date().toISOString()}
+
+          ### Next Steps
+
+          1. Review the workflow logs
+          2. Check agent configuration
+          3. Retry execution if appropriate
+          4. Escalate to CTO if critical
+
+          ---
+          🚨 Automatically created by Miyabi Agent Executor
+          `;
+
+          await github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: `[ESCALATION] ${agent} Agent Failed - Issue #${issueNumber || 'N/A'}`,
+            body: body,
+            labels: ['escalation', 'agent-failure', 'sev:high']
+          });

@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  miyabi-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: miyabi-agent:latest
+    container_name: miyabi-agent
+    restart: unless-stopped
+
+    environment:
+      # GitHub Configuration
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_REPOSITORY=${GITHUB_REPOSITORY}
+      - GITHUB_REPOSITORY_OWNER=${GITHUB_REPOSITORY_OWNER}
+
+      # Agent Configuration
+      - NODE_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - WORKDIR=/app
+
+      # Optional: Issue number for targeted execution
+      # - ISSUE_NUMBER=${ISSUE_NUMBER}
+
+    volumes:
+      # Mount configuration
+      - ./config:/app/config:ro
+
+      # Mount logs
+      - ./logs:/app/logs
+
+      # Mount output artifacts
+      - ./output:/app/output
+
+      # Mount AI working directory (for agent state)
+      - agent-data:/app/.ai
+
+    networks:
+      - miyabi-network
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Optional: PostgreSQL for agent state persistence
+  postgres:
+    image: postgres:16-alpine
+    container_name: miyabi-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=miyabi
+      - POSTGRES_USER=miyabi
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-miyabi_secure_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - miyabi-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U miyabi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - with-database
+
+  # Optional: Redis for agent coordination and caching
+  redis:
+    image: redis:7-alpine
+    container_name: miyabi-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - miyabi-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - with-cache
+
+networks:
+  miyabi-network:
+    driver: bridge
+
+volumes:
+  agent-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
