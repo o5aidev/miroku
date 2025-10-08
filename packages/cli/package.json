@@ -11,6 +11,7 @@
   "files": [
     "dist",
     "templates",
+    "scripts",
     ".claude",
     "CLAUDE.md",
     "README.md",
@@ -25,6 +26,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "postinstall": "node scripts/postinstall.js",
     "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
