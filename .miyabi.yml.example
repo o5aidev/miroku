@@ -1,0 +1,16 @@
+github:
+  defaultPrivate: true
+  # token: ghp_YOUR_TOKEN_HERE  # DO NOT commit actual token
+  # Set GITHUB_TOKEN environment variable instead
+project:
+  gitignoreTemplate: Node
+  licenseTemplate: mit
+labels: {}
+workflows:
+  autoLabel: true
+  autoReview: true
+  autoSync: true
+cli:
+  language: ja
+  theme: default
+  verboseErrors: true

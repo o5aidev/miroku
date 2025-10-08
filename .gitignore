@@ -12,6 +12,9 @@ build/
 .env.local
 .env.*.local
 
+# Configuration files with secrets
+.miyabi.yml
+
 # Claude Code local settings
 .claude/settings.local.json
 .claude/.env*

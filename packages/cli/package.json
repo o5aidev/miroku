@@ -1,24 +1,27 @@
 {
   "name": "miyabi",
-  "version": "0.1.5",
-  "description": "✨ Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
+  "version": "0.3.3",
+  "description": "Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
-    "miyabi": "./dist/index.js",
-    "agentic-os": "./dist/index.js"
+    "miyabi": "./dist/index.js"
   },
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "templates",
+    ".claude",
     "README.md",
-    "LICENSE"
+    "SETUP_GUIDE.md",
+    "FOR_NON_PROGRAMMERS.md",
+    "INSTALL_TO_EXISTING_PROJECT.md"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "prepublishOnly": "npm run build",
-    "test": "echo \"Tests coming soon\" && exit 0"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "ai",
@@ -27,14 +30,13 @@
     "automation",
     "cli",
     "github",
-    "cicd",
+    "automation",
+    "workflow",
     "devops",
-    "ai-agents",
     "claude",
-    "anthropic",
-    "issue-driven-development"
+    "anthropic"
   ],
-  "author": "Shunsuke Hayashi <supernovasyun@gmail.com> (https://github.com/ShunsukeHayashi)",
+  "author": "Shunsuke Hayashi <supernovasyun@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/ShunsukeHayashi/Autonomous-Operations#readme",
   "bugs": {

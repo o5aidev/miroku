@@ -41,41 +41,56 @@ export interface TokenResponse {
  * Main OAuth flow - returns GitHub token
  */
 export async function githubOAuth(): Promise<string> {
-  console.log(chalk.cyan('\n🔐 GitHub Authentication Required\n'));
+  console.log(chalk.cyan('\n🔐 GitHub認証が必要です\n'));
 
   // Check if token already exists
   const existingToken = loadTokenFromEnv();
 
   if (existingToken) {
-    console.log(chalk.gray('Found existing token in .env'));
+    console.log(chalk.gray('.envに保存されたトークンを確認中...'));
 
     // Verify token is valid
     if (await verifyToken(existingToken)) {
-      console.log(chalk.green('✓ Token is valid\n'));
+      console.log(chalk.green('✓ トークンは有効です\n'));
       return existingToken;
     } else {
-      console.log(chalk.yellow('⚠️  Existing token is invalid, re-authenticating...\n'));
+      console.log(chalk.yellow('⚠️  トークンが無効です。再認証が必要です\n'));
     }
+  }
+
+  // Check if CLIENT_ID is configured
+  if (CLIENT_ID === 'Iv1.placeholder') {
+    console.log(chalk.yellow('⚠️  OAuth Appが設定されていません\n'));
+    console.log(chalk.white('代わりにGitHub Personal Access Tokenを使用してください:\n'));
+    console.log(chalk.cyan('  1. https://github.com/settings/tokens/new にアクセス'));
+    console.log(chalk.cyan('  2. 以下の権限を選択:'));
+    console.log(chalk.gray('     - repo (Full control of private repositories)'));
+    console.log(chalk.gray('     - workflow (Update GitHub Action workflows)'));
+    console.log(chalk.gray('     - read:project, write:project (Access projects)'));
+    console.log(chalk.cyan('  3. トークンを生成してコピー'));
+    console.log(chalk.cyan('  4. .env ファイルに追加: GITHUB_TOKEN=ghp_your_token\n'));
+
+    throw new Error('OAuth App not configured: GitHub Personal Access Tokenを作成して .env に設定してください');
   }
 
   // Start Device Flow
   const deviceCode = await requestDeviceCode();
 
   // Show instructions to user
-  console.log(chalk.white.bold('Please complete authentication:'));
-  console.log(chalk.cyan(`\n  1. Open: ${deviceCode.verification_uri}`));
-  console.log(chalk.cyan(`  2. Enter code: ${chalk.bold(deviceCode.user_code)}\n`));
+  console.log(chalk.white.bold('認証を完了してください:'));
+  console.log(chalk.cyan(`\n  1. ブラウザで開く: ${deviceCode.verification_uri}`));
+  console.log(chalk.cyan(`  2. コードを入力: ${chalk.bold(deviceCode.user_code)}\n`));
 
   // Auto-open browser
-  console.log(chalk.gray('Opening browser automatically...\n'));
+  console.log(chalk.gray('ブラウザを自動的に開いています...\n'));
   try {
     await open(deviceCode.verification_uri);
   } catch {
-    console.log(chalk.yellow('Could not open browser automatically. Please open manually.\n'));
+    console.log(chalk.yellow('ブラウザを自動的に開けませんでした。手動で開いてください。\n'));
   }
 
   // Poll for token
-  console.log(chalk.gray('Waiting for authorization...'));
+  console.log(chalk.gray('認証を待っています...'));
   const token = await pollForToken(deviceCode);
 
   // Verify token has required scopes
@@ -84,7 +99,7 @@ export async function githubOAuth(): Promise<string> {
   // Save to .env
   await saveTokenToEnv(token);
 
-  console.log(chalk.green.bold('\n✅ Authentication successful!\n'));
+  console.log(chalk.green.bold('\n✅ 認証に成功しました！\n'));
 
   return token;
 }
@@ -159,7 +174,7 @@ async function pollForToken(deviceCode: DeviceCodeResponse): Promise<string> {
       }
 
       if (data.error) {
-        throw new Error(`OAuth error: ${data.error} - ${data.error_description || 'Unknown error'}`);
+        throw new Error(`OAuth error: ${data.error} - ${data.error_description || ''}`);
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('OAuth error')) {
@@ -181,7 +196,11 @@ async function verifyToken(token: string): Promise<boolean> {
     const octokit = new Octokit({ auth: token });
     await octokit.users.getAuthenticated();
     return true;
-  } catch {
+  } catch (error) {
+    // Log why the token is invalid for debugging
+    if (error instanceof Error) {
+      console.log(chalk.gray(`トークン検証エラー: ${error.message}`));
+    }
     return false;
   }
 }
@@ -220,14 +239,32 @@ function loadTokenFromEnv(): string | null {
   const envPath = path.join(process.cwd(), '.env');
 
   if (!fs.existsSync(envPath)) {
+    console.log(chalk.gray(`.envファイルが見つかりません: ${envPath}`));
     return null;
   }
 
   try {
     const content = fs.readFileSync(envPath, 'utf-8');
     const match = content.match(/GITHUB_TOKEN=([^\n\r]+)/);
-    return match ? match[1].trim() : null;
-  } catch {
+
+    if (!match) {
+      console.log(chalk.yellow('⚠️  .envファイルにGITHUB_TOKENが見つかりません'));
+      return null;
+    }
+
+    const token = match[1].trim();
+    // Remove quotes if present
+    const cleanToken = token.replace(/^["']|["']$/g, '');
+
+    if (!cleanToken) {
+      console.log(chalk.yellow('⚠️  GITHUB_TOKENが空です'));
+      return null;
+    }
+
+    console.log(chalk.gray(`トークンを読み込みました (長さ: ${cleanToken.length}文字)`));
+    return cleanToken;
+  } catch (error) {
+    console.log(chalk.red(`.envファイルの読み込みに失敗: ${error}`));
     return null;
   }
 }

@@ -1,0 +1,218 @@
+name: 🔄 Sync PR Status to Project
+
+# Automatically update GitHub Project V2 status based on PR state
+# Issue #5 Phase A: Data Persistence Layer
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, ready_for_review, converted_to_draft]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: read
+  repository-projects: write
+  contents: read
+
+jobs:
+  sync-pr-status:
+    runs-on: ubuntu-latest
+    name: Update Project Status
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine Status
+        id: status
+        run: |
+          PR_STATE="${{ github.event.pull_request.state }}"
+          PR_DRAFT="${{ github.event.pull_request.draft }}"
+          EVENT_ACTION="${{ github.event.action }}"
+
+          echo "PR State: $PR_STATE"
+          echo "Is Draft: $PR_DRAFT"
+          echo "Action: $EVENT_ACTION"
+
+          # Determine the target status
+          if [ "$PR_STATE" == "closed" ] && [ "${{ github.event.pull_request.merged }}" == "true" ]; then
+            echo "status=Done" >> $GITHUB_OUTPUT
+            echo "status_emoji=✅" >> $GITHUB_OUTPUT
+          elif [ "$PR_STATE" == "closed" ]; then
+            echo "status=Cancelled" >> $GITHUB_OUTPUT
+            echo "status_emoji=❌" >> $GITHUB_OUTPUT
+          elif [ "$PR_DRAFT" == "true" ]; then
+            echo "status=In Progress" >> $GITHUB_OUTPUT
+            echo "status_emoji=🚧" >> $GITHUB_OUTPUT
+          elif [ "$EVENT_ACTION" == "ready_for_review" ]; then
+            echo "status=In Review" >> $GITHUB_OUTPUT
+            echo "status_emoji=👀" >> $GITHUB_OUTPUT
+          elif [ "$PR_STATE" == "open" ]; then
+            echo "status=In Progress" >> $GITHUB_OUTPUT
+            echo "status_emoji=🏃" >> $GITHUB_OUTPUT
+          else
+            echo "status=Unknown" >> $GITHUB_OUTPUT
+            echo "status_emoji=❓" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update Project Status via GraphQL
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER || '1' }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const projectNumber = parseInt(process.env.PROJECT_NUMBER);
+            const owner = process.env.GITHUB_OWNER;
+            const prNumber = context.payload.pull_request.number;
+            const targetStatus = '${{ steps.status.outputs.status }}';
+
+            console.log(`🔄 Updating PR #${prNumber} status to: ${targetStatus}`);
+
+            try {
+              // Step 1: Get Project ID and Status field ID
+              const projectQuery = `
+                query($owner: String!, $number: Int!) {
+                  user(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      field(name: "Status") {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+
+              const projectResult = await github.graphql(projectQuery, {
+                owner,
+                number: projectNumber
+              });
+
+              const projectId = projectResult.user.projectV2.id;
+              const statusField = projectResult.user.projectV2.field;
+
+              if (!statusField) {
+                console.log('⚠️ Status field not found in project');
+                return;
+              }
+
+              const statusOption = statusField.options.find(opt => opt.name === targetStatus);
+
+              if (!statusOption) {
+                console.log(`⚠️ Status option "${targetStatus}" not found`);
+                console.log('Available options:', statusField.options.map(o => o.name));
+                return;
+              }
+
+              // Step 2: Get PR's project item ID
+              const prQuery = `
+                query($owner: String!, $repo: String!, $number: Int!) {
+                  repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $number) {
+                      id
+                      projectItems(first: 10) {
+                        nodes {
+                          id
+                          project {
+                            id
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `;
+
+              const prResult = await github.graphql(prQuery, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                number: prNumber
+              });
+
+              const projectItems = prResult.repository.pullRequest.projectItems.nodes;
+              const projectItem = projectItems.find(item => item.project.id === projectId);
+
+              if (!projectItem) {
+                console.log('⚠️ PR is not in the project yet');
+                return;
+              }
+
+              // Step 3: Update status
+              const updateMutation = `
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId
+                    itemId: $itemId
+                    fieldId: $fieldId
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item {
+                      id
+                    }
+                  }
+                }
+              `;
+
+              await github.graphql(updateMutation, {
+                projectId,
+                itemId: projectItem.id,
+                fieldId: statusField.id,
+                optionId: statusOption.id
+              });
+
+              console.log(`✅ Updated PR #${prNumber} status to: ${targetStatus}`);
+
+            } catch (error) {
+              console.error('❌ Failed to update project status:', error);
+              // Don't fail the workflow if project sync fails
+            }
+
+      - name: Comment on PR
+        if: steps.status.outputs.status != 'Unknown'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ steps.status.outputs.status }}';
+            const emoji = '${{ steps.status.outputs.status_emoji }}';
+
+            let message = `${emoji} **Project Status Updated**\n\nThis PR's status has been updated to: **${status}**`;
+
+            if (status === 'Done') {
+              message += '\n\n🎉 Congratulations! This PR has been merged and completed.';
+            } else if (status === 'In Review') {
+              message += '\n\n👀 Ready for review! A reviewer will look at this soon.';
+            } else if (status === 'Cancelled') {
+              message += '\n\n❌ This PR was closed without merging.';
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `${message}\n\n---\n*Automated by [project-pr-sync.yml](.github/workflows/project-pr-sync.yml)*`
+            });
+
+      - name: Log completion
+        run: |
+          echo "✅ Project sync completed"
+          echo "   PR: #${{ github.event.pull_request.number }}"
+          echo "   Status: ${{ steps.status.outputs.status }}"
+          echo "   Emoji: ${{ steps.status.outputs.status_emoji }}"

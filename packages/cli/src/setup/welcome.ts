@@ -24,148 +24,147 @@ export async function createWelcomeIssue(
   const { data } = await octokit.issues.create({
     owner,
     repo,
-    title: '🎉 Welcome to Agentic OS!',
-    body: `# Welcome to Autonomous Development! 🤖
+    title: '✨ Welcome to Miyabi!',
+    body: `# 自律型開発へようこそ！🤖
 
-Your project is now powered by **Agentic OS** - a fully automated AI development framework.
+あなたのプロジェクトは **Miyabi** で動いています - 完全自動化されたAI開発フレームワークです。
 
-## ✨ What You Get
+## ✨ 提供される機能
 
-- **6 AI Agents** ready to work on your Issues
-- **Automatic Issue → PR pipeline** (no manual coding needed)
-- **Label-based state machine** for progress tracking
-- **Real-time monitoring** via GitHub Projects
+- **6つのAIエージェント** があなたのIssueに取り組みます
+- **自動 Issue → PR パイプライン** （手動コーディング不要）
+- **ラベルベースのステートマシン** で進捗管理
+- **リアルタイム監視** via GitHub Projects
 
-## 🚀 How to Use
+## 🚀 使い方
 
-### Step 1: Create an Issue
+### ステップ1: Issueを作成
 
-Just describe what you want to build:
+作りたいものを記述するだけ:
 
 \`\`\`bash
-gh issue create --title "Add user authentication" --body "Implement login with email/password"
+gh issue create --title "ユーザー認証を追加" --body "メール/パスワードでログイン機能を実装"
 \`\`\`
 
-### Step 2: Wait (Seriously, That's It)
+### ステップ2: 待つ（本当にそれだけ）
 
-The agents will automatically:
-1. **Analyze** the Issue and add labels
-2. **Break down** the task into steps
-3. **Implement** the feature
-4. **Review** the code quality
-5. **Create** a Pull Request
+エージェントが自動的に:
+1. **分析** - Issueを解析してラベル付け
+2. **分解** - タスクをステップに分割
+3. **実装** - 機能を実装
+4. **レビュー** - コード品質をチェック
+5. **PR作成** - Pull Requestを作成
 
-You'll see a PR appear within 10-15 minutes! ✨
+10-15分でPRが完成します！✨
 
-### Step 3: Review and Merge
+### ステップ3: レビューとマージ
 
-- Check the PR
-- Request changes if needed
-- Merge when ready
-- Agent deploys automatically
+- PRを確認
+- 必要に応じて変更を依頼
+- 準備ができたらマージ
+- エージェントが自動でデプロイ
 
-## 📊 Monitor Progress
+## 📊 進捗を確認
 
-### Via CLI
+### CLI経由
 \`\`\`bash
-npx agentic-os status
+npx miyabi
 
-# Watch mode (auto-refresh)
-npx agentic-os status --watch
+# ステータス確認を選択
+# ウォッチモードで自動更新も可能
 \`\`\`
 
-### Via GitHub
-- **Issues tab**: See state labels (pending → analyzing → implementing → reviewing → done)
-- **Projects tab**: View agent assignments and metrics
-- **Actions tab**: Watch workflows in real-time
+### GitHub経由
+- **Issues タブ**: ステートラベルを確認 (pending → analyzing → implementing → reviewing → done)
+- **Projects タブ**: エージェントのアサインとメトリクスを表示
+- **Actions タブ**: ワークフローをリアルタイムで監視
 
-## 🏷️ State Labels
+## 🏷️ ステートラベル
 
-Issues move through states automatically:
+Issueは自動的に状態を遷移します:
 
-- \`📥 state:pending\` - Awaiting agent assignment
-- \`🔍 state:analyzing\` - Being analyzed
-- \`🏗️ state:implementing\` - Code being written
-- \`👀 state:reviewing\` - Under quality review
-- \`✅ state:done\` - Completed and merged
+- \`📥 state:pending\` - エージェント割り当て待ち
+- \`🔍 state:analyzing\` - 分析中
+- \`🏗️ state:implementing\` - 実装中
+- \`👀 state:reviewing\` - レビュー中
+- \`✅ state:done\` - 完了・マージ済み
 
-## 🤖 Agent Types
+## 🤖 エージェントの種類
 
-Each agent has a specific role:
+各エージェントには専門の役割があります:
 
-- **CoordinatorAgent** - Task orchestration and planning
-- **CodeGenAgent** - Writing implementation code
-- **ReviewAgent** - Quality checks and testing
-- **IssueAgent** - Issue analysis and labeling
-- **PRAgent** - Pull request management
-- **DeploymentAgent** - Production deployment
+- **CoordinatorAgent** - タスク管理と計画
+- **CodeGenAgent** - コード実装
+- **ReviewAgent** - 品質チェックとテスト
+- **IssueAgent** - Issue分析とラベリング
+- **PRAgent** - Pull Request管理
+- **DeploymentAgent** - 本番デプロイ
 
-You don't need to assign agents manually - it's automatic!
+エージェントの手動割り当ては不要です - すべて自動！
 
-## 💡 Tips
+## 💡 ヒント
 
-### For Best Results
-- Be specific in Issue descriptions
-- Break down large features into smaller Issues
-- Use labels to set priority (P0-Critical, P1-High, etc.)
-- Review PRs promptly to keep agents moving
+### 良い結果を得るために
+- Issue の説明は具体的に
+- 大きな機能は小さな Issue に分割
+- ラベルで優先度を設定 (P0-Critical, P1-High, など)
+- PR は迅速にレビューしてエージェントを動かし続ける
 
-### Common Patterns
+### よくあるパターン
 
-**Feature Development:**
+**機能開発:**
 \`\`\`bash
-gh issue create --title "Add dark mode toggle" \\
-  --body "Create toggle button in settings that switches theme"
+gh issue create --title "ダークモードトグルを追加" \\
+  --body "設定画面にテーマを切り替えるトグルボタンを作成"
 \`\`\`
 
-**Bug Fixes:**
+**バグ修正:**
 \`\`\`bash
-gh issue create --title "Fix login redirect loop" \\
-  --body "After successful login, user gets stuck in redirect loop" \\
+gh issue create --title "ログインリダイレクトループを修正" \\
+  --body "ログイン成功後、リダイレクトループに陥る" \\
   --label "🐛 type:bug"
 \`\`\`
 
-**Documentation:**
+**ドキュメント:**
 \`\`\`bash
-gh issue create --title "Document API endpoints" \\
-  --body "Add JSDoc comments to all API route handlers" \\
+gh issue create --title "APIエンドポイントをドキュメント化" \\
+  --body "すべてのAPIルートハンドラーにJSDocコメントを追加" \\
   --label "📚 type:docs"
 \`\`\`
 
-## 🔧 Configuration
+## 🔧 設定
 
-All configuration is in \`.github/\`:
-- \`labels.yml\` - 53 labels for state management
-- \`workflows/\` - GitHub Actions automation
-- \`WORKFLOW_RULES.md\` - Development guidelines
+すべての設定は \`.github/\` にあります:
+- \`labels.yml\` - 53個のラベル定義
+- \`workflows/\` - GitHub Actions 自動化
+- \`WORKFLOW_RULES.md\` - 開発ガイドライン
 
-## 📚 Documentation
+## 📚 ドキュメント
 
-- [Getting Started Guide](https://github.com/ShunsukeHayashi/Autonomous-Operations/blob/main/docs/GETTING_STARTED.md)
-- [Agent Operations Manual](https://github.com/ShunsukeHayashi/Autonomous-Operations/blob/main/docs/AGENTS.md)
-- [System Architecture](https://github.com/ShunsukeHayashi/Autonomous-Operations/blob/main/docs/system-architecture.puml)
+- [README](https://github.com/ShunsukeHayashi/Autonomous-Operations#readme)
+- [Miyabi npm package](https://www.npmjs.com/package/miyabi)
 
-## 🆘 Need Help?
+## 🆘 ヘルプが必要？
 
-- Check status: \`npx agentic-os status\`
-- View logs: Check GitHub Actions tab
-- Report issues: [Agentic OS Issues](https://github.com/ShunsukeHayashi/Autonomous-Operations/issues)
+- ステータス確認: \`npx miyabi\` でステータス確認を選択
+- ログを表示: GitHub Actions タブを確認
+- 問題を報告: [Miyabi Issues](https://github.com/ShunsukeHayashi/Autonomous-Operations/issues)
 
-## 🎯 Try It Now!
+## 🎯 今すぐ試してみよう！
 
-Close this Issue and create your first real task:
+この Issue をクローズして、最初の本当のタスクを作成:
 
 \`\`\`bash
-gh issue create --title "Your task here" --body "Describe what you want"
+gh issue create --title "あなたのタスク" --body "作りたいものを説明"
 \`\`\`
 
-Then watch the magic happen! 🪄
+そして魔法が起こるのを見よう！🪄
 
 ---
 
-**Pro tip:** You can close this Issue now. It was just a demo to show you how the system works.
+**プロヒント:** この Issue は今すぐクローズして構いません。システムの動作を示すデモでした。
 
-🤖 Generated by Agentic OS`,
+✨ Generated by Miyabi`,
     labels: ['📚 type:docs', '👋 good-first-issue'],
   });
 

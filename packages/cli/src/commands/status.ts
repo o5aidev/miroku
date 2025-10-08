@@ -14,10 +14,11 @@ export async function status(options: StatusOptions = {}) {
   const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
-    console.error(chalk.red('\n❌ GITHUB_TOKEN not found in environment\n'));
-    console.log(chalk.gray('Please set GITHUB_TOKEN:'));
-    console.log(chalk.white('  export GITHUB_TOKEN=ghp_your_token\n'));
-    process.exit(1);
+    console.log(chalk.red('\n❌ GITHUB_TOKENが見つかりません\n'));
+    console.log(chalk.yellow('💡 対処法:'));
+    console.log(chalk.white('  1. 環境変数を設定: export GITHUB_TOKEN=ghp_your_token'));
+    console.log(chalk.white('  2. もしくは miyabi を実行して認証してください\n'));
+    throw new Error('GITHUB_TOKEN not found in environment');
   }
 
   const octokit = new Octokit({ auth: token });
@@ -26,21 +27,48 @@ export async function status(options: StatusOptions = {}) {
   const repo = await getCurrentRepo();
 
   if (!repo) {
-    console.error(chalk.red('\n❌ Not in a git repository\n'));
-    process.exit(1);
+    console.log(chalk.red('\n❌ Gitリポジトリが見つかりません\n'));
+    console.log(chalk.yellow('💡 対処法:'));
+    console.log(chalk.white('  1. Gitリポジトリのディレクトリで実行してください'));
+    console.log(chalk.white('  2. リモートリポジトリが設定されているか確認してください'));
+    console.log(chalk.white('  3. `git remote -v` で確認できます\n'));
+    throw new Error('Not a git repository or no origin remote found');
   }
 
-  // Fetch status
-  await displayStatus(octokit, repo.owner, repo.name);
+  try {
+    // Fetch status
+    await displayStatus(octokit, repo.owner, repo.name);
 
-  if (options.watch) {
-    console.log(chalk.gray('\n👀 Watch mode active (refreshing every 10s)...'));
-    console.log(chalk.gray('Press Ctrl+C to exit\n'));
+    if (options.watch) {
+      console.log(chalk.gray('\n👀 Watch mode active (refreshing every 10s)...'));
+      console.log(chalk.gray('Press Ctrl+C to exit\n'));
 
-    setInterval(async () => {
-      console.clear();
-      await displayStatus(octokit, repo.owner, repo.name);
-    }, 10000);
+      setInterval(async () => {
+        console.clear();
+        try {
+          await displayStatus(octokit, repo.owner, repo.name);
+        } catch (error) {
+          console.log(chalk.red('\n⚠️  ステータスの取得に失敗しました'));
+          if (error instanceof Error) {
+            console.log(chalk.gray(`原因: ${error.message}\n`));
+          }
+        }
+      }, 10000);
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('404') || error.message.includes('Not Found')) {
+        throw new Error('repository not found: リポジトリが見つかりません。アクセス権限を確認してください');
+      }
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        throw new Error('authentication failed: トークンが無効です。再認証してください');
+      }
+      if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        throw new Error('access denied: アクセス権限がありません。トークンの権限を確認してください');
+      }
+      throw new Error(`network error: ${error.message}`);
+    }
+    throw error;
   }
 }
 
