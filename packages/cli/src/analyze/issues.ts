@@ -6,13 +6,6 @@
 
 import { Octokit } from '@octokit/rest';
 
-interface Issue {
-  number: number;
-  title: string;
-  body: string | null;
-  labels: string[];
-}
-
 /**
  * Auto-label all open Issues in repository
  */

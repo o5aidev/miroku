@@ -1,29 +1,44 @@
 {
-  "name": "@agentic-os/cli",
-  "version": "0.1.0",
-  "description": "Zero-learning-cost CLI for Agentic OS - Autonomous development framework",
+  "name": "agentic-os",
+  "version": "1.0.0",
+  "description": "Zero-learning-cost autonomous development framework - AI agents handle your Issues automatically",
   "type": "module",
   "bin": {
     "agentic-os": "./dist/index.js"
   },
   "main": "./dist/index.js",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Tests coming soon\" && exit 0"
   },
   "keywords": [
     "ai",
     "agents",
     "autonomous",
+    "automation",
     "cli",
     "github",
-    "automation"
+    "cicd",
+    "devops",
+    "ai-agents",
+    "claude",
+    "anthropic",
+    "issue-driven-development"
   ],
-  "author": "Agentic OS Team",
+  "author": "Shunsuke Hayashi <supernovasyun@gmail.com> (https://github.com/ShunsukeHayashi)",
   "license": "MIT",
+  "homepage": "https://github.com/ShunsukeHayashi/Autonomous-Operations#readme",
+  "bugs": {
+    "url": "https://github.com/ShunsukeHayashi/Autonomous-Operations/issues"
+  },
   "dependencies": {
-    "@agentic-os/core": "workspace:*",
     "@octokit/rest": "^20.0.0",
     "@octokit/graphql": "^7.0.2",
     "chalk": "^5.3.0",

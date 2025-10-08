@@ -12,12 +12,14 @@
 
 import ora from 'ora';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
 import { analyzeProject } from '../analyze/project.js';
 import { githubOAuth } from '../auth/github-oauth.js';
 import { setupLabels } from '../setup/labels.js';
 import { autoLabelIssues } from '../analyze/issues.js';
 import { deployWorkflows } from '../setup/workflows.js';
+
+// @ts-ignore - inquirer is an ESM-only module
+import inquirer from 'inquirer';
 import { linkToProject } from '../setup/projects.js';
 
 export interface InstallOptions {

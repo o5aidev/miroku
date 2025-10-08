@@ -7,6 +7,8 @@
 import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// @ts-ignore - yaml is an ESM-only module
 import { parse as parseYaml } from 'yaml';
 
 interface Label {
