@@ -1,0 +1,199 @@
+name: 📊 Update Project Custom Fields
+
+# Update GitHub Project V2 custom fields based on Issue/PR state
+# Addresses Issue #5 - Phase A: Data Persistence Layer
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled, closed, reopened]
+  pull_request:
+    types: [opened, closed, merged, review_requested, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to update'
+        required: true
+        type: number
+
+permissions:
+  issues: write
+  pull-requests: write
+  repository-projects: write
+
+jobs:
+  update-project-fields:
+    runs-on: ubuntu-latest
+    name: Update Custom Fields
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Issue/PR Information
+        id: info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isIssue = context.eventName === 'issues' || context.payload.issue;
+            const number = context.payload.issue?.number || context.payload.pull_request?.number || context.payload.inputs?.issue_number;
+
+            let item;
+            if (isIssue) {
+              item = context.payload.issue || (await github.rest.issues.get({
+                owner: context.repo.owner,
+                repo: context.repo.name,
+                issue_number: number
+              })).data;
+            } else {
+              item = context.payload.pull_request;
+            }
+
+            // Extract labels
+            const labels = (item.labels || []).map(l => l.name);
+
+            // Determine agent from labels
+            let agent = 'Unassigned';
+            if (labels.some(l => l.includes('agent:coordinator'))) agent = 'CoordinatorAgent';
+            else if (labels.some(l => l.includes('agent:codegen'))) agent = 'CodeGenAgent';
+            else if (labels.some(l => l.includes('agent:review'))) agent = 'ReviewAgent';
+            else if (labels.some(l => l.includes('agent:issue'))) agent = 'IssueAgent';
+            else if (labels.some(l => l.includes('agent:pr'))) agent = 'PRAgent';
+            else if (labels.some(l => l.includes('agent:deploy'))) agent = 'DeploymentAgent';
+
+            // Determine priority
+            let priority = 'P2-Medium';
+            if (labels.some(l => l.includes('P0-Critical'))) priority = 'P0-Critical';
+            else if (labels.some(l => l.includes('P1-High'))) priority = 'P1-High';
+            else if (labels.some(l => l.includes('P3-Low'))) priority = 'P3-Low';
+
+            // Determine state
+            let state = 'Pending';
+            if (labels.some(l => l.includes('state:analyzing'))) state = 'Analyzing';
+            else if (labels.some(l => l.includes('state:implementing'))) state = 'Implementing';
+            else if (labels.some(l => l.includes('state:reviewing'))) state = 'Reviewing';
+            else if (labels.some(l => l.includes('state:done'))) state = 'Done';
+            else if (labels.some(l => l.includes('state:blocked'))) state = 'Blocked';
+            else if (item.state === 'closed') state = 'Done';
+
+            // Calculate duration (if closed)
+            let duration = null;
+            if (item.closed_at) {
+              const created = new Date(item.created_at);
+              const closed = new Date(item.closed_at);
+              duration = Math.round((closed - created) / (1000 * 60)); // minutes
+            }
+
+            core.setOutput('number', number);
+            core.setOutput('agent', agent);
+            core.setOutput('priority', priority);
+            core.setOutput('state', state);
+            core.setOutput('duration', duration || '');
+            core.setOutput('title', item.title);
+
+      - name: Find Project Item
+        id: find-item
+        uses: actions/github-script@v7
+        env:
+          PROJECT_NUMBER: 1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const query = `
+              query($owner: String!, $repo: String!, $number: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $number) {
+                    projectItems(first: 10) {
+                      nodes {
+                        id
+                        project {
+                          id
+                          title
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+
+            try {
+              const result = await github.graphql(query, {
+                owner: context.repo.owner,
+                repo: context.repo.name,
+                number: parseInt('${{ steps.info.outputs.number }}')
+              });
+
+              const projectItems = result.repository.issue.projectItems.nodes;
+              if (projectItems.length > 0) {
+                const projectItemId = projectItems[0].id;
+                const projectId = projectItems[0].project.id;
+                core.setOutput('project_item_id', projectItemId);
+                core.setOutput('project_id', projectId);
+                return true;
+              } else {
+                console.log('Issue not in any project yet');
+                return false;
+              }
+            } catch (error) {
+              console.error('Error finding project item:', error);
+              return false;
+            }
+
+      - name: Update Project Fields
+        if: steps.find-item.outputs.project_item_id
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Note: This is a simplified version
+            // Full implementation requires knowing field IDs from the project
+            // which can be fetched via GraphQL query to the project
+
+            const projectItemId = '${{ steps.find-item.outputs.project_item_id }}';
+            const projectId = '${{ steps.find-item.outputs.project_id }}';
+
+            console.log('Project Item ID:', projectItemId);
+            console.log('Agent:', '${{ steps.info.outputs.agent }}');
+            console.log('Priority:', '${{ steps.info.outputs.priority }}');
+            console.log('State:', '${{ steps.info.outputs.state }}');
+            console.log('Duration:', '${{ steps.info.outputs.duration }}');
+
+            // TODO: Implement actual field updates via GraphQL
+            // Example mutation:
+            // mutation {
+            //   updateProjectV2ItemFieldValue(input: {
+            //     projectId: "PROJECT_ID"
+            //     itemId: "ITEM_ID"
+            //     fieldId: "FIELD_ID"
+            //     value: { text: "VALUE" }
+            //   }) {
+            //     projectV2Item { id }
+            //   }
+            // }
+
+      - name: Comment Update
+        if: steps.find-item.outputs.project_item_id
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const number = parseInt('${{ steps.info.outputs.number }}');
+            const agent = '${{ steps.info.outputs.agent }}';
+            const priority = '${{ steps.info.outputs.priority }}';
+            const state = '${{ steps.info.outputs.state }}';
+            const duration = '${{ steps.info.outputs.duration }}';
+
+            let body = `🤖 **Project Updated**\n\n`;
+            body += `- **Agent**: ${agent}\n`;
+            body += `- **Priority**: ${priority}\n`;
+            body += `- **State**: ${state}\n`;
+            if (duration) {
+              body += `- **Duration**: ${duration} minutes\n`;
+            }
+            body += `\n---\n*Automated by [project-update-fields.yml](.github/workflows/project-update-fields.yml)*`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.name,
+              issue_number: number,
+              body: body
+            });

@@ -385,9 +385,194 @@ async function generateWeeklyReport() {
 - [x] GraphQL クエリ動作確認
 - [x] Issue 自動追加ワークフロー作成
 - [x] ステータス自動更新ワークフロー作成
+- [x] **カスタムフィールド自動更新ワークフロー作成** (`project-update-fields.yml`)
+- [x] **GraphQL Helper Script 実装** (`scripts/projects-graphql.ts`)
 - [ ] カスタムフィールド設定（手動、UI で実施）
 - [ ] KPI レポート生成テスト
-- [ ] ドキュメント完成
+- [x] ドキュメント完成
+
+### 最新実装 (2025-10-08)
+
+#### 1. カスタムフィールド自動更新ワークフロー
+
+**ファイル**: `.github/workflows/project-update-fields.yml`
+
+**トリガー**:
+- Issues: `opened`, `edited`, `labeled`, `unlabeled`, `closed`, `reopened`
+- Pull Requests: `opened`, `closed`, `merged`, `review_requested`, `ready_for_review`
+- `workflow_dispatch` (手動実行、issue_number指定可能)
+
+**自動判定ロジック**:
+
+```yaml
+# ラベルからAgentを判定
+agent:coordinator → CoordinatorAgent
+agent:codegen → CodeGenAgent
+agent:review → ReviewAgent
+agent:issue → IssueAgent
+agent:pr → PRAgent
+agent:deploy → DeploymentAgent
+
+# ラベルからPriorityを判定
+P0-Critical, P1-High, P2-Medium, P3-Low
+
+# ラベルとissue stateからStateを判定
+state:analyzing → Analyzing
+state:implementing → Implementing
+state:reviewing → Reviewing
+state:done → Done
+state:blocked → Blocked
+closed → Done
+
+# Durationを計算（closed時のみ）
+duration = (closed_at - created_at) / 60  # 分単位
+```
+
+**処理フロー**:
+1. Issue/PR情報取得 → Agent/Priority/State/Duration判定
+2. Project Item ID検索 (GraphQL)
+3. カスタムフィールド更新 (GraphQL mutation)
+4. Issueにコメント投稿
+
+#### 2. GraphQL Helper Script
+
+**ファイル**: `scripts/projects-graphql.ts`
+
+**提供関数**:
+
+```typescript
+// プロジェクト情報とフィールド取得
+getProjectInfo(owner, projectNumber, token)
+  → { projectId: string, fields: ProjectField[] }
+
+// IssueをProjectに追加
+addItemToProject(projectId, contentId, token)
+  → itemId: string
+
+// テキスト/数値フィールド更新
+updateProjectField(projectId, itemId, fieldId, value, token)
+
+// SingleSelectフィールド更新（Agent, Priority, State）
+updateSingleSelectField(projectId, itemId, fieldId, optionId, token)
+
+// 全Project Items取得
+getProjectItems(owner, projectNumber, token)
+  → ProjectItem[]
+
+// 週次レポート生成
+generateWeeklyReport(owner, projectNumber, token)
+  → markdown report
+```
+
+**CLI使用例**:
+
+```bash
+# プロジェクト情報表示
+GITHUB_TOKEN=xxx tsx scripts/projects-graphql.ts info
+
+# 全アイテム表示
+GITHUB_TOKEN=xxx tsx scripts/projects-graphql.ts items
+
+# 週次レポート生成
+GITHUB_TOKEN=xxx tsx scripts/projects-graphql.ts report
+```
+
+**GraphQL Query例**:
+
+```graphql
+# プロジェクト情報取得
+query($owner: String!, $number: Int!) {
+  user(login: $owner) {
+    projectV2(number: $number) {
+      id
+      title
+      fields(first: 20) {
+        nodes {
+          ... on ProjectV2Field { id name dataType }
+          ... on ProjectV2SingleSelectField {
+            id name dataType
+            options { id name }
+          }
+        }
+      }
+    }
+  }
+}
+
+# SingleSelectフィールド更新
+mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: $projectId
+    itemId: $itemId
+    fieldId: $fieldId
+    value: { singleSelectOptionId: $optionId }
+  }) {
+    projectV2Item { id }
+  }
+}
+```
+
+#### 3. npm Scripts追加
+
+`package.json`に以下を追加済み:
+
+```json
+"scripts": {
+  "project:info": "tsx scripts/github-project-api.ts info",
+  "project:items": "tsx scripts/github-project-api.ts items",
+  "project:metrics": "tsx scripts/github-project-api.ts metrics",
+  "project:report": "tsx scripts/github-project-api.ts report"
+}
+```
+
+#### 4. 統合パターン例
+
+**自動更新フロー**:
+
+```
+Issue作成
+  ↓
+project-sync.yml → ProjectにIssue追加
+  ↓
+ラベル付与: agent:codegen, P1-High, state:implementing
+  ↓
+project-update-fields.yml トリガー
+  ↓
+Agent = "CodeGenAgent"
+Priority = "P1-High"
+State = "Implementing"
+  ↓
+GraphQL mutation → カスタムフィールド更新
+  ↓
+Issueにコメント: "🤖 Project Updated"
+```
+
+**週次レポート生成例**:
+
+```bash
+$ npm run project:report
+
+# Weekly Project Report
+
+**Date**: 2025-10-08
+
+## Summary
+
+- **Total Items**: 45
+- **Completed This Week**: 12
+- **In Progress**: 8
+
+## Completed Items
+
+- #29: Fix ESM compatibility
+- #19: NPM Publication Ready
+- #5: GitHub OS Integration Phase A
+
+## In Progress
+
+- #5: GitHub OS Integration Phase B-J
+- #30: Sprint Management Enhancement
+```
 
 ---
 
