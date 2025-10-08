@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Origami - 一つのコマンドで全てが完結
+ * Hashira - 一つのコマンドで全てが完結
  */
 
 import { Command } from 'commander';
@@ -14,8 +14,8 @@ import { status } from './commands/status.js';
 const program = new Command();
 
 program
-  .name('origami')
-  .description('🎨 Origami - 一つのコマンドで全てが完結する自律型開発フレームワーク')
+  .name('hashira')
+  .description('⛩️ Hashira - 一つのコマンドで全てが完結する自律型開発フレームワーク')
   .version('0.1.0');
 
 // ============================================================================
@@ -24,7 +24,7 @@ program
 
 program
   .action(async () => {
-    console.log(chalk.cyan.bold('\n🎨 Origami\n'));
+    console.log(chalk.cyan.bold('\n⛩️ Hashira\n'));
     console.log(chalk.gray('一つのコマンドで全てが完結\n'));
 
     const { action } = await inquirer.prompt([

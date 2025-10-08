@@ -1,10 +1,10 @@
 {
-  "name": "origami",
+  "name": "hashira",
   "version": "0.1.0",
-  "description": "Origami - 一つのコマンドで全てが完結する自律型開発フレームワーク",
+  "description": "Hashira - 一つのコマンドで全てが完結する自律型開発フレームワーク",
   "type": "module",
   "bin": {
-    "origami": "./dist/index.js"
+    "hashira": "./dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
