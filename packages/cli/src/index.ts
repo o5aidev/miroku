@@ -12,16 +12,26 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { init } from './commands/init.js';
 import { install } from './commands/install.js';
 import { status } from './commands/status.js';
+
+// Get package.json path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, '../package.json'), 'utf-8')
+);
 
 const program = new Command();
 
 program
   .name('miyabi')
   .description('✨ Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク')
-  .version('0.1.0');
+  .version(packageJson.version);
 
 // ============================================================================
 // Command: init
