@@ -71,6 +71,16 @@
       "name": "miyabi-test",
       "description": "テスト実行",
       "file": "commands/miyabi-test.md"
+    },
+    {
+      "name": "miyabi-amembo",
+      "description": "Amembo実行",
+      "file": "commands/miyabi-amembo.md"
+    },
+    {
+      "name": "miyabi-watch",
+      "description": "Watch モード",
+      "file": "commands/miyabi-watch.md"
     }
   ],
   "agents": [
