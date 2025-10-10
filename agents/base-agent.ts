@@ -504,6 +504,38 @@ ${JSON.stringify(invocations, null, 2)}
     throw lastError;
   }
 
+  /**
+   * Safely truncate a string without breaking Unicode surrogate pairs
+   *
+   * JavaScript strings are UTF-16, where some characters (like emojis) are
+   * represented as surrogate pairs (two 16-bit code units). Using substring()
+   * can break these pairs, creating invalid JSON.
+   *
+   * @param str - The string to truncate
+   * @param maxLength - Maximum length in characters (not bytes)
+   * @returns Safely truncated string
+   */
+  protected safeTruncate(str: string, maxLength: number): string {
+    if (str.length <= maxLength) {
+      return str;
+    }
+
+    // Truncate to maxLength
+    let truncated = str.substring(0, maxLength);
+
+    // Check if we cut in the middle of a surrogate pair
+    // High surrogates are in range 0xD800-0xDBFF
+    // Low surrogates are in range 0xDC00-0xDFFF
+    const lastCharCode = truncated.charCodeAt(truncated.length - 1);
+
+    // If the last character is a high surrogate (start of a pair), remove it
+    if (lastCharCode >= 0xD800 && lastCharCode <= 0xDBFF) {
+      truncated = truncated.substring(0, truncated.length - 1);
+    }
+
+    return truncated;
+  }
+
   // ============================================================================
   // Getters
   // ============================================================================

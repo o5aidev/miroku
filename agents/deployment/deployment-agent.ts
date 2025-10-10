@@ -247,7 +247,7 @@ export class DeploymentAgent extends BaseAgent {
         'npm_build',
         'passed',
         'Build successful',
-        result.stdout.substring(0, 500)
+        this.safeTruncate(result.stdout, 500)
       );
 
       this.log('✅ Build successful');
@@ -281,7 +281,7 @@ export class DeploymentAgent extends BaseAgent {
         'npm_test',
         'passed',
         'Tests passed',
-        result.stdout.substring(0, 500)
+        this.safeTruncate(result.stdout, 500)
       );
 
       this.log('✅ Tests passed');
@@ -325,7 +325,7 @@ export class DeploymentAgent extends BaseAgent {
         'firebase_deploy',
         'passed',
         `Deployed to ${config.environment}`,
-        result.stdout.substring(0, 500)
+        this.safeTruncate(result.stdout, 500)
       );
 
       // Extract deployment URL from output

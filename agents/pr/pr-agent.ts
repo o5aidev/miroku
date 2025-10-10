@@ -368,7 +368,7 @@ export class PRAgent extends BaseAgent {
         'github_api_create_pr',
         'passed',
         `Created PR #${response.data.number}`,
-        JSON.stringify(response.data).substring(0, 500)
+        this.safeTruncate(JSON.stringify(response.data), 500)
       );
 
       return {

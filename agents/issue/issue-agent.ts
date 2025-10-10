@@ -116,7 +116,7 @@ export class IssueAgent extends BaseAgent {
         'github_api_get_issue',
         'passed',
         `Fetched Issue #${issueNumber}`,
-        JSON.stringify(response.data).substring(0, 500)
+        this.safeTruncate(JSON.stringify(response.data), 500)
       );
 
       return {
@@ -235,7 +235,7 @@ export class IssueAgent extends BaseAgent {
         'github_api_create_comment',
         'passed',
         'Added analysis comment',
-        comment.substring(0, 200)
+        this.safeTruncate(comment, 200)
       );
     } catch (error) {
       await this.logToolInvocation(

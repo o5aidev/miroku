@@ -238,7 +238,7 @@ export class CodeGenAgent extends BaseAgent {
     // Get README content
     try {
       const readme = await fs.promises.readFile('README.md', 'utf-8');
-      context.push('# Project Overview\n' + readme.substring(0, 2000));
+      context.push('# Project Overview\n' + this.safeTruncate(readme, 2000));
     } catch (error) {
       // No README
     }
@@ -246,7 +246,7 @@ export class CodeGenAgent extends BaseAgent {
     // Get sample code from agents/
     try {
       const baseAgent = await fs.promises.readFile('agents/base-agent.ts', 'utf-8');
-      context.push('# BaseAgent Pattern\n```typescript\n' + baseAgent.substring(0, 1000) + '\n```');
+      context.push('# BaseAgent Pattern\n```typescript\n' + this.safeTruncate(baseAgent, 1000) + '\n```');
     } catch (error) {
       // No base agent
     }
@@ -289,7 +289,7 @@ export class CodeGenAgent extends BaseAgent {
         'claude_code_generation',
         'passed',
         `Generated ${files.length} files`,
-        generatedText.substring(0, 500)
+        this.safeTruncate(generatedText, 500)
       );
 
       return {
