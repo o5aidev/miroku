@@ -12,13 +12,19 @@
 
 ### コアコンポーネント
 
-1. **Agent System**
+1. **Agent System** (via [miyabi-agent-sdk](https://www.npmjs.com/package/miyabi-agent-sdk))
    - CoordinatorAgent: タスク統括・DAG分解
-   - CodeGenAgent: コード生成
-   - ReviewAgent: コード品質レビュー
-   - IssueAgent: Issue分析・ラベリング
-   - PRAgent: Pull Request自動作成
-   - DeploymentAgent: デプロイ管理
+   - CodeGenAgent: AI駆動コード生成 (Claude Sonnet 4)
+   - ReviewAgent: コード品質レビュー (100点満点スコアリング)
+   - IssueAgent: Issue分析・ラベリング (AI推論)
+   - PRAgent: Pull Request自動作成 (Conventional Commits)
+   - DeploymentAgent: CI/CDデプロイ自動化 (Firebase/Vercel/AWS)
+   - TestAgent: テスト自動実行 (Vitest/Jest/Playwright)
+
+   **SDK Integration**:
+   - npm: `miyabi-agent-sdk@^0.1.0-alpha.2`
+   - Source: [codex repository](https://github.com/ShunsukeHayashi/codex)
+   - Dependencies: `@anthropic-ai/sdk`, `@octokit/rest`
 
 2. **GitHub OS Integration**
    - Projects V2: データ永続化層
@@ -45,6 +51,9 @@
 - `docs/GITHUB_OS_INTEGRATION.md`: GitHub OS完全統合ガイド
 - `docs/LABEL_SYSTEM_GUIDE.md`: **53ラベル体系の完全ガイド** ⭐
 - `docs/AGENT_SDK_LABEL_INTEGRATION.md`: **Agent SDK × Label System統合** ⭐
+- `docs/CODEX_MIYABI_INTEGRATION.md`: **Codex × Miyabi 統合アーキテクチャ** 🔗
+- `docs/SAAS_BUSINESS_MODEL.md`: SaaS事業化戦略 (16,000行)
+- `docs/MARKET_ANALYSIS_2025.md`: 市場調査レポート 2025 (8,000行)
 - `packages/cli/README.md`: CLI使用方法
 
 ### コアコード
@@ -148,9 +157,12 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 
 ## 関連リンク
 
-- Dashboard: https://shunsukehayashi.github.io/Miyabi/
-- Repository: https://github.com/ShunsukeHayashi/Miyabi
-- NPM Package: @miyabi/agent-sdk
+- **Dashboard**: https://shunsukehayashi.github.io/Miyabi/
+- **Repository (Miyabi)**: https://github.com/ShunsukeHayashi/Miyabi
+- **Repository (Codex)**: https://github.com/ShunsukeHayashi/codex
+- **NPM Package (CLI)**: https://www.npmjs.com/package/miyabi
+- **NPM Package (SDK)**: https://www.npmjs.com/package/miyabi-agent-sdk
+- **Landing Page**: https://shunsukehayashi.github.io/Miyabi/landing.html
 
 ---
 

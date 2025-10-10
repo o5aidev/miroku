@@ -1,0 +1,19 @@
+// src/types.ts
+export interface Command {
+  name: string;
+  description: string;
+  command: string;
+  category: string;
+}
+
+export interface Workflow {
+  name: string;
+  description: string;
+  commands: string[];
+  category: string;
+}
+
+export interface ProjectConfig {
+  commands: Command[];
+  workflows: Workflow[];
+}

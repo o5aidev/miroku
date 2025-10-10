@@ -1,11 +1,47 @@
 # Memory Bank Template
 
 ## Active Story / Task
-- タイトル: 市場調査完了！📊 - $50B+市場を詳細分析、SaaS化戦略確立
+- タイトル: Codex × Miyabi統合完了！🔗 - SDK紐付けドキュメント化、アーキテクチャ明確化
 - ステータス: 完了
 - 期間: 2025-10-10
 
 ## Key Decisions
+- 2025-10-10: Codex × Miyabi統合ドキュメント完成（miyabi-agent-sdk紐付け） / アーキテクチャ / Claude Code
+  - ユーザー要望: "miyabi-agent-sdk" "紐付けておいて" "https://github.com/ShunsukeHayashi/codex"
+  - docs/CODEX_MIYABI_INTEGRATION.md 作成（10,000+行）
+    * Part 1: アーキテクチャ全体像
+      - Repository構造: Autonomous-Operations (Miyabi) ← miyabi-agent-sdk ← codex
+      - Dependency Flow: codex → npm publish → Miyabi install
+    * Part 2: プロジェクト役割分担
+      - Codex: Agent orchestration engine (Rust CLI + TypeScript SDK)
+      - Miyabi: GitHub as OS platform (TypeScript, 53 Label System)
+      - miyabi-agent-sdk: Agent実装の共通基盤 (npm package)
+    * Part 3: Integration Flow
+      - Development: codex → build → npm publish → Miyabi install
+      - Runtime: User → miyabi CLI → SDK → Agents → GitHub API
+    * Part 4: Agent Architecture (7つのAgent詳細)
+      - CoordinatorAgent: タスク統括・DAG分解
+      - CodeGenAgent: AI駆動コード生成 (Claude Sonnet 4)
+      - ReviewAgent: 品質スコアリング (100点満点)
+      - IssueAgent: AI推論ラベル分類 (53 Labels)
+      - PRAgent: Conventional Commits準拠PR作成
+      - DeploymentAgent: Firebase/Vercel/AWS自動デプロイ
+      - TestAgent: Vitest/Jest/Playwright実行 (80%+ coverage)
+    * Part 5: Integration Points (実装コード例)
+    * Part 6: Package Management (versioning strategy)
+    * Part 7: Development Workflow (feature/bug fix)
+    * Part 8: Documentation Strategy (cross-repo links)
+    * Part 9: Roadmap (Alpha → Beta → RC → Stable v1.0)
+    * Part 10: Support & Contributing
+  - CLAUDE.md更新
+    * Agent System: miyabi-agent-sdkリンク追加
+    * Dependencies: @anthropic-ai/sdk, @octokit/rest明記
+    * ドキュメントセクション: CODEX_MIYABI_INTEGRATION.md追加
+    * 関連リンク: codexリポジトリ、miyabi-agent-sdk npm追加
+  - 統合の明確化
+    * Codex = Engine (Agent orchestration, MCP, Rust CLI)
+    * miyabi-agent-sdk = Bridge (npm package, 7 Agents)
+    * Miyabi = Platform (GitHub as OS, 53 Labels, CLI)
 - 2025-10-10: Miyabi市場調査完了（8,000行、12パート分析） / 市場戦略 / Claude Code
   - ユーザー要望: "調査してください。Webを使ってどういう市場があるか調査してください。"
   - docs/MARKET_ANALYSIS_2025.md 作成（8,000+行）
