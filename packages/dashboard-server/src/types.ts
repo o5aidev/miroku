@@ -432,3 +432,65 @@ export const STATE_LABELS: Record<string, LabelStateConfig> = {
     description: 'Paused - waiting',
   },
 };
+
+// ============================================================================
+// Task Hierarchy Types
+// ============================================================================
+
+/**
+ * Task階層のノードタイプ
+ */
+export type TaskNodeType = 'issue' | 'task' | 'subtask' | 'todo';
+
+/**
+ * Task階層ノード
+ */
+export interface TaskNode {
+  id: string; // "issue-100-task-1-subtask-1"
+  type: TaskNodeType; // "subtask"
+  parentId: string | null; // "issue-100-task-1"
+  position: { x: number; y: number };
+  data: {
+    title: string;
+    description?: string;
+    status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+    assignee?: string;
+    dueDate?: string;
+    dependencies: string[]; // ["issue-100-task-1-subtask-1"]
+    estimatedHours?: number;
+    actualHours?: number;
+    tags?: string[];
+  };
+}
+
+/**
+ * Task階層エッジ
+ */
+export interface TaskEdge {
+  id: string;
+  source: string; // 親ノードID or 依存元
+  target: string; // 子ノードID or 依存先
+  type: 'hierarchy' | 'dependency' | 'blocking';
+  label?: string;
+  style?: {
+    stroke: string;
+    strokeWidth: number;
+    strokeDasharray?: string;
+  };
+}
+
+/**
+ * Issue全体のTask階層データ
+ */
+export interface TaskHierarchyData {
+  issueId: string;
+  nodes: TaskNode[];
+  edges: TaskEdge[];
+  metadata: {
+    totalTasks: number;
+    completedTasks: number;
+    blockedTasks: number;
+    estimatedTotalHours: number;
+    actualTotalHours: number;
+  };
+}
