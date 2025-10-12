@@ -1,0 +1,462 @@
+{
+  "server": {
+    "name": "Miyabi Community",
+    "description": "Autonomous AI Development Framework - Community Hub",
+    "icon": "🌸",
+    "vanity_url": "discord.gg/miyabi",
+    "region": "auto",
+    "verification_level": "medium"
+  },
+  "channels": {
+    "categories": [
+      {
+        "name": "📢 WELCOME & INFO",
+        "channels": [
+          {
+            "name": "welcome",
+            "type": "text",
+            "description": "Welcome message and getting started guide",
+            "pinned_content": "docs/discord/welcome.md"
+          },
+          {
+            "name": "rules",
+            "type": "text",
+            "description": "Community rules and guidelines",
+            "pinned_content": "docs/discord/rules.md",
+            "read_only": true
+          },
+          {
+            "name": "announcements",
+            "type": "text",
+            "description": "Official announcements from the Miyabi team",
+            "read_only": true
+          },
+          {
+            "name": "changelog",
+            "type": "text",
+            "description": "Version updates and release notes (GitHub auto-post)"
+          }
+        ]
+      },
+      {
+        "name": "💬 GENERAL",
+        "channels": [
+          {
+            "name": "general",
+            "type": "text",
+            "description": "General chat about Miyabi, AI, and development"
+          },
+          {
+            "name": "introductions",
+            "type": "text",
+            "description": "Introduce yourself to the community"
+          },
+          {
+            "name": "showcase",
+            "type": "text",
+            "description": "Show off your projects and creations"
+          },
+          {
+            "name": "feedback",
+            "type": "text",
+            "description": "Feedback and feature requests"
+          }
+        ]
+      },
+      {
+        "name": "🎓 LEARNING",
+        "channels": [
+          {
+            "name": "beginners",
+            "type": "text",
+            "description": "Beginner-friendly zone - no question too basic"
+          },
+          {
+            "name": "tutorials",
+            "type": "text",
+            "description": "Tutorials, guides, and learning resources"
+          },
+          {
+            "name": "ask-experts",
+            "type": "text",
+            "description": "Get advice from experienced developers"
+          },
+          {
+            "name": "resources",
+            "type": "text",
+            "description": "Curated learning resources and tools"
+          }
+        ]
+      },
+      {
+        "name": "💻 DEVELOPMENT",
+        "channels": [
+          {
+            "name": "development",
+            "type": "text",
+            "description": "Development discussions and technical topics"
+          },
+          {
+            "name": "bug-reports",
+            "type": "text",
+            "description": "Report bugs with reproduction steps"
+          },
+          {
+            "name": "feature-requests",
+            "type": "text",
+            "description": "Suggest new features and improvements"
+          },
+          {
+            "name": "pull-requests",
+            "type": "text",
+            "description": "PR notifications and discussions (GitHub integration)"
+          },
+          {
+            "name": "code-review",
+            "type": "text",
+            "description": "Request code reviews from the community"
+          }
+        ]
+      },
+      {
+        "name": "🤖 AI & AGENTS",
+        "channels": [
+          {
+            "name": "ai-discussions",
+            "type": "text",
+            "description": "AI/ML topics, models, and techniques"
+          },
+          {
+            "name": "agent-showcase",
+            "type": "text",
+            "description": "Demo your custom agents"
+          },
+          {
+            "name": "prompt-engineering",
+            "type": "text",
+            "description": "Share effective prompts and techniques"
+          },
+          {
+            "name": "claude-tips",
+            "type": "text",
+            "description": "Tips for using Claude and Claude Code"
+          }
+        ]
+      },
+      {
+        "name": "🎪 EVENTS",
+        "channels": [
+          {
+            "name": "events",
+            "type": "text",
+            "description": "Event announcements and schedules"
+          },
+          {
+            "name": "hackathons",
+            "type": "text",
+            "description": "Hackathon coordination and submissions"
+          },
+          {
+            "name": "study-sessions",
+            "type": "text",
+            "description": "Collaborative learning sessions"
+          }
+        ]
+      },
+      {
+        "name": "🔧 SUPPORT",
+        "channels": [
+          {
+            "name": "help",
+            "type": "text",
+            "description": "General help and support"
+          },
+          {
+            "name": "installation-issues",
+            "type": "text",
+            "description": "Troubleshooting installation and setup"
+          },
+          {
+            "name": "github-issues",
+            "type": "text",
+            "description": "Auto-posted GitHub issues (bot integration)"
+          }
+        ]
+      },
+      {
+        "name": "🎮 OFF-TOPIC",
+        "channels": [
+          {
+            "name": "random",
+            "type": "text",
+            "description": "Off-topic chat and casual conversation"
+          },
+          {
+            "name": "memes",
+            "type": "text",
+            "description": "Miyabi, AI, and programming memes"
+          }
+        ]
+      },
+      {
+        "name": "🔊 VOICE CHANNELS",
+        "channels": [
+          {
+            "name": "General Voice",
+            "type": "voice",
+            "user_limit": 25
+          },
+          {
+            "name": "Study Room",
+            "type": "voice",
+            "user_limit": 10,
+            "description": "Quiet co-working space"
+          },
+          {
+            "name": "Pair Programming",
+            "type": "voice",
+            "user_limit": 5,
+            "description": "Collaborative coding sessions"
+          },
+          {
+            "name": "Events",
+            "type": "voice",
+            "user_limit": 50,
+            "description": "For community events and presentations"
+          }
+        ]
+      }
+    ],
+    "total_channels": 33
+  },
+  "roles": {
+    "automated": [
+      {
+        "name": "@Member",
+        "color": "#FFFFFF",
+        "permissions": ["view_channels", "send_messages", "add_reactions"],
+        "default": true
+      },
+      {
+        "name": "@Active",
+        "color": "#8800FF",
+        "criteria": "Weekly participation (MEE6)",
+        "permissions": ["view_channels", "send_messages", "add_reactions", "use_external_emojis"]
+      },
+      {
+        "name": "@Regular",
+        "color": "#0088FF",
+        "criteria": "Monthly active contributor (MEE6)",
+        "permissions": ["view_channels", "send_messages", "add_reactions", "use_external_emojis", "embed_links"]
+      },
+      {
+        "name": "@Veteran",
+        "color": "#00FF00",
+        "criteria": "3+ months membership",
+        "permissions": ["view_channels", "send_messages", "add_reactions", "use_external_emojis", "embed_links", "attach_files"]
+      }
+    ],
+    "contribution": [
+      {
+        "name": "@Contributor",
+        "color": "#FFDD00",
+        "criteria": "Submitted PR on GitHub",
+        "permissions": ["all_member_permissions"]
+      },
+      {
+        "name": "@Core Team",
+        "color": "#FF0000",
+        "criteria": "Core maintainer",
+        "permissions": ["manage_messages", "manage_roles", "manage_server"]
+      },
+      {
+        "name": "@Moderator",
+        "color": "#FF8800",
+        "criteria": "Community moderator",
+        "permissions": ["manage_messages", "kick_members", "timeout_members", "manage_channels"]
+      }
+    ],
+    "expertise": [
+      {
+        "name": "@Beginner",
+        "color": "#CCCCCC",
+        "self_assign": true
+      },
+      {
+        "name": "@Intermediate",
+        "color": "#888888",
+        "self_assign": true
+      },
+      {
+        "name": "@Expert",
+        "color": "#444444",
+        "self_assign": true
+      }
+    ],
+    "interests": [
+      "@TypeScript",
+      "@Python",
+      "@Go",
+      "@AI/ML",
+      "@DevOps",
+      "@Frontend",
+      "@Backend"
+    ],
+    "special": [
+      {
+        "name": "@Bot",
+        "color": "#7289DA",
+        "for": "Bot accounts"
+      },
+      {
+        "name": "@Sponsor",
+        "color": "#FFD700",
+        "for": "Project sponsors (future)"
+      }
+    ]
+  },
+  "bots": [
+    {
+      "name": "MEE6",
+      "purpose": "Leveling and auto-moderation",
+      "url": "https://mee6.xyz/",
+      "features": [
+        "Welcome message automation",
+        "Level-up system",
+        "Auto-role assignment",
+        "Basic moderation"
+      ]
+    },
+    {
+      "name": "GitHub Bot",
+      "purpose": "GitHub integration",
+      "url": "https://github.com/apps/discord",
+      "features": [
+        "Issue notifications",
+        "PR notifications",
+        "Commit notifications",
+        "Release announcements"
+      ]
+    },
+    {
+      "name": "Miyabi Bot",
+      "purpose": "Custom bot (development planned)",
+      "status": "planned",
+      "features": [
+        "/miyabi help - Help command",
+        "/miyabi docs <query> - Documentation search",
+        "/miyabi status - Project status",
+        "/miyabi agent <name> - Agent information",
+        "AI-powered Q&A (Claude API integration)"
+      ]
+    }
+  ],
+  "events": {
+    "weekly": [
+      {
+        "name": "Weekly Update",
+        "day": "Monday",
+        "duration": "5-10 minutes",
+        "description": "Quick announcements and updates"
+      },
+      {
+        "name": "Office Hours",
+        "day": "Wednesday",
+        "duration": "1 hour",
+        "description": "Live Q&A with maintainers and experts"
+      },
+      {
+        "name": "Study Session",
+        "day": "Saturday",
+        "duration": "2 hours",
+        "description": "Collaborative learning and coding"
+      }
+    ],
+    "monthly": [
+      {
+        "name": "Community Hackathon",
+        "schedule": "First Saturday",
+        "duration": "24 hours"
+      },
+      {
+        "name": "Tech Talk",
+        "schedule": "Second Wednesday",
+        "duration": "1 hour",
+        "description": "Guest speakers and presentations"
+      },
+      {
+        "name": "Contribution Sprint",
+        "schedule": "Third Saturday",
+        "duration": "4 hours",
+        "description": "Fix bugs and improve docs together"
+      },
+      {
+        "name": "Community Showcase",
+        "schedule": "Fourth Friday",
+        "duration": "1 hour",
+        "description": "Demo community projects"
+      }
+    ]
+  },
+  "growth_targets": {
+    "month_1": {
+      "members": 50,
+      "daily_active": 10,
+      "messages_per_day": 50
+    },
+    "month_3": {
+      "members": 200,
+      "daily_active": 40,
+      "messages_per_day": 200,
+      "contributors": 10,
+      "community_projects": 2
+    },
+    "month_6": {
+      "members": 500,
+      "daily_active": 100,
+      "messages_per_day": 500,
+      "contributors": 25,
+      "community_projects": 5
+    },
+    "month_12": {
+      "members": 1000,
+      "daily_active": 200,
+      "messages_per_day": 1000,
+      "contributors": 50,
+      "community_projects": 10
+    }
+  },
+  "moderation": {
+    "verification_level": "medium",
+    "explicit_content_filter": "all_members",
+    "auto_moderation": {
+      "spam_filter": true,
+      "link_filter": false,
+      "invite_filter": true,
+      "mention_spam": true,
+      "keyword_filter": []
+    },
+    "warning_system": {
+      "first_offense": "Verbal warning",
+      "second_offense": "Timeout (1-24 hours)",
+      "third_offense": "Temporary ban (7 days)",
+      "severe_violations": "Permanent ban"
+    }
+  },
+  "integrations": {
+    "github": {
+      "repository": "ShunsukeHayashi/Miyabi",
+      "webhook_channels": {
+        "issues": "#github-issues",
+        "pull_requests": "#pull-requests",
+        "releases": "#changelog"
+      }
+    }
+  },
+  "notes": {
+    "phase": "Planning",
+    "target_launch": "2025 Q4",
+    "documentation": "See DISCORD_COMMUNITY_PLAN.md for full strategy",
+    "related_issues": ["#52"]
+  }
+}
