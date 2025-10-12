@@ -8,6 +8,14 @@
 
 完全自律型AI開発オペレーションプラットフォーム。GitHub as OS アーキテクチャに基づき、Issue作成からコード実装、PR作成、デプロイまでを完全自動化します。
 
+### 📚 統合ドキュメント
+
+プロジェクトのすべてのコンポーネントはEntity-Relationモデルで統合的に管理されています：
+
+- **[ENTITY_RELATION_MODEL.md](docs/ENTITY_RELATION_MODEL.md)** - 12種類のEntity定義と27の関係性マップ ⭐⭐⭐
+- **[TEMPLATE_MASTER_INDEX.md](docs/TEMPLATE_MASTER_INDEX.md)** - 88ファイルの統合テンプレートインデックス ⭐⭐⭐
+- **[LABEL_SYSTEM_GUIDE.md](docs/LABEL_SYSTEM_GUIDE.md)** - 53ラベル体系完全ガイド ⭐⭐⭐
+
 ## アーキテクチャ
 
 ### コアコンポーネント
@@ -47,13 +55,23 @@
 - `.github/labels.yml`: 構造化された53ラベル体系
 
 ### ドキュメント
-- `docs/AGENT_OPERATIONS_MANUAL.md`: Agent運用マニュアル
+
+**コアドキュメント（必読）**:
+- `docs/ENTITY_RELATION_MODEL.md`: **Entity-Relationモデル定義** ⭐⭐⭐
+- `docs/TEMPLATE_MASTER_INDEX.md`: **テンプレート統合インデックス** ⭐⭐⭐
+- `docs/LABEL_SYSTEM_GUIDE.md`: **53ラベル体系完全ガイド** ⭐⭐⭐
+- `docs/AGENT_OPERATIONS_MANUAL.md`: **Agent運用マニュアル** ⭐⭐
+
+**統合ガイド**:
 - `docs/GITHUB_OS_INTEGRATION.md`: GitHub OS完全統合ガイド
-- `docs/LABEL_SYSTEM_GUIDE.md`: **53ラベル体系の完全ガイド** ⭐
-- `docs/AGENT_SDK_LABEL_INTEGRATION.md`: **Agent SDK × Label System統合** ⭐
-- `docs/CODEX_MIYABI_INTEGRATION.md`: **Codex × Miyabi 統合アーキテクチャ** 🔗
+- `docs/AGENT_SDK_LABEL_INTEGRATION.md`: Agent SDK × Label System統合
+- `docs/CODEX_MIYABI_INTEGRATION.md`: Codex × Miyabi 統合アーキテクチャ
+
+**ビジネス資料**:
 - `docs/SAAS_BUSINESS_MODEL.md`: SaaS事業化戦略 (16,000行)
 - `docs/MARKET_ANALYSIS_2025.md`: 市場調査レポート 2025 (8,000行)
+
+**CLI**:
 - `packages/cli/README.md`: CLI使用方法
 
 ### コアコード
@@ -119,6 +137,8 @@ Labelはオペレーティングシステムの状態管理機構として機能
 - **DeploymentAgent**: `trigger:deploy-staging` で即座にデプロイ
 
 ### 詳細ドキュメント
+- [ENTITY_RELATION_MODEL.md](docs/ENTITY_RELATION_MODEL.md) - **Entity-Relationモデル定義**
+- [TEMPLATE_MASTER_INDEX.md](docs/TEMPLATE_MASTER_INDEX.md) - **テンプレート統合インデックス**
 - [LABEL_SYSTEM_GUIDE.md](docs/LABEL_SYSTEM_GUIDE.md) - 53ラベル完全解説
 - [AGENT_SDK_LABEL_INTEGRATION.md](docs/AGENT_SDK_LABEL_INTEGRATION.md) - SDK連携ガイド
 
@@ -305,14 +325,157 @@ npm run agents:parallel:exec -- --issues=270 --concurrency=1
 npm run agents:parallel:exec -- --issues=270,271,272,273,274 --concurrency=5
 ```
 
+## Entity-Relation Model
+
+### 🔗 12種類のコアEntity
+
+すべてのプロジェクトコンポーネントは以下のEntityで統合的に管理されています：
+
+| ID | Entity | 説明 | 型定義 |
+|----|--------|------|--------|
+| E1 | **Issue** | GitHub Issue | `agents/types/index.ts:54-64` |
+| E2 | **Task** | 分解されたタスク | `agents/types/index.ts:37-52` |
+| E3 | **Agent** | 自律実行Agent | `agents/types/index.ts:15-22` |
+| E4 | **PR** | Pull Request | `agents/types/index.ts:240-257` |
+| E5 | **Label** | GitHub Label（53個） | `docs/LABEL_SYSTEM_GUIDE.md` |
+| E6 | **QualityReport** | 品質レポート | `agents/types/index.ts:108-130` |
+| E7 | **Command** | Claude Codeコマンド | `.claude/commands/*.md` |
+| E8 | **Escalation** | エスカレーション | `agents/types/index.ts:96-102` |
+| E9 | **Deployment** | デプロイ情報 | `agents/types/index.ts:262-281` |
+| E10 | **LDDLog** | LDDログ | `agents/types/index.ts:284-312` |
+| E11 | **DAG** | タスク依存グラフ | `agents/types/index.ts:66-70` |
+| E12 | **Worktree** | Git Worktree | `CLAUDE.md` (本ファイル) |
+
+### 📊 27の関係性
+
+**Issue処理フロー**:
+- R1: Issue --analyzed-by-→ Agent (IssueAgent)
+- R2: Issue --decomposed-into-→ Task[] (CoordinatorAgent)
+- R3: Issue --tagged-with-→ Label[]
+- R4: Issue --creates-→ PR
+
+**Agent実行**:
+- R9: Agent --executes-→ Task
+- R10: Agent --generates-→ PR
+- R11: Agent --creates-→ QualityReport
+- R12: Agent --triggers-→ Escalation
+- R13: Agent --performs-→ Deployment
+- R14: Agent --logs-to-→ LDDLog
+- R15: Agent --invoked-by-→ Command
+
+**詳細**: [ENTITY_RELATION_MODEL.md](docs/ENTITY_RELATION_MODEL.md)
+
+### 📁 88ファイルの統合テンプレート
+
+すべてのテンプレートはEntity-Relationモデルに基づいて整合的に管理されています：
+
+- **Agent仕様** (6ファイル): `.claude/agents/specs/\*-agent.md`
+- **Agent実行プロンプト** (6ファイル): `.claude/agents/prompts/\*-agent-prompt.md`
+- **Claude Codeコマンド** (9ファイル): `.claude/commands/\*.md`
+- **型定義** (5ファイル): `agents/types/\*.ts`
+- **ドキュメント** (20+ファイル): `docs/\*.md`
+
+**詳細**: [TEMPLATE_MASTER_INDEX.md](docs/TEMPLATE_MASTER_INDEX.md)
+
+---
+
 ## 関連リンク
 
+**プロジェクト**:
 - **Dashboard**: https://shunsukehayashi.github.io/Miyabi/
 - **Repository (Miyabi)**: https://github.com/ShunsukeHayashi/Miyabi
 - **Repository (Codex)**: https://github.com/ShunsukeHayashi/codex
-- **NPM Package (CLI)**: https://www.npmjs.com/package/miyabi
-- **NPM Package (SDK)**: https://www.npmjs.com/package/miyabi-agent-sdk
 - **Landing Page**: https://shunsukehayashi.github.io/Miyabi/landing.html
+
+**NPMパッケージ**:
+- **CLI**: https://www.npmjs.com/package/miyabi
+- **SDK**: https://www.npmjs.com/package/miyabi-agent-sdk
+
+**ドキュメント**:
+- **Entity-Relationモデル**: [ENTITY_RELATION_MODEL.md](docs/ENTITY_RELATION_MODEL.md)
+- **テンプレート統合**: [TEMPLATE_MASTER_INDEX.md](docs/TEMPLATE_MASTER_INDEX.md)
+- **Label体系**: [LABEL_SYSTEM_GUIDE.md](docs/LABEL_SYSTEM_GUIDE.md)
+
+---
+
+## タスク管理プロトコル
+
+**重要**: このプロジェクトでは、構造化されたTodo管理を全セッションで実施します。
+
+### プロトコル概要
+
+Claude Codeセッション中のタスク管理は、以下の構造化ルールに従います：
+
+**詳細仕様**: [`.claude/prompts/task-management-protocol.md`](.claude/prompts/task-management-protocol.md)
+
+### 適用ルール
+
+1. **Todo作成基準**
+   - ✅ 複数ステップ（3以上）が必要なタスク
+   - ✅ 複雑なタスク（実装 + テスト + ドキュメント）
+   - ✅ ユーザーが複数タスクをリスト形式で提供
+   - ❌ 単純な1ステップタスク
+   - ❌ 純粋な質問・情報提供
+
+2. **ステータス管理**
+   ```
+   pending → in_progress → completed
+   ```
+   - 同時に`in_progress`は**1つのみ**
+   - 完了したタスクは**即座に**`completed`に変更
+   - エラー時は`in_progress`のまま維持
+
+3. **Todo構造**
+   ```typescript
+   {
+     content: "【カテゴリ】タスク内容 - 詳細",
+     status: "pending" | "in_progress" | "completed",
+     activeForm: "【実施中 - カテゴリ】進行状況"
+   }
+   ```
+
+4. **更新タイミング**
+   - タスク開始時（pending → in_progress）
+   - サブタスク完了時（進捗報告）
+   - メインタスク完了時（in_progress → completed）
+   - 新規タスク発見時（追加）
+
+### 実装例
+
+```typescript
+// Phase型タスク
+[
+  {
+    content: "【Phase 1】型安全性の向上 - IToolCreator interface作成",
+    status: "completed",
+    activeForm: "【完了 - Phase 1】IToolCreator interface作成完了✅"
+  },
+  {
+    content: "【Phase 2】エラーハンドリング強化 - 5種類のエラークラス実装",
+    status: "in_progress",
+    activeForm: "【実装中 - Phase 2】Exponential Backoff実装中"
+  },
+  {
+    content: "【Phase 3】キャッシュ最適化 - TTLCache実装",
+    status: "pending",
+    activeForm: "【待機中 - Phase 3】TTLCache実装準備"
+  }
+]
+```
+
+### 禁止事項
+
+❌ **やってはいけないこと:**
+- 複数タスクをまとめて`completed`に変更（バッチ更新禁止）
+- テスト失敗時に`completed`にする
+- 部分的な実装で`completed`にする
+- 複数のタスクを同時に`in_progress`にする
+
+✅ **推奨される動作:**
+- タスク開始前に必ず`in_progress`に変更
+- 完全完了後に即座に`completed`に変更
+- ブロックされたら`in_progress`のまま維持
+- 新規タスク発見時に即座に追加
 
 ---
 
