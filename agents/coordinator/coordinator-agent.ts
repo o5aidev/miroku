@@ -25,9 +25,16 @@ import {
   ExecutionReport,
   TaskResult,
   AgentStatus,
+  PlansDocument,
+  TaskLevel,
+  DecisionLog,
+  Timeline,
+  ProgressSummary,
 } from '../types/index.js';
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { DAGManager } from '../utils/dag-manager.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {
   constructor(config: AgentConfig) {
@@ -461,5 +468,211 @@ export class CoordinatorAgent extends BaseAgent {
     }
 
     return null;
+  }
+
+  // ============================================================================
+  // Plans.md Auto-Generation (Phase 2 - Issue #100)
+  // ============================================================================
+
+  /**
+   * Generate execution plan (Plans.md) from Issue and DAG
+   *
+   * Inspired by OpenAI Dev Day - Feler's 7-hour session approach
+   * Goal: Maintain trajectory during extended Claude Code sessions
+   *
+   * @param issue - GitHub Issue being processed
+   * @param dag - Dependency graph with topologically sorted levels
+   * @returns PlansDocument for Markdown generation
+   */
+  async generateExecPlan(issue: Issue, dag: DAG): Promise<PlansDocument> {
+    this.log('📝 Generating execution plan (Plans.md)');
+
+    // Extract overview from issue
+    const overview = this.extractOverview(issue);
+
+    // Organize tasks by DAG level
+    const tasks = this.organizeTasks(dag);
+
+    // Calculate progress summary
+    const progress = this.calculateProgress(dag.nodes);
+
+    // Initialize empty decision log (will be populated during execution)
+    const decisions: DecisionLog[] = [];
+
+    // Estimate timeline
+    const timeline = this.estimateTimeline(dag.nodes);
+
+    return {
+      overview,
+      tasks,
+      progress,
+      decisions,
+      timeline,
+    };
+  }
+
+  /**
+   * Extract overview from Issue (first 1-2 sentences)
+   */
+  private extractOverview(issue: Issue): string {
+    // Try to extract from ## Overview section
+    const overviewMatch = issue.body.match(/##\s+Overview\s*\n([^\n]+(?:\n[^\n]+)?)/i);
+    if (overviewMatch) {
+      return overviewMatch[1].trim();
+    }
+
+    // Try to extract from ## 📋 Task Description section
+    const descMatch = issue.body.match(/##\s+📋\s+Task Description\s*\n([^\n]+(?:\n[^\n]+)?)/i);
+    if (descMatch) {
+      return descMatch[1].trim();
+    }
+
+    // Fallback: Use issue title
+    return issue.title;
+  }
+
+  /**
+   * Organize tasks by DAG level
+   */
+  private organizeTasks(dag: DAG): TaskLevel[] {
+    return dag.levels.map((level, index) => {
+      const levelTasks = level
+        .map((taskId) => dag.nodes.find((t) => t.id === taskId))
+        .filter((t): t is Task => t !== undefined);
+
+      return {
+        level: index,
+        tasks: levelTasks,
+        canRunInParallel: levelTasks.length > 1,
+      };
+    });
+  }
+
+  /**
+   * Calculate progress summary from tasks
+   */
+  private calculateProgress(tasks: Task[]): ProgressSummary {
+    const total = tasks.length;
+    const completed = tasks.filter((t) => t.status === 'completed').length;
+    const inProgress = tasks.filter((t) => t.status === 'running').length;
+    const failed = tasks.filter((t) => t.status === 'failed').length;
+    const pending = tasks.filter((t) => t.status === 'idle' || !t.status).length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      total,
+      completed,
+      inProgress,
+      pending,
+      failed,
+      percentage,
+    };
+  }
+
+  /**
+   * Estimate timeline based on task durations
+   */
+  private estimateTimeline(tasks: Task[]): Timeline {
+    const now = new Date();
+    const started = now.toISOString().replace('T', ' ').split('.')[0];
+
+    // Estimate completion time (sum of all durations)
+    const totalMinutes = tasks.reduce((sum, task) => sum + (task.estimatedDuration || 0), 0);
+    const expectedCompletion = new Date(now.getTime() + totalMinutes * 60 * 1000);
+    const expectedCompletionStr = expectedCompletion.toISOString().replace('T', ' ').split('.')[0];
+
+    return {
+      started,
+      lastUpdate: started,
+      expectedCompletion: expectedCompletionStr,
+    };
+  }
+
+  /**
+   * Convert PlansDocument to Markdown
+   *
+   * @param plan - The execution plan
+   * @param issueNumber - GitHub Issue number
+   * @returns Markdown string
+   */
+  planToMarkdown(plan: PlansDocument, issueNumber: number): string {
+    let md = `# Execution Plan - Issue #${issueNumber}\n\n`;
+
+    // Overview
+    md += `## Overview\n${plan.overview}\n\n`;
+
+    // Tasks (grouped by level)
+    md += `## Tasks\n`;
+    for (const level of plan.tasks) {
+      md += `### Level ${level.level}${level.canRunInParallel ? ' (並行実行可能)' : ''}\n`;
+      for (const task of level.tasks) {
+        const checkbox = task.status === 'completed' ? '[x]' : '[ ]';
+        md += `- ${checkbox} Task ${task.id}: ${task.title}\n`;
+        md += `  - Agent: ${task.assignedAgent}\n`;
+        md += `  - Duration: ${task.estimatedDuration || 0}分\n`;
+        md += `  - Status: ${task.status || 'idle'}\n`;
+        if (task.dependencies.length > 0) {
+          md += `  - Dependencies: ${task.dependencies.join(', ')}\n`;
+        }
+        md += `\n`;
+      }
+    }
+
+    // Progress
+    md += `## Progress\n`;
+    md += `- Total: ${plan.progress.total} tasks\n`;
+    md += `- Completed: ${plan.progress.completed}/${plan.progress.total} (${plan.progress.percentage}%)\n`;
+    md += `- In Progress: ${plan.progress.inProgress}\n`;
+    md += `- Pending: ${plan.progress.pending}\n`;
+    md += `- Failed: ${plan.progress.failed}\n\n`;
+
+    // Decisions
+    if (plan.decisions.length > 0) {
+      md += `## Decisions\n`;
+      for (const decision of plan.decisions) {
+        md += `### ${decision.timestamp}\n`;
+        md += `- **Decision**: ${decision.decision}\n`;
+        md += `- **Reason**: ${decision.reason}\n`;
+        if (decision.alternatives) {
+          md += `- **Alternatives**: ${decision.alternatives.join(', ')}\n`;
+        }
+        if (decision.implementation) {
+          md += `- **Implementation**: ${decision.implementation}\n`;
+        }
+        md += `\n`;
+      }
+    }
+
+    // Timeline
+    md += `## Timeline\n`;
+    md += `- Started: ${plan.timeline.started}\n`;
+    md += `- Last Update: ${plan.timeline.lastUpdate}\n`;
+    md += `- Expected Completion: ${plan.timeline.expectedCompletion}\n`;
+
+    return md;
+  }
+
+  /**
+   * Write Plans.md to Worktree
+   *
+   * @param plan - The execution plan
+   * @param issueNumber - GitHub Issue number
+   * @param worktreePath - Path to worktree directory
+   */
+  async writePlansToWorktree(
+    plan: PlansDocument,
+    issueNumber: number,
+    worktreePath: string
+  ): Promise<void> {
+    const markdown = this.planToMarkdown(plan, issueNumber);
+    const filePath = path.join(worktreePath, 'plans.md');
+
+    // Ensure directory exists
+    await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+
+    // Write file
+    await fs.promises.writeFile(filePath, markdown, 'utf-8');
+
+    this.log(`✅ Plans.md written to ${filePath}`);
   }
 }

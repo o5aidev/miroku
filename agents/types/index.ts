@@ -402,6 +402,66 @@ export class CircularDependencyError extends Error {
 }
 
 // ============================================================================
+// Plans.md Auto-Generation Types (Phase 2 - Issue #100)
+// ============================================================================
+
+/**
+ * PlansDocument - "Living Documentation" for long-running Claude Code sessions
+ *
+ * Inspired by OpenAI Dev Day - Feler's 7-hour session approach
+ * Goal: Maintain trajectory during extended sessions (1.5B tokens, 15k lines refactor)
+ */
+export interface PlansDocument {
+  overview: string;
+  tasks: TaskLevel[];
+  progress: ProgressSummary;
+  decisions: DecisionLog[];
+  timeline: Timeline;
+}
+
+/**
+ * TaskLevel - Tasks grouped by DAG level for parallel execution
+ */
+export interface TaskLevel {
+  level: number;
+  tasks: Task[];
+  canRunInParallel: boolean;
+}
+
+/**
+ * DecisionLog - Captures technical decisions during execution
+ * Why: Document reasoning for future reference
+ */
+export interface DecisionLog {
+  timestamp: string;
+  decision: string;
+  reason: string;
+  alternatives?: string[];
+  implementation?: string;
+}
+
+/**
+ * Timeline - Execution timeline tracking
+ */
+export interface Timeline {
+  started: string;
+  lastUpdate: string;
+  expectedCompletion: string;
+}
+
+/**
+ * ProgressSummary - Real-time progress tracking
+ */
+export interface ProgressSummary {
+  total: number;
+  completed: number;
+  inProgress: number;
+  pending: number;
+  failed: number;
+  percentage: number;
+}
+
+// ============================================================================
 // Discord Community Types (E13)
 // ============================================================================
 
