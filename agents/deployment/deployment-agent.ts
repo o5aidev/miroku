@@ -13,6 +13,7 @@
 import { BaseAgent } from '../base-agent.js';
 import {
   AgentResult,
+  AgentConfig,
   Task,
   DeploymentConfig,
   DeploymentResult,
@@ -22,7 +23,7 @@ import * as fs from 'fs';
 export class DeploymentAgent extends BaseAgent {
   private deploymentHistory: DeploymentResult[] = [];
 
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('DeploymentAgent', config);
   }
 

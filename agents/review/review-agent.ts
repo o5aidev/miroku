@@ -19,6 +19,7 @@
 import { BaseAgent } from '../base-agent.js';
 import {
   AgentResult,
+  AgentConfig,
   Task,
   ReviewRequest,
   ReviewResult,
@@ -30,7 +31,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 export class ReviewAgent extends BaseAgent {
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('ReviewAgent', config);
   }
 

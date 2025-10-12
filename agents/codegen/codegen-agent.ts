@@ -14,6 +14,7 @@
 import { BaseAgent } from '../base-agent.js';
 import {
   AgentResult,
+  AgentConfig,
   Task,
   CodeSpec,
   GeneratedCode,
@@ -26,7 +27,7 @@ import * as path from 'path';
 export class CodeGenAgent extends BaseAgent {
   private anthropic: Anthropic;
 
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('CodeGenAgent', config);
 
     if (!config.anthropicApiKey) {
