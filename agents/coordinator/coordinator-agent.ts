@@ -28,6 +28,8 @@ import {
 } from '../types/index.js';
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { DAGManager } from '../utils/dag-manager.js';
+import { PlansGenerator } from '../utils/plans-generator.js';
+import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {
   constructor(config: AgentConfig) {
@@ -66,6 +68,9 @@ export class CoordinatorAgent extends BaseAgent {
 
       // 4. Create execution plan
       const plan = await this.createExecutionPlan(decomposition.tasks, dag);
+
+      // 4.5. Generate Plans.md (Feler's pattern from OpenAI Dev Day)
+      await this.generatePlansFile(decomposition, plan);
 
       // 5. Execute tasks in parallel (respecting dependencies)
       const report = await this.executeParallel(plan);
@@ -434,6 +439,78 @@ export class CoordinatorAgent extends BaseAgent {
     await this.appendToFile(reportFile, JSON.stringify(report, null, 2));
 
     this.log(`📄 Execution report saved: ${reportFile}`);
+
+    // Update Plans.md with final results (if in worktree mode)
+    if (this.config.useWorktree) {
+      await this.updatePlansWithReport(report);
+    }
+  }
+
+  /**
+   * Generate Plans.md file (Feler's 7-hour session pattern from OpenAI Dev Day)
+   *
+   * Creates a living document that maintains trajectory during long sessions.
+   * Placed in worktree root or reports directory.
+   */
+  private async generatePlansFile(
+    decomposition: TaskDecomposition,
+    plan: ExecutionPlan
+  ): Promise<void> {
+    this.log('📋 Generating Plans.md (Feler\'s pattern)');
+
+    // Generate markdown content
+    const plansContent = PlansGenerator.generateInitialPlan(decomposition);
+
+    // Determine output path
+    let plansPath: string;
+    if (this.config.useWorktree && this.config.worktreeBasePath) {
+      // Save in worktree root
+      const issueNumber = decomposition.originalIssue.number;
+      const worktreePath = path.join(
+        this.config.worktreeBasePath,
+        `issue-${issueNumber}`
+      );
+      await this.ensureDirectory(worktreePath);
+      plansPath = path.join(worktreePath, 'plans.md');
+    } else {
+      // Save in reports directory
+      const reportsDir = this.config.reportDirectory;
+      await this.ensureDirectory(reportsDir);
+      plansPath = path.join(reportsDir, `plans-session-${plan.sessionId}.md`);
+    }
+
+    // Write file
+    await this.appendToFile(plansPath, plansContent);
+
+    this.log(`📋 Plans.md generated: ${plansPath}`);
+    this.log(`   Pattern: Feler's 7-hour session (OpenAI Dev Day)`);
+    this.log(`   Purpose: Maintain trajectory during autonomous execution`);
+  }
+
+  /**
+   * Update Plans.md with execution report
+   */
+  private async updatePlansWithReport(report: ExecutionReport): Promise<void> {
+    this.log('📋 Updating Plans.md with execution results');
+
+    // Find Plans.md file
+    const reportsDir = this.config.reportDirectory;
+    const plansPath = path.join(reportsDir, `plans-session-${report.sessionId}.md`);
+
+    try {
+      // Read existing content
+      const existingContent = await this.readFile(plansPath);
+
+      // Update with report data
+      const updatedContent = PlansGenerator.updateWithProgress(existingContent, report);
+
+      // Write back
+      await this.appendToFile(plansPath, updatedContent);
+
+      this.log(`📋 Plans.md updated with execution results`);
+    } catch (error) {
+      this.log(`⚠️  Could not update Plans.md: ${(error as Error).message}`);
+    }
   }
 
   // ============================================================================
