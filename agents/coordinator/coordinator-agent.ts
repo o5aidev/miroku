@@ -108,7 +108,7 @@ export class CoordinatorAgent extends BaseAgent {
 
     // Estimate total duration
     const estimatedTotalDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration || 0),
       0
     );
 
@@ -467,7 +467,7 @@ export class CoordinatorAgent extends BaseAgent {
     }
 
     // Check for long duration tasks
-    const longTasks = tasks.filter((t) => t.estimatedDuration > 60);
+    const longTasks = tasks.filter((t) => (t.estimatedDuration || 0) > 60);
     if (longTasks.length > 0) {
       recommendations.push(
         `${longTasks.length} tasks estimated >1 hour - consider breaking down`
@@ -493,7 +493,7 @@ export class CoordinatorAgent extends BaseAgent {
     const concurrency = Math.min(tasks.length, 5); // Max 5 parallel
 
     const estimatedDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration || 0),
       0
     );
 
@@ -584,14 +584,15 @@ export class CoordinatorAgent extends BaseAgent {
 
         try {
           // Instantiate and execute the appropriate specialist agent
-          const agent = await this.createSpecialistAgent(task.assignedAgent);
+          const agentType = task.assignedAgent || 'CodeGenAgent';
+          const agent = await this.createSpecialistAgent(agentType);
           const result = await agent.execute(task);
           const durationMs = Date.now() - startTime;
 
           return {
             taskId: task.id,
             status: result.status === 'success' ? ('completed' as AgentStatus) : ('failed' as AgentStatus),
-            agentType: task.assignedAgent,
+            agentType,
             durationMs,
             result,
           };
@@ -602,7 +603,7 @@ export class CoordinatorAgent extends BaseAgent {
           return {
             taskId: task.id,
             status: 'failed' as AgentStatus,
-            agentType: task.assignedAgent,
+            agentType: task.assignedAgent || 'CodeGenAgent',
             durationMs,
             result: {
               status: 'failed' as const,

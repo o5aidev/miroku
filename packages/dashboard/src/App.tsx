@@ -3,10 +3,11 @@ import { FlowCanvas } from './components/FlowCanvas';
 import { FlowCanvasMock } from './components/FlowCanvasMock';
 import { ERView } from './components/ERView';
 import { IssueDependencyView } from './components/IssueDependencyView';
+import { ImprovementsPanel } from './components/ImprovementsPanel';
 import { DevicePanel } from './components/DevicePanel';
 import { useAccessibilityPreferences } from './hooks/useAccessibilityPreferences';
 
-type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies';
+type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('flow');
@@ -77,6 +78,17 @@ function App() {
               >
                 🔗
               </button>
+              <button
+                onClick={() => setViewMode('improvements')}
+                title="Improvements Stats"
+                className={`rounded px-2 py-0.5 text-xs transition-all ${
+                  viewMode === 'improvements'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-white/90 hover:bg-white/10'
+                }`}
+              >
+                🚀
+              </button>
             </div>
           </div>
 
@@ -121,6 +133,16 @@ function App() {
               }`}
             >
               🔗
+            </button>
+            <button
+              onClick={() => setViewMode('improvements')}
+              className={`rounded px-1.5 py-0.5 text-xs transition ${
+                viewMode === 'improvements'
+                  ? 'bg-white text-purple-600 shadow'
+                  : 'text-white/90 hover:bg-white/10'
+              }`}
+            >
+              🚀
             </button>
           </div>
 
@@ -167,6 +189,11 @@ function App() {
           {viewMode === 'flow-mock' && <FlowCanvasMock />}
           {viewMode === 'er' && <ERView />}
           {viewMode === 'issue-dependencies' && <IssueDependencyView />}
+          {viewMode === 'improvements' && (
+            <div className="h-full overflow-y-auto bg-gradient-to-br from-slate-900 to-slate-800 p-4">
+              <ImprovementsPanel />
+            </div>
+          )}
         </div>
 
         {/* Device Panel Sidebar */}

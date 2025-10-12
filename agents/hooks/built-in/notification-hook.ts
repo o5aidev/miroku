@@ -23,12 +23,12 @@ export interface NotificationConfig {
   mentionOnFailure?: string[];
 }
 
-export class NotificationHook implements PostHook, ErrorHook {
+export class NotificationHook implements PostHook {
   name = 'notification';
-  description = 'Sends notifications to Slack/Discord on completion or error';
+  description = 'Sends notifications to Slack/Discord on completion';
   priority = 90; // Run late but before cleanup
 
-  private config: NotificationConfig;
+  protected config: NotificationConfig;
 
   constructor(config: NotificationConfig = {}) {
     this.config = {
@@ -53,22 +53,9 @@ export class NotificationHook implements PostHook, ErrorHook {
   }
 
   /**
-   * Execute as ErrorHook (failure)
-   */
-  async executeError(context: HookContext, error: Error): Promise<void> {
-    if (!this.config.notifyOnFailure) {
-      return;
-    }
-
-    const message = this.formatErrorMessage(context, error);
-
-    await this.sendNotifications(message);
-  }
-
-  /**
    * Format success message
    */
-  private formatSuccessMessage(
+  protected formatSuccessMessage(
     context: HookContext,
     result: AgentResult
   ): string {
@@ -86,7 +73,7 @@ ${result.metrics?.qualityScore ? `**Quality Score**: ${result.metrics.qualitySco
   /**
    * Format error message
    */
-  private formatErrorMessage(context: HookContext, error: Error): string {
+  protected formatErrorMessage(context: HookContext, error: Error): string {
     const duration = Date.now() - context.startTime;
 
     const mentions =
@@ -105,7 +92,7 @@ ${result.metrics?.qualityScore ? `**Quality Score**: ${result.metrics.qualitySco
   /**
    * Send notifications to configured channels
    */
-  private async sendNotifications(message: string): Promise<void> {
+  protected async sendNotifications(message: string): Promise<void> {
     const promises: Promise<void>[] = [];
 
     if (this.config.slackWebhookUrl) {
@@ -167,5 +154,26 @@ ${result.metrics?.qualityScore ? `**Quality Score**: ${result.metrics.qualitySco
     } catch (error) {
       logger.warning(`Failed to send Discord notification: ${(error as Error).message}`);
     }
+  }
+}
+
+/**
+ * ErrorNotificationHook - Sends notifications on agent errors
+ */
+export class ErrorNotificationHook extends NotificationHook implements ErrorHook {
+  name = 'error-notification';
+  description = 'Sends notifications to Slack/Discord on error';
+
+  /**
+   * Execute as ErrorHook (failure)
+   */
+  async execute(context: HookContext, error: Error): Promise<void> {
+    if (!this.config.notifyOnFailure) {
+      return;
+    }
+
+    const message = this.formatErrorMessage(context, error);
+
+    await this.sendNotifications(message);
   }
 }

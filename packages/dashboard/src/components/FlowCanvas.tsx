@@ -1185,9 +1185,10 @@ export function FlowCanvas() {
       {/* Activity Log - Conditional */}
       {showActivityLog && <ActivityLog activities={activities} />}
 
-      {/* NEW: Node Details Modal */}
+      {/* NEW: Node Details Modal with real-time activities */}
       <NodeDetailsModal
         node={detailsNode}
+        activities={activities}
         onClose={() => {
           setDetailsNode(null);
           setSelectedNode(null);
