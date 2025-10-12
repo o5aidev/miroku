@@ -414,7 +414,7 @@ export class CodeAnalyzer {
    *
    * @returns {object} プロジェクト情報
    */
-  public getProjectInfo() {
+  public getProjectInfo(): { totalSourceFiles: number; rootDirectory: string } {
     return {
       totalSourceFiles: this.sourceFiles.length,
       rootDirectory: this.project.getRootDirectories()[0]?.getPath() || 'N/A',
