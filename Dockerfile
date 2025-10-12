@@ -76,7 +76,7 @@ COPY --from=deps --chown=miyabi:miyabi /app/node_modules ./node_modules
 COPY --from=deps --chown=miyabi:miyabi /app/packages ./packages
 
 # Copy built artifacts from builder stage (exclude packages that weren't built)
-COPY --from=builder --chown=miyabi:miyabi /app/dist ./dist
+# Note: Root-level /app/dist may not exist, packages contain their own dist directories
 COPY --from=builder --chown=miyabi:miyabi /app/packages/miyabi-agent-sdk/dist ./packages/miyabi-agent-sdk/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/core/dist ./packages/core/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/cli/dist ./packages/cli/dist
