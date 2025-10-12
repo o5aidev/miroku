@@ -90,7 +90,18 @@
     "miyabi:todos": "npx miyabi todos",
     "miyabi:config": "npx miyabi config",
     "miyabi:setup": "npx miyabi setup",
-    "miyabi:docs": "npx miyabi docs"
+    "miyabi:docs": "npx miyabi docs",
+    "water-spider:start": "tsx scripts/water-spider-main.ts start",
+    "water-spider:create-sessions": "tsx scripts/water-spider-main.ts create-sessions",
+    "water-spider:kill-sessions": "tsx scripts/water-spider-main.ts kill-sessions",
+    "water-spider:list": "tsx scripts/water-spider-main.ts list",
+    "water-spider:webhook": "tsx scripts/water-spider-main.ts webhook-only",
+    "tmux:create": "tsx scripts/tmux/tmux-manager.ts create-all",
+    "tmux:kill": "tsx scripts/tmux/tmux-manager.ts kill-all",
+    "tmux:list": "tsx scripts/tmux/tmux-manager.ts list",
+    "webhook:server": "tsx scripts/webhook/webhook-server.ts",
+    "feedback-loop:demo": "tsx agents/feedback-loop/feedback-loop-demo.ts",
+    "feedback-loop:docs": "cat docs/FEEDBACK_LOOP_GUIDE.md"
   },
   "keywords": [
     "ai",

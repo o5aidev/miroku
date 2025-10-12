@@ -461,3 +461,285 @@ export interface BotCommand {
   description: string;
   usage: string;
 }
+
+// ============================================================================
+// Goal-Oriented TDD + Consumption-Driven + Infinite Feedback Loop Types
+// ============================================================================
+
+/**
+ * Goal-Oriented TDD: テストゴール定義
+ * 各セッションが達成すべきゴールを明確に定義
+ */
+export interface GoalDefinition {
+  id: string;
+  title: string;
+  description: string;
+
+  // Success criteria
+  successCriteria: SuccessCriteria;
+
+  // Test specifications
+  testSpecs: TestSpecification[];
+
+  // Acceptance criteria
+  acceptanceCriteria: string[];
+
+  // Metrics thresholds
+  metricsThresholds: MetricsThreshold;
+
+  // Priority & deadline
+  priority: number;
+  deadline?: string;
+
+  // Context
+  context: {
+    issueNumber?: number;
+    taskId?: string;
+    previousAttempts: number;
+    feedbackHistory: FeedbackRecord[];
+  };
+}
+
+/**
+ * Success criteria for goal validation
+ */
+export interface SuccessCriteria {
+  // Code quality
+  minQualityScore: number; // 0-100
+  maxEslintErrors: number;
+  maxTypeScriptErrors: number;
+  maxSecurityIssues: number;
+
+  // Test coverage
+  minTestCoverage: number; // 0-100
+  minTestsPassed: number;
+
+  // Performance
+  maxBuildTimeMs?: number;
+  maxResponseTimeMs?: number;
+
+  // Business metrics
+  customMetrics?: Array<{
+    name: string;
+    threshold: number;
+    operator: 'gte' | 'lte' | 'eq';
+  }>;
+}
+
+/**
+ * Test specification for TDD
+ */
+export interface TestSpecification {
+  id: string;
+  name: string;
+  description: string;
+  type: 'unit' | 'integration' | 'e2e' | 'snapshot' | 'performance';
+
+  // Test details
+  testFile: string;
+  testFunction: string;
+  expectedBehavior: string;
+
+  // Dependencies
+  dependencies: string[];
+
+  // Status
+  status: 'pending' | 'passed' | 'failed' | 'skipped';
+  failureCount?: number;
+  lastRun?: string;
+}
+
+/**
+ * Metrics thresholds for goal validation
+ */
+export interface MetricsThreshold {
+  qualityScore: number;
+  testCoverage: number;
+  buildTime: number;
+  codeSize: number;
+  cyclomaticComplexity: number;
+}
+
+/**
+ * Consumption-Driven: 成果消費・検証レポート
+ * 実行結果を消費し、ゴールに対する達成度を評価
+ */
+export interface ConsumptionReport {
+  goalId: string;
+  sessionId: string;
+  timestamp: string;
+
+  // Validation results
+  validationResults: ValidationResult[];
+
+  // Overall assessment
+  overallScore: number; // 0-100
+  goalAchieved: boolean;
+
+  // Metrics
+  actualMetrics: ActualMetrics;
+
+  // Gap analysis
+  gaps: GapAnalysis[];
+
+  // Recommendations
+  recommendations: string[];
+
+  // Next actions
+  nextActions: NextAction[];
+}
+
+/**
+ * Validation result for each success criterion
+ */
+export interface ValidationResult {
+  criterion: string;
+  expected: number | string;
+  actual: number | string;
+  passed: boolean;
+  scoreImpact: number;
+  feedback: string;
+}
+
+/**
+ * Actual metrics collected from execution
+ */
+export interface ActualMetrics {
+  qualityScore: number;
+  eslintErrors: number;
+  typeScriptErrors: number;
+  securityIssues: number;
+  testCoverage: number;
+  testsPassed: number;
+  testsFailed: number;
+  buildTimeMs: number;
+  responseTimeMs?: number;
+  linesOfCode: number;
+  cyclomaticComplexity: number;
+  customMetrics?: Record<string, number>;
+}
+
+/**
+ * Gap analysis between expected and actual
+ */
+export interface GapAnalysis {
+  metric: string;
+  expected: number;
+  actual: number;
+  gap: number;
+  gapPercentage: number;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  rootCause?: string;
+}
+
+/**
+ * Next action to close the gap
+ */
+export interface NextAction {
+  id: string;
+  type: 'refactor' | 'fix' | 'improve' | 'optimize' | 'test' | 'refine_goal';
+  description: string;
+  priority: number;
+  estimatedImpact: number; // Expected score improvement
+  targetMetric: string;
+}
+
+/**
+ * Infinite Feedback Loop: フィードバックループ制御
+ */
+export interface FeedbackLoop {
+  loopId: string;
+  goalId: string;
+
+  // Loop state
+  iteration: number;
+  maxIterations: number;
+  startTime: string;
+  lastIterationTime: string;
+
+  // Loop status
+  status: 'running' | 'converged' | 'diverged' | 'max_iterations_reached' | 'escalated';
+
+  // Iteration history
+  iterations: IterationRecord[];
+
+  // Convergence tracking
+  convergenceMetrics: ConvergenceMetrics;
+
+  // Auto-refinement
+  autoRefinementEnabled: boolean;
+  refinementHistory: GoalRefinement[];
+}
+
+/**
+ * Record of each iteration
+ */
+export interface IterationRecord {
+  iteration: number;
+  timestamp: string;
+  goalDefinition: GoalDefinition;
+  consumptionReport: ConsumptionReport;
+  feedback: FeedbackRecord;
+  durationMs: number;
+  scoreImprovement: number;
+}
+
+/**
+ * Feedback record for continuous improvement
+ */
+export interface FeedbackRecord {
+  timestamp: string;
+  type: 'positive' | 'constructive' | 'corrective' | 'escalation';
+  score: number;
+
+  // Feedback content
+  summary: string;
+  details: string[];
+  codeExamples?: Array<{
+    issue: string;
+    current: string;
+    suggested: string;
+  }>;
+
+  // Action items
+  actionItems: NextAction[];
+
+  // References
+  references?: string[];
+}
+
+/**
+ * Convergence metrics for loop control
+ */
+export interface ConvergenceMetrics {
+  scoreHistory: number[];
+  scoreVariance: number;
+  improvementRate: number; // Score improvement per iteration
+  isConverging: boolean;
+  estimatedIterationsToConverge?: number;
+}
+
+/**
+ * Goal refinement for continuous improvement
+ */
+export interface GoalRefinement {
+  timestamp: string;
+  reason: string;
+
+  // Original goal
+  originalGoal: GoalDefinition;
+
+  // Refined goal
+  refinedGoal: GoalDefinition;
+
+  // Changes
+  changes: Array<{
+    field: string;
+    before: any;
+    after: any;
+    reason: string;
+  }>;
+
+  // Expected impact
+  expectedImpact: string;
+}
