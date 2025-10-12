@@ -17,6 +17,7 @@ import { config } from './commands/config.js';
 import { setup } from './commands/setup.js';
 import { docs } from './commands/docs.js';
 import { doctor } from './commands/doctor.js';
+import { onboard } from './commands/onboard.js';
 import { registerAgentCommand } from './commands/agent.js';
 import { registerAutoModeCommand } from './commands/auto.js';
 import { registerTodosCommand } from './commands/todos.js';
@@ -99,6 +100,7 @@ program
       console.log(chalk.cyan('  npx miyabi docs') + chalk.gray('               - ドキュメント生成'));
       console.log(chalk.cyan('  npx miyabi config') + chalk.gray('             - 設定管理'));
       console.log(chalk.cyan('  npx miyabi setup') + chalk.gray('              - セットアップガイド'));
+      console.log(chalk.cyan('  npx miyabi onboard') + chalk.gray('            - 初回セットアップウィザード'));
       console.log(chalk.cyan('  npx miyabi doctor') + chalk.gray('             - ヘルスチェック・診断\n'));
       console.log(chalk.gray('詳細: npx miyabi --help\n'));
       process.exit(0);
@@ -130,7 +132,7 @@ program
         name: 'action',
         message: '何をしますか？',
         choices: [
-          { name: '🌸 初めての方（セットアップガイド）', value: 'setup' },
+          { name: '🌸 初めての方（初回セットアップ）', value: 'onboard' },
           { name: '🆕 新しいプロジェクトを作成', value: 'init' },
           { name: '📦 既存プロジェクトに追加', value: 'install' },
           { name: '📊 ステータス確認', value: 'status' },
@@ -150,6 +152,11 @@ program
 
     try {
       switch (action) {
+        case 'onboard': {
+          await onboard({});
+          break;
+        }
+
         case 'setup': {
           await setup({});
           break;
@@ -417,6 +424,17 @@ program
   .option('-v, --verbose', '詳細な診断情報を表示')
   .action(async (options: { json?: boolean; verbose?: boolean }) => {
     await doctor(options);
+  });
+
+program
+  .command('onboard')
+  .description('初回セットアップウィザード')
+  .option('--skip-demo', 'デモプロジェクト作成をスキップ')
+  .option('--skip-tour', '機能紹介をスキップ')
+  .option('--non-interactive', '非対話モード')
+  .option('-y, --yes', 'すべてのプロンプトを自動承認')
+  .action(async (options: { skipDemo?: boolean; skipTour?: boolean; nonInteractive?: boolean; yes?: boolean }) => {
+    await onboard(options);
   });
 
 // Register agent command
