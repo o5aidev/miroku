@@ -6,22 +6,96 @@
 
 ```
 .claude/agents/
-├── specs/          # Agent仕様書（役割・権限・エスカレーション条件）
-│   ├── coordinator-agent.md
-│   ├── codegen-agent.md
-│   ├── review-agent.md
-│   ├── deployment-agent.md
-│   ├── pr-agent.md
-│   └── issue-agent.md
+├── specs/                  # Agent仕様書（役割・権限・エスカレーション条件）
+│   ├── coding/            # コーディング・開発運用系Agent（7個）
+│   │   ├── README.md
+│   │   ├── coordinator-agent.md
+│   │   ├── codegen-agent.md
+│   │   ├── review-agent.md
+│   │   ├── deployment-agent.md
+│   │   ├── pr-agent.md
+│   │   ├── issue-agent.md
+│   │   └── hooks-integration.md
+│   │
+│   └── business/          # ビジネス・経営戦略系Agent（14個）
+│       ├── README.md
+│       ├── ai-entrepreneur-agent.md
+│       ├── product-concept-agent.md
+│       ├── product-design-agent.md
+│       ├── funnel-design-agent.md
+│       ├── persona-agent.md
+│       ├── self-analysis-agent.md
+│       ├── market-research-agent.md
+│       ├── marketing-agent.md
+│       ├── content-creation-agent.md
+│       ├── sns-strategy-agent.md
+│       ├── youtube-agent.md
+│       ├── sales-agent.md
+│       ├── crm-agent.md
+│       └── analytics-agent.md
 │
-└── prompts/        # Worktree実行プロンプト（Claude Code用）
-    ├── coordinator-agent-prompt.md
-    ├── codegen-agent-prompt.md
-    ├── review-agent-prompt.md
-    ├── deployment-agent-prompt.md
-    ├── pr-agent-prompt.md
-    └── issue-agent-prompt.md
+└── prompts/               # Worktree実行プロンプト（Claude Code用）
+    ├── coding/            # コーディング系プロンプト（6個）
+    │   ├── README.md
+    │   ├── coordinator-agent-prompt.md
+    │   ├── codegen-agent-prompt.md
+    │   ├── review-agent-prompt.md
+    │   ├── deployment-agent-prompt.md
+    │   ├── pr-agent-prompt.md
+    │   └── issue-agent-prompt.md
+    │
+    └── business/          # ビジネス系プロンプト（将来追加予定）
+        └── README.md
 ```
+
+## Agent体系（全21個）
+
+### 🔧 Coding Agents（7個）
+
+**開発運用・自動化を担当するAgent群**
+
+| Agent | 権限 | 役割 | 仕様書 | プロンプト |
+|-------|------|------|--------|-----------|
+| CoordinatorAgent | 🔴統括 | タスク統括・DAG構築 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| CodeGenAgent | 🔵実行 | AI駆動コード生成 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| ReviewAgent | 🔵実行 | コード品質判定 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| IssueAgent | 🟢分析 | Issue分析・Label管理 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| PRAgent | 🔵実行 | Pull Request作成 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| DeploymentAgent | 🔵実行 | CI/CDデプロイ自動化 | [specs/coding/](specs/coding/) | [prompts/coding/](prompts/coding/) |
+| Hooks Integration | - | Agent実行Hook統合 | [specs/coding/](specs/coding/) | - |
+
+### 💼 Business Agents（14個）
+
+**ビジネス戦略・マーケティング・営業を担当するAgent群**
+
+#### 🎯 戦略・企画系（6個）
+
+| Agent | 権限 | 役割 | 仕様書 |
+|-------|------|------|--------|
+| AIEntrepreneurAgent | 🔴統括 | ビジネスプラン作成（8フェーズ） | [specs/business/](specs/business/) |
+| ProductConceptAgent | 🔵実行 | MVP設計・プロダクトロードマップ | [specs/business/](specs/business/) |
+| ProductDesignAgent | 🔵実行 | UI/UX設計・デザインシステム | [specs/business/](specs/business/) |
+| FunnelDesignAgent | 🔵実行 | カスタマージャーニー・ファネル最適化 | [specs/business/](specs/business/) |
+| PersonaAgent | 🟢分析 | ペルソナ作成・ユーザーインサイト | [specs/business/](specs/business/) |
+| SelfAnalysisAgent | 🟢分析 | SWOT分析・キャリアプランニング | [specs/business/](specs/business/) |
+
+#### 📢 マーケティング系（5個）
+
+| Agent | 権限 | 役割 | 仕様書 |
+|-------|------|------|--------|
+| MarketResearchAgent | 🟢分析 | 市場調査・競合分析 | [specs/business/](specs/business/) |
+| MarketingAgent | 🔵実行 | マーケティング施策立案 | [specs/business/](specs/business/) |
+| ContentCreationAgent | 🔵実行 | ブログ・SNS・プレスリリース生成 | [specs/business/](specs/business/) |
+| SNSStrategyAgent | 🔵実行 | SNS投稿計画・エンゲージメント最適化 | [specs/business/](specs/business/) |
+| YouTubeAgent | 🔵実行 | 動画企画・台本作成・SEO最適化 | [specs/business/](specs/business/) |
+
+#### 💼 営業・顧客管理系（3個）
+
+| Agent | 権限 | 役割 | 仕様書 |
+|-------|------|------|--------|
+| SalesAgent | 🔵実行 | 営業戦略立案・リード管理 | [specs/business/](specs/business/) |
+| CRMAgent | 🔵実行 | 顧客データ管理・LTV最大化 | [specs/business/](specs/business/) |
+| AnalyticsAgent | 🟢分析 | データ分析・レポート生成 | [specs/business/](specs/business/) |
 
 ## ファイルの種類
 
@@ -36,7 +110,7 @@
 - **技術仕様**: 使用するアルゴリズム・API・モデル
 - **メトリクス**: 実行時間・成功率などのKPI
 
-#### 例: `specs/codegen-agent.md`
+#### 例: `specs/coding/codegen-agent.md`
 
 ```markdown
 ---
@@ -68,7 +142,7 @@ GitHub Issueの内容を解析し、Claude Sonnet 4 APIを使用して必要な�
 - **トラブルシューティング**: よくある問題と解決方法
 - **Output Format**: JSON形式の結果レポート
 
-#### 例: `prompts/codegen-agent-prompt.md`
+#### 例: `prompts/coding/codegen-agent-prompt.md`
 
 ```markdown
 # CodeGenAgent Worktree Execution Prompt
@@ -94,82 +168,85 @@ GitHub Issueの内容を解析し、Claude Sonnet 4 APIを使用して必要な�
 
 | ファイルタイプ | 対象読者 | 目的 | いつ読む？ |
 |------------|---------|------|-----------|
-| **specs/** | 人間（開発者・アーキテクト） | Agentの設計・役割・権限を理解する | アーキテクチャレビュー時 |
-| **prompts/** | Claude Code（AI実行環境） | Worktree内で実際に作業を実行する | Git Worktree並列実行時 |
+| **specs/coding/** | 人間（開発者・アーキテクト） | コーディング系Agentの設計を理解する | アーキテクチャレビュー時 |
+| **specs/business/** | 人間（経営者・PM・マーケター） | ビジネス系Agentの設計を理解する | ビジネス戦略立案時 |
+| **prompts/coding/** | Claude Code（AI実行環境） | Worktree内で開発作業を実行する | Git Worktree並列実行時 |
+| **prompts/business/** | Claude Code（AI実行環境） | Worktree内でビジネス分析を実行する | ビジネスAgent実行時（将来） |
 
-## Agent一覧
+## 権限レベル
 
-### CoordinatorAgent
-
-- **役割**: タスク統括・並行実行制御
-- **権限**: 🔴統括権限（タスク分解・Agent割り当てを決定）
-- **実装**: DAG構築、トポロジカルソート、並行実行制御
-
-**ファイル**:
-- `specs/coordinator-agent.md` - アーキテクチャ仕様
-- `prompts/coordinator-agent-prompt.md` - Worktree実行手順
-
-### CodeGenAgent
-
-- **役割**: AI駆動コード生成
-- **権限**: 🔵実行権限（コード生成を直接実行可能）
-- **実装**: Claude Sonnet 4 API、TypeScript strict mode、BaseAgentパターン
-
-**ファイル**:
-- `specs/codegen-agent.md` - アーキテクチャ仕様
-- `prompts/codegen-agent-prompt.md` - Worktree実行手順
-
-### ReviewAgent
-
-- **役割**: コード品質レビュー
-- **権限**: 🔵実行権限（品質判定を実行可能）
-- **実装**: ESLint、TypeScript型チェック、セキュリティスキャン、100点満点スコアリング
-
-**ファイル**:
-- `specs/review-agent.md` - アーキテクチャ仕様
-- `prompts/review-agent-prompt.md` - Worktree実行手順
-
-### IssueAgent
-
-- **役割**: Issue分析・Label管理
-- **権限**: 🟢分析権限（Issue分析・Label付与を実行可能）
-- **実装**: 53ラベル体系、キーワードベース判定、依存関係抽出
-
-**ファイル**:
-- `specs/issue-agent.md` - アーキテクチャ仕様
-- `prompts/issue-agent-prompt.md` - Worktree実行手順
-
-### PRAgent
-
-- **役割**: Pull Request自動作成
-- **権限**: 🔵実行権限（PR作成を直接実行可能）
-- **実装**: Conventional Commits準拠、GitHub API統合
-
-**ファイル**:
-- `specs/pr-agent.md` - アーキテクチャ仕様
-- `prompts/pr-agent-prompt.md` - Worktree実行手順
-
-### DeploymentAgent
-
-- **役割**: CI/CDデプロイ自動化
-- **権限**: 🔵実行権限（デプロイを直接実行可能）
-- **実装**: Firebase/Vercel/AWS、ヘルスチェック、自動ロールバック
-
-**ファイル**:
-- `specs/deployment-agent.md` - アーキテクチャ仕様
-- `prompts/deployment-agent-prompt.md` - Worktree実行手順
+| レベル | マーク | 説明 | 該当Agent |
+|--------|--------|------|-----------|
+| 統括権限 | 🔴 | タスク分解・Agent割り当て・リソース配分を決定可能 | CoordinatorAgent, AIEntrepreneurAgent |
+| 実行権限 | 🔵 | 直接的な実装・デプロイ・PR作成・施策実行を可能 | CodeGen, Review, PR, Deployment, ProductDesign, Marketing, Content, SNS, YouTube, Sales, CRM |
+| 分析権限 | 🟢 | Issue分析・Label付与・市場調査・データ分析を実行可能 | IssueAgent, MarketResearch, Persona, SelfAnalysis, Analytics |
 
 ## Worktree実行フロー
 
-1. **CoordinatorAgent**がIssueを分解してDAGを構築
-2. 各タスクに対して**Worktree**を作成（`.worktrees/issue-{N}/`）
-3. Worktree内で**Claude Code**が起動
-4. Claude Codeが該当するAgent promptを読み込んで実行
-5. 実行完了後、結果をmainブランチにマージ
+### Coding Agent実行フロー
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 1. IssueAgent: Issue分析 → Label付与                      │
+└──────────────┬──────────────────────────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────────────────────────┐
+│ 2. CoordinatorAgent: Task分解 → DAG構築 → Worktree作成    │
+└──────────────┬──────────────────────────────────────────┘
+               │
+        ┌──────┼──────┐
+        │      │      │
+        ▼      ▼      ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│ CodeGen  │ │ Review   │ │ Deploy   │
+│ (並行)   │ │ (並行)   │ │ (順次)   │
+└─────┬────┘ └─────┬────┘ └─────┬────┘
+      │            │            │
+      └────────────┼────────────┘
+                   │
+                   ▼
+           ┌───────────────┐
+           │ PRAgent: PR作成│
+           └───────────────┘
+```
+
+### Business Agent実行フロー
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ AIEntrepreneurAgent: ビジネスプラン作成（8フェーズ）       │
+│  1. 市場分析 → 2. 競合分析 → 3. 顧客分析 → 4. 価値提案    │
+│  5. 収益モデル → 6. マーケティング → 7. チーム → 8. 資金  │
+└──────────────┬──────────────────────────────────────────┘
+               │
+        ┌──────┼──────┬──────┐
+        │      │      │      │
+        ▼      ▼      ▼      ▼
+  ┌─────────┐ ┌─────────┐ ┌─────────┐
+  │ Product │ │ Market  │ │ Sales   │
+  │ Design  │ │ Research│ │ Strategy│
+  └────┬────┘ └────┬────┘ └────┬────┘
+       │           │           │
+       └───────────┼───────────┘
+                   │
+                   ▼
+           ┌───────────────┐
+           │ Content       │
+           │ Creation      │
+           └───────────────┘
+```
+
+## 実行コマンド例
+
+### Coding Agent実行
 
 ```bash
-# 実行例
-npm run agents:parallel:exec -- --issues=270,271,272 --concurrency=2
+# 単一Issue実行
+npm run agents:parallel:exec -- --issues=270 --concurrency=2
+
+# 複数Issue並行実行
+npm run agents:parallel:exec -- --issues=270,240,276 --concurrency=3
 
 # Worktree構成
 .worktrees/
@@ -178,43 +255,100 @@ npm run agents:parallel:exec -- --issues=270,271,272 --concurrency=2
 └── issue-272/  # ReviewAgent実行
 ```
 
+### Business Agent実行（将来）
+
+```bash
+# AIアントレプレナーAgent実行
+npm run agents:entrepreneur -- --issue 2
+
+# 特定フェーズのみ実行
+npm run agents:entrepreneur -- --issue 2 --phase market-analysis
+
+# 複数ビジネスAgent並行実行
+npm run agents:parallel:exec -- --issues=2,3,4 --concurrency=2 --agent-category=business
+```
+
 ## 新しいAgentの追加
 
 新しいAgentを追加する場合は、以下の2つのファイルを作成してください：
 
-1. **`specs/your-agent.md`** - Agent仕様書
-   ```markdown
-   ---
-   name: YourAgent
-   description: Agent description
-   authority: 🔵実行権限
-   escalation: TechLead
-   ---
+### 1. Agent仕様書
 
-   ## 役割
-   ...
-   ```
+**場所**: `specs/coding/` または `specs/business/`
 
-2. **`prompts/your-agent-prompt.md`** - 実行プロンプト
-   ```markdown
-   # YourAgent Worktree Execution Prompt
+```markdown
+---
+name: YourAgent
+description: Agent description
+authority: 🔵実行権限
+escalation: TechLead
+---
 
-   あなたはWorktree内で実行されている**YourAgent**です。
+## 役割
+...
 
-   ## Task情報
-   - **Task ID**: {{TASK_ID}}
-   ...
+## 責任範囲
+...
 
-   ## 実行手順
-   ...
-   ```
+## 実行権限
+...
+
+## 成功条件
+...
+
+## エスカレーション条件
+...
+```
+
+### 2. 実行プロンプト
+
+**場所**: `prompts/coding/` または `prompts/business/`
+
+```markdown
+# YourAgent Worktree Execution Prompt
+
+あなたはWorktree内で実行されている**YourAgent**です。
+
+## Task情報
+- **Task ID**: {{TASK_ID}}
+...
+
+## 実行手順
+
+### 1. [フェーズ1]（推定時間）
+...
+
+## Success Criteria
+✅ 完了条件のチェックリスト
+
+## Output Format
+```json
+{
+  "agentType": "YourAgent",
+  "status": "completed",
+  "result": {...}
+}
+```
+```
+
+## カテゴリー別ドキュメント
+
+### Coding Agents
+- **仕様書**: [specs/coding/README.md](specs/coding/README.md)
+- **プロンプト**: [prompts/coding/README.md](prompts/coding/README.md)
+
+### Business Agents
+- **仕様書**: [specs/business/README.md](specs/business/README.md)
+- **プロンプト**: [prompts/business/README.md](prompts/business/README.md)（将来追加予定）
 
 ## 参照
 
 - [CLAUDE.md](../../CLAUDE.md) - プロジェクト全体の設定
 - [AGENT_OPERATIONS_MANUAL.md](../../docs/AGENT_OPERATIONS_MANUAL.md) - Agent運用マニュアル
 - [LABEL_SYSTEM_GUIDE.md](../../docs/LABEL_SYSTEM_GUIDE.md) - 53ラベル体系
+- [SAAS_BUSINESS_MODEL.md](../../docs/SAAS_BUSINESS_MODEL.md) - SaaS事業化戦略
+- [MARKET_ANALYSIS_2025.md](../../docs/MARKET_ANALYSIS_2025.md) - 市場調査レポート
 
 ---
 
-🤖 Generated with Claude Code
+🤖 Agent Documentation - 21 Agents (Coding: 7 | Business: 14)

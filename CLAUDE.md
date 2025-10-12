@@ -20,14 +20,26 @@
 
 ### コアコンポーネント
 
-1. **Agent System** (via [miyabi-agent-sdk](https://www.npmjs.com/package/miyabi-agent-sdk))
+1. **Agent System** - 全21個のAgent（Coding: 7個 | Business: 14個）
+
+   **🔧 Coding Agents（7個）** - 開発運用・自動化
    - CoordinatorAgent: タスク統括・DAG分解
    - CodeGenAgent: AI駆動コード生成 (Claude Sonnet 4)
    - ReviewAgent: コード品質レビュー (100点満点スコアリング)
    - IssueAgent: Issue分析・ラベリング (AI推論)
    - PRAgent: Pull Request自動作成 (Conventional Commits)
    - DeploymentAgent: CI/CDデプロイ自動化 (Firebase/Vercel/AWS)
-   - TestAgent: テスト自動実行 (Vitest/Jest/Playwright)
+
+   **💼 Business Agents（14個）** - ビジネス戦略・マーケティング・営業
+   - 🎯 戦略・企画系（6個）: AIEntrepreneur, ProductConcept, ProductDesign, FunnelDesign, Persona, SelfAnalysis
+   - 📢 マーケティング系（5個）: MarketResearch, Marketing, ContentCreation, SNSStrategy, YouTube
+   - 💼 営業・顧客管理系（3個）: Sales, CRM, Analytics
+
+   **Agent Directory**: `.claude/agents/` ([README](.claude/agents/README.md))
+   - `specs/coding/` - コーディング系Agent仕様（7個）
+   - `specs/business/` - ビジネス系Agent仕様（14個）
+   - `prompts/coding/` - コーディング系実行プロンプト（6個）
+   - `prompts/business/` - ビジネス系実行プロンプト（将来追加）
 
    **SDK Integration**:
    - npm: `miyabi-agent-sdk@^0.1.0-alpha.2`
@@ -237,21 +249,40 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 **汎用プロンプト**:
 - `.claude/prompts/worktree-agent-execution.md` - 全Agent共通の実行テンプレート
 
-**Agent専用プロンプト** (`.claude/agents/prompts/`): 各AgentタイプごとにWorktree実行の詳細な手順を定義
-- `.claude/agents/prompts/coordinator-agent-prompt.md` - CoordinatorAgent実行ガイド（タスク分解・DAG構築）
-- `.claude/agents/prompts/codegen-agent-prompt.md` - CodeGenAgent実行ガイド（コード生成）
-- `.claude/agents/prompts/review-agent-prompt.md` - ReviewAgent実行ガイド（品質レビュー）
-- `.claude/agents/prompts/deployment-agent-prompt.md` - DeploymentAgent実行ガイド（デプロイ）
-- `.claude/agents/prompts/pr-agent-prompt.md` - PRAgent実行ガイド（PR作成）
-- `.claude/agents/prompts/issue-agent-prompt.md` - IssueAgent実行ガイド（Issue分析・ラベリング）
+**Agent専用プロンプト** (`.claude/agents/prompts/coding/`): 各AgentタイプごとにWorktree実行の詳細な手順を定義
+- `.claude/agents/prompts/coding/coordinator-agent-prompt.md` - CoordinatorAgent実行ガイド（タスク分解・DAG構築）
+- `.claude/agents/prompts/coding/codegen-agent-prompt.md` - CodeGenAgent実行ガイド（コード生成）
+- `.claude/agents/prompts/coding/review-agent-prompt.md` - ReviewAgent実行ガイド（品質レビュー）
+- `.claude/agents/prompts/coding/deployment-agent-prompt.md` - DeploymentAgent実行ガイド（デプロイ）
+- `.claude/agents/prompts/coding/pr-agent-prompt.md` - PRAgent実行ガイド（PR作成）
+- `.claude/agents/prompts/coding/issue-agent-prompt.md` - IssueAgent実行ガイド（Issue分析・ラベリング）
 
-**Agent仕様ドキュメント** (`.claude/agents/specs/`): 各Agentの役割・権限・エスカレーション条件を定義
-- `.claude/agents/specs/coordinator-agent.md` - CoordinatorAgent仕様
-- `.claude/agents/specs/codegen-agent.md` - CodeGenAgent仕様
-- `.claude/agents/specs/review-agent.md` - ReviewAgent仕様
-- `.claude/agents/specs/deployment-agent.md` - DeploymentAgent仕様
-- `.claude/agents/specs/pr-agent.md` - PRAgent仕様
-- `.claude/agents/specs/issue-agent.md` - IssueAgent仕様
+**Agent仕様ドキュメント** (`.claude/agents/specs/coding/` | `.claude/agents/specs/business/`): 各Agentの役割・権限・エスカレーション条件を定義
+
+*Coding Agents（7個）*:
+- `.claude/agents/specs/coding/coordinator-agent.md` - CoordinatorAgent仕様
+- `.claude/agents/specs/coding/codegen-agent.md` - CodeGenAgent仕様
+- `.claude/agents/specs/coding/review-agent.md` - ReviewAgent仕様
+- `.claude/agents/specs/coding/deployment-agent.md` - DeploymentAgent仕様
+- `.claude/agents/specs/coding/pr-agent.md` - PRAgent仕様
+- `.claude/agents/specs/coding/issue-agent.md` - IssueAgent仕様
+- `.claude/agents/specs/coding/hooks-integration.md` - Hooks統合ガイド
+
+*Business Agents（14個）*:
+- `.claude/agents/specs/business/ai-entrepreneur-agent.md` - AIEntrepreneurAgent仕様（8フェーズビジネスプラン）
+- `.claude/agents/specs/business/product-concept-agent.md` - ProductConceptAgent仕様
+- `.claude/agents/specs/business/product-design-agent.md` - ProductDesignAgent仕様
+- `.claude/agents/specs/business/funnel-design-agent.md` - FunnelDesignAgent仕様
+- `.claude/agents/specs/business/persona-agent.md` - PersonaAgent仕様
+- `.claude/agents/specs/business/self-analysis-agent.md` - SelfAnalysisAgent仕様
+- `.claude/agents/specs/business/market-research-agent.md` - MarketResearchAgent仕様
+- `.claude/agents/specs/business/marketing-agent.md` - MarketingAgent仕様
+- `.claude/agents/specs/business/content-creation-agent.md` - ContentCreationAgent仕様
+- `.claude/agents/specs/business/sns-strategy-agent.md` - SNSStrategyAgent仕様
+- `.claude/agents/specs/business/youtube-agent.md` - YouTubeAgent仕様
+- `.claude/agents/specs/business/sales-agent.md` - SalesAgent仕様
+- `.claude/agents/specs/business/crm-agent.md` - CRMAgent仕様
+- `.claude/agents/specs/business/analytics-agent.md` - AnalyticsAgent仕様
 
 各プロンプトには以下が含まれます：
 - Agent固有の実行手順（ステップバイステップ）
@@ -369,8 +400,10 @@ npm run agents:parallel:exec -- --issues=270,271,272,273,274 --concurrency=5
 
 すべてのテンプレートはEntity-Relationモデルに基づいて整合的に管理されています：
 
-- **Agent仕様** (6ファイル): `.claude/agents/specs/\*-agent.md`
-- **Agent実行プロンプト** (6ファイル): `.claude/agents/prompts/\*-agent-prompt.md`
+- **Coding Agent仕様** (7ファイル): `.claude/agents/specs/coding/\*-agent.md`
+- **Business Agent仕様** (14ファイル): `.claude/agents/specs/business/\*-agent.md`
+- **Coding Agent実行プロンプト** (6ファイル): `.claude/agents/prompts/coding/\*-agent-prompt.md`
+- **Business Agent実行プロンプト** (将来追加): `.claude/agents/prompts/business/\*-agent-prompt.md`
 - **Claude Codeコマンド** (9ファイル): `.claude/commands/\*.md`
 - **型定義** (5ファイル): `agents/types/\*.ts`
 - **ドキュメント** (20+ファイル): `docs/\*.md`
