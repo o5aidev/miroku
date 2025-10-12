@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ReviewAgent - Snapshot Tests > Review Comments Structure > should generate consistent review comments 1`] = `
+[
+  {
+    "column": 5,
+    "file": "test.ts",
+    "line": 10,
+    "message": "Unused variable detected",
+    "scoreImpact": Any<Number>,
+    "severity": "high",
+    "type": "eslint",
+  },
+  {
+    "column": 15,
+    "file": "test.ts",
+    "line": 25,
+    "message": "Parameter 'user' implicitly has 'any' type",
+    "scoreImpact": Any<Number>,
+    "severity": "high",
+    "type": "typescript",
+  },
+  {
+    "column": 10,
+    "file": "test.ts",
+    "line": 50,
+    "message": "Possible hardcoded API Key detected",
+    "scoreImpact": Any<Number>,
+    "severity": "critical",
+    "type": "security",
+  },
+]
+`;
+
+exports[`ReviewAgent - Snapshot Tests > Review Comments Structure > should have consistent issue structure 1`] = `
+{
+  "column": Any<Number>,
+  "file": "test.ts",
+  "line": Any<Number>,
+  "message": "Test issue message",
+  "scoreImpact": Any<Number>,
+  "severity": "medium",
+  "type": "eslint",
+}
+`;

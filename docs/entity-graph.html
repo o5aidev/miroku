@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entity-Relation Graph - Miyabi Dashboard</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #0d1117;
+      color: #c9d1d9;
+    }
+
+    header {
+      background-color: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #8b949e;
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 80px);
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: #161b22;
+      border-right: 1px solid #30363d;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #f0f6fc;
+    }
+
+    .filter-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-group h3 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: #8b949e;
+      text-transform: uppercase;
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem;
+      margin-bottom: 0.25rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .filter-item:hover {
+      background-color: #21262d;
+    }
+
+    .filter-item input[type="checkbox"] {
+      margin-right: 0.5rem;
+    }
+
+    .filter-item label {
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+
+    .stats {
+      background-color: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .stat-label {
+      color: #8b949e;
+    }
+
+    .stat-value {
+      color: #58a6ff;
+      font-weight: 600;
+    }
+
+    .graph-container {
+      flex: 1;
+      position: relative;
+      background-color: #0d1117;
+    }
+
+    #cy {
+      width: 100%;
+      height: 100%;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .error {
+      color: #f85149;
+      padding: 1rem;
+      background-color: #21262d;
+      border: 1px solid #f85149;
+      border-radius: 6px;
+      margin: 1rem;
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      background-color: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 1rem;
+      max-width: 250px;
+    }
+
+    .legend h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: #f0f6fc;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+    }
+
+    .controls {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      background-color: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      color: #c9d1d9;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: #30363d;
+    }
+
+    .btn-primary {
+      background-color: #238636;
+      border-color: #238636;
+    }
+
+    .btn-primary:hover {
+      background-color: #2ea043;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🌸 Entity-Relation Graph</h1>
+    <p class="subtitle">Real-time visualization of Miyabi session activities</p>
+  </header>
+
+  <div class="container">
+    <aside class="sidebar">
+      <h2>Filters & Stats</h2>
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Total Nodes:</span>
+          <span class="stat-value" id="stat-nodes">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Total Edges:</span>
+          <span class="stat-value" id="stat-edges">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Session ID:</span>
+          <span class="stat-value" id="stat-session" style="font-size: 0.7rem;">-</span>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Node Types</h3>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-issue" checked>
+          <label for="filter-issue">Issue</label>
+        </div>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-task" checked>
+          <label for="filter-task">Task</label>
+        </div>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-agent" checked>
+          <label for="filter-agent">Agent</label>
+        </div>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-command" checked>
+          <label for="filter-command">Command/Tool</label>
+        </div>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-label" checked>
+          <label for="filter-label">Label</label>
+        </div>
+        <div class="filter-item">
+          <input type="checkbox" id="filter-discord" checked>
+          <label for="filter-discord">DiscordCommunity</label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <h3>Layouts</h3>
+        <button class="btn" onclick="changeLayout('cose')">Force-Directed</button>
+        <button class="btn" onclick="changeLayout('breadthfirst')">Hierarchical</button>
+        <button class="btn" onclick="changeLayout('circle')">Circle</button>
+        <button class="btn" onclick="changeLayout('grid')">Grid</button>
+      </div>
+    </aside>
+
+    <div class="graph-container">
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading graph data...</p>
+      </div>
+      <div class="error" id="error" style="display: none;"></div>
+      <div id="cy"></div>
+
+      <div class="controls">
+        <button class="btn" onclick="fitGraph()">Fit</button>
+        <button class="btn" onclick="resetZoom()">Reset Zoom</button>
+        <button class="btn btn-primary" onclick="refreshGraph()">Refresh</button>
+      </div>
+
+      <div class="legend">
+        <h3>Legend</h3>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #58a6ff;"></div>
+          <span>Issue</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #3fb950;"></div>
+          <span>Task</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #d29922;"></div>
+          <span>Agent</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #f85149;"></div>
+          <span>Command/Tool</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #a371f7;"></div>
+          <span>Label</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background-color: #ec6cb9;"></div>
+          <span>DiscordCommunity</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+  <script src="entity-graph.js"></script>
+</body>
+</html>

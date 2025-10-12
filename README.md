@@ -596,6 +596,7 @@ A ──┤      ├─ F         (26時間)
 
 | ドキュメント | 説明 |
 |:------------|:-----|
+| 📊 [Entity-Relationグラフ](https://shunsukehayashi.github.io/Miyabi/entity-graph.html) | リアルタイムセッション活動の可視化 |
 | 📱 [Termux環境ガイド](docs/TERMUX_GUIDE.md) | Android/Termux環境での使用方法 |
 | 🔒 [セキュリティポリシー](SECURITY.md) | セキュリティ脆弱性の報告方法 |
 | 🔐 [プライバシーポリシー](PRIVACY.md) | データ収集とプライバシー保護 |
@@ -1226,6 +1227,7 @@ AI agents automatically:
 
 | Documentation | Description |
 |:-------------|:------------|
+| 📊 [Entity-Relation Graph](https://shunsukehayashi.github.io/Miyabi/entity-graph.html) | Real-time session activity visualization |
 | 📱 [Termux Guide](docs/TERMUX_GUIDE.md) | Usage in Android/Termux environment |
 | 🔒 [Security Policy](SECURITY.md) | Security vulnerability reporting |
 | 🔐 [Privacy Policy](PRIVACY.md) | Data collection and privacy protection |
