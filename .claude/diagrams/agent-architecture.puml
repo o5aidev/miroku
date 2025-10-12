@@ -4,7 +4,7 @@ skinparam linetype ortho
 
 title Agent階層とエスカレーション - 組織設計原則に基づく自律実行システム
 
-/' 人間レイヤー '/
+' 人間レイヤー
 package "Human Layer (戦略・承認)" {
   actor "TechLead" as techlead #LightBlue
   actor "PO" as po #LightGreen
@@ -12,7 +12,7 @@ package "Human Layer (戦略・承認)" {
   actor "CTO" as cto #LightYellow
 }
 
-/' BaseAgent抽象クラス '/
+' BaseAgent抽象クラス
 abstract class BaseAgent {
   - agentType: string
   - config: AgentConfig
@@ -22,113 +22,100 @@ abstract class BaseAgent {
   + escalate(message, target, severity, data): Promise<void>
 }
 
-/' Coordinator Layer '/
+' Coordinator Layer
 package "Coordinator Layer (統括)" {
-  class CoordinatorAgent {
-    {field} 🔴 **統括権限**
-    --
+  class CoordinatorAgent <<統括権限>> {
     + execute(task: Task): AgentResult
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - Issue → Task分解
     - DAG構築・トポロジカルソート
     - Agent割り当て
     - 並行実行制御 (最大5並行)
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - TechLead (循環依存検出)
     - PO (要件不明確)
   }
 }
 
-/' Specialist Layer '/
+' Specialist Layer
 package "Specialist Layer (専門実行)" {
 
-  class CodeGenAgent {
-    {field} 🔵 **実行権限**
-    --
+  class CodeGenAgent <<実行権限>> {
     + execute(task: Task): AgentResult
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - TypeScriptコード生成
     - ユニットテスト生成
     - BaseAgentパターン実装
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - TechLead (アーキテクチャ問題)
   }
 
-  class ReviewAgent {
-    {field} 🟡 **判定権限**
-    --
+  class ReviewAgent <<判定権限>> {
     + execute(task: Task): AgentResult
     + calculateQualityScore(): number
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - 静的解析 (ESLint/TypeScript)
     - セキュリティスキャン
     - 品質スコア算出 (0-100点)
     - 合格ライン: 80点以上
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - CISO (Critical脆弱性)
     - TechLead (品質スコア50点未満)
   }
 
-  class IssueAgent {
-    {field} 🔵 **分析権限**
-    --
+  class IssueAgent <<分析権限>> {
     + execute(task: Task): AgentResult
     + classifyIssue(): IssueClassification
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - Issue種別判定
     - 53ラベル自動付与
     - Severity評価 (Sev.1-5)
     - 担当者自動アサイン
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - TechLead (技術判断)
     - PO (ビジネス判断)
     - CISO (セキュリティ)
   }
 
-  class PRAgent {
-    {field} 🔵 **作成権限**
-    --
+  class PRAgent <<作成権限>> {
     + execute(task: Task): AgentResult
     + generatePRTitle(): string
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - Draft PR自動作成
     - Conventional Commits準拠
     - レビュワー自動割り当て
     - 関連Issue紐付け
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - TechLead (権限エラー)
   }
 
-  class DeploymentAgent {
-    {field} 🔴 **実行権限** (Staging)
-    {field} 🟡 **承認後実行** (Production)
-    --
+  class DeploymentAgent <<実行権限>> {
     + execute(task: Task): AgentResult
     + healthCheck(): boolean
     + rollback(): void
-    --
-    **責任範囲:**
+    __
+    責任範囲:
     - Firebase/Vercelデプロイ
     - ヘルスチェック (5-10回リトライ)
     - 自動Rollback
-    --
-    **エスカレーション:**
+    __
+    エスカレーション:
     - CTO (本番デプロイ失敗)
     - TechLead (ビルド失敗)
   }
 }
 
-/' 継承関係 '/
+' 継承関係
 BaseAgent <|-- CoordinatorAgent
 BaseAgent <|-- CodeGenAgent
 BaseAgent <|-- ReviewAgent
@@ -136,38 +123,38 @@ BaseAgent <|-- IssueAgent
 BaseAgent <|-- PRAgent
 BaseAgent <|-- DeploymentAgent
 
-/' 実行関係 (Coordinator → Specialists) '/
-CoordinatorAgent --> CodeGenAgent : "assigns"
-CoordinatorAgent --> ReviewAgent : "assigns"
-CoordinatorAgent --> IssueAgent : "assigns"
-CoordinatorAgent --> PRAgent : "assigns"
-CoordinatorAgent --> DeploymentAgent : "assigns"
+' 実行関係 (Coordinator → Specialists)
+CoordinatorAgent --> CodeGenAgent : assigns
+CoordinatorAgent --> ReviewAgent : assigns
+CoordinatorAgent --> IssueAgent : assigns
+CoordinatorAgent --> PRAgent : assigns
+CoordinatorAgent --> DeploymentAgent : assigns
 
-/' Agent間の連携 '/
-CodeGenAgent --> ReviewAgent : "triggers after\ncode generation"
-ReviewAgent --> PRAgent : "triggers after\nquality check (≥80点)"
-PRAgent --> DeploymentAgent : "triggers after\nPR merge"
+' Agent間の連携
+CodeGenAgent --> ReviewAgent : triggers after\ncode generation
+ReviewAgent --> PRAgent : triggers after\nquality check (>=80点)
+PRAgent --> DeploymentAgent : triggers after\nPR merge
 
-/' エスカレーション関係 '/
-CoordinatorAgent ..> techlead : "循環依存\n検出時"
-CoordinatorAgent ..> po : "要件不明確時"
+' エスカレーション関係
+CoordinatorAgent ..> techlead : 循環依存\n検出時
+CoordinatorAgent ..> po : 要件不明確時
 
-CodeGenAgent ..> techlead : "アーキテクチャ\n問題時"
+CodeGenAgent ..> techlead : アーキテクチャ\n問題時
 
-ReviewAgent ..> ciso : "Critical脆弱性\n検出時"
-ReviewAgent ..> techlead : "品質スコア\n50点未満"
+ReviewAgent ..> ciso : Critical脆弱性\n検出時
+ReviewAgent ..> techlead : 品質スコア\n50点未満
 
-IssueAgent ..> techlead : "技術判断\n必要時"
-IssueAgent ..> po : "ビジネス判断\n必要時"
-IssueAgent ..> ciso : "セキュリティ\n関連時"
+IssueAgent ..> techlead : 技術判断\n必要時
+IssueAgent ..> po : ビジネス判断\n必要時
+IssueAgent ..> ciso : セキュリティ\n関連時
 
-PRAgent ..> techlead : "権限エラー時"
+PRAgent ..> techlead : 権限エラー時
 
-DeploymentAgent ..> cto : "本番デプロイ\n失敗時"
-DeploymentAgent ..> techlead : "ビルド失敗時"
+DeploymentAgent ..> cto : 本番デプロイ\n失敗時
+DeploymentAgent ..> techlead : ビルド失敗時
 
 note right of CoordinatorAgent
-  **並行実行制御**
+  並行実行制御
   - DAG構築 (Kahn's Algorithm)
   - トポロジカルソート
   - 並行度算出 (最大5)
@@ -175,7 +162,7 @@ note right of CoordinatorAgent
 end note
 
 note right of ReviewAgent
-  **品質スコアリング**
+  品質スコアリング
   base_score: 100点
   - ESLintエラー: -20点/件
   - TypeScriptエラー: -30点/件
@@ -185,8 +172,8 @@ note right of ReviewAgent
 end note
 
 note bottom of DeploymentAgent
-  **Production承認フロー**
-  1. Staging自動デプロイ ✓
+  Production承認フロー
+  1. Staging自動デプロイ
   2. CTOへ承認リクエスト
   3. 承認後にProductionデプロイ
   4. ヘルスチェック (10回)
@@ -195,11 +182,12 @@ end note
 
 legend right
   |= 権限レベル |= 説明 |
-  | 🔴 統括権限 | タスク分解・Agent割り当て・リソース配分を決定可能 |
-  | 🔵 実行権限 | コード生成・PR作成・デプロイ実行を直接実行可能 |
-  | 🟡 判定権限 | 品質合否判定を実行可能 (合格基準に基づく) |
+  | 統括権限 | タスク分解・Agent割り当て・リソース配分を決定可能 |
+  | 実行権限 | コード生成・PR作成・デプロイ実行を直接実行可能 |
+  | 判定権限 | 品質合否判定を実行可能 (合格基準に基づく) |
+  | 分析権限 | Issue分析・Label付与を実行可能 |
 
-  **組織設計原則5原則**
+  組織設計原則5原則
   1. 責任の明確化 - 各Agentの役割を明確に定義
   2. 権限の明確化 - Agent毎の実行権限を制限
   3. 階層の明確化 - Coordinator → Specialist の階層構造

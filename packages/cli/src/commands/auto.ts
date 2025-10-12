@@ -157,7 +157,7 @@ async function monitorAndAnalyze(options?: { scanTodos?: boolean }): Promise<Dec
       let agent: AgentType = 'issue';
       let reason = '';
 
-      if (labels.some((l) => l.includes('pending') || !l.includes('state:'))) {
+      if (labels.some((l) => l.includes('pending')) || !labels.some((l) => l.includes('state:'))) {
         agent = 'issue';
         reason = '新規Issue - 分析・ラベリングが必要';
         priority += 2;
