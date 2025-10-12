@@ -1,0 +1,121 @@
+@startuml claude-directory-structure
+!theme plain
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+title .claude/ ディレクトリ構造 - Autonomous Operations
+
+package ".claude" {
+
+  package "agents" {
+    package "specs" {
+      file "coordinator-agent.md" as coord_spec
+      file "codegen-agent.md" as codegen_spec
+      file "review-agent.md" as review_spec
+      file "issue-agent.md" as issue_spec
+      file "pr-agent.md" as pr_spec
+      file "deployment-agent.md" as deploy_spec
+      file "hooks-integration.md" as hooks_spec
+    }
+
+    package "prompts" {
+      file "coordinator-agent-prompt.md" as coord_prompt
+      file "codegen-agent-prompt.md" as codegen_prompt
+      file "review-agent-prompt.md" as review_prompt
+      file "issue-agent-prompt.md" as issue_prompt
+      file "pr-agent-prompt.md" as pr_prompt
+      file "deployment-agent-prompt.md" as deploy_prompt
+    }
+
+    file "README.md" as agents_readme
+  }
+
+  package "commands" {
+    file "test.md" as cmd_test
+    file "agent-run.md" as cmd_agent_run
+    file "verify.md" as cmd_verify
+    file "deploy.md" as cmd_deploy
+    file "create-issue.md" as cmd_create_issue
+    file "generate-docs.md" as cmd_generate_docs
+    file "security-scan.md" as cmd_security
+    file "miyabi-auto.md" as cmd_miyabi_auto
+    file "miyabi-todos.md" as cmd_miyabi_todos
+  }
+
+  package "prompts" {
+    file "task-management-protocol.md" as task_mgmt
+    file "worktree-agent-execution.md" as worktree_exec
+  }
+
+  package "hooks" {
+    file "log-commands.sh" as hook_log
+    file "agent-event.sh" as hook_agent
+    file "README.md" as hooks_readme
+  }
+
+  package "mcp-servers" {
+    file "miyabi-integration.js" as mcp_miyabi
+    file "discord-integration.js" as mcp_discord
+    file "github-enhanced.js" as mcp_github
+    file "ide-integration.js" as mcp_ide
+    file "project-context.js" as mcp_project
+  }
+
+  file "README.md" as root_readme
+  file "instructions.md" as instructions
+  file "settings.example.json" as settings_example
+  file "settings.local.json" as settings_local
+  file "mcp-config.json" as mcp_config
+  file "mcp.json" as mcp_json
+}
+
+note right of specs
+  **Agent仕様定義**
+  - 役割・責任範囲
+  - 実行権限
+  - エスカレーション条件
+  - 成功条件
+  総行数: 2,213行
+end note
+
+note right of prompts
+  **Worktree実行プロンプト**
+  - Step-by-step手順
+  - 実装パターン
+  - Success Criteria
+  - トラブルシューティング
+  総行数: 3,042行
+end note
+
+note right of commands
+  **スラッシュコマンド**
+  - /test, /agent-run
+  - /verify, /deploy
+  - /security-scan
+  総行数: 3,078行
+end note
+
+note right of mcp_json
+  **MCP統合**
+  - miyabi-integration
+  - discord-community
+  - github-enhanced
+  - filesystem
+end note
+
+legend right
+  |= ファイル種別 |= 説明 |
+  | .md | Markdown形式のドキュメント |
+  | .json | JSON形式の設定ファイル |
+  | .sh | Shell Hooks スクリプト |
+  | .js | MCP Server 実装 |
+
+  **統計情報**
+  - 総ファイル数: 39ファイル
+  - 総行数: 8,333行
+  - Agent仕様: 7ファイル
+  - Agent実行プロンプト: 6ファイル
+  - Commands: 9ファイル
+endlegend
+
+@enduml

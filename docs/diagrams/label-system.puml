@@ -1,0 +1,136 @@
+@startuml Miyabi Label System (53 Labels)
+
+!define STATE_COLOR #E8F5E9
+!define AGENT_COLOR #FFF3E0
+!define PRIORITY_COLOR #FFEBEE
+!define TYPE_COLOR #E3F2FD
+!define QUALITY_COLOR #F3E5F5
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BorderColor #424242
+    ArrowColor #757575
+}
+
+title Miyabi Label System\n10 Categories × 53 Labels
+
+package "STATE Labels (8)" <<STATE_COLOR>> {
+    class "📥 state:pending" as pending
+    class "🔍 state:analyzing" as analyzing
+    class "🏗️ state:implementing" as implementing
+    class "👀 state:reviewing" as reviewing
+    class "✅ state:done" as done
+    class "🔴 state:blocked" as blocked
+    class "🛑 state:failed" as failed
+    class "⏸️ state:paused" as paused
+}
+
+package "AGENT Labels (6)" <<AGENT_COLOR>> {
+    class "🤖 agent:coordinator" as coordinator
+    class "🤖 agent:codegen" as codegen
+    class "🤖 agent:review" as review
+    class "🤖 agent:issue" as issue
+    class "🤖 agent:pr" as pr
+    class "🤖 agent:deployment" as deployment
+}
+
+package "PRIORITY Labels (4)" <<PRIORITY_COLOR>> {
+    class "🔥 priority:P0-Critical" as p0
+    class "⚠️ priority:P1-High" as p1
+    class "📊 priority:P2-Medium" as p2
+    class "📝 priority:P3-Low" as p3
+}
+
+package "TYPE Labels (7)" <<TYPE_COLOR>> {
+    class "✨ type:feature" as feature
+    class "🐛 type:bug" as bug
+    class "📚 type:docs" as docs
+    class "🔧 type:refactor" as refactor
+    class "🧪 type:test" as test
+    class "🏗️ type:architecture" as architecture
+    class "🚀 type:deployment" as deployment_type
+}
+
+package "SEVERITY Labels (4)" <<PRIORITY_COLOR>> {
+    class "🚨 severity:Sev.1-Critical" as sev1
+    class "⚠️ severity:Sev.2-High" as sev2
+    class "📊 severity:Sev.3-Medium" as sev3
+    class "📝 severity:Sev.4-Low" as sev4
+}
+
+package "PHASE Labels (5)" <<TYPE_COLOR>> {
+    class "🎯 phase:planning" as planning
+    class "🏗️ phase:implementation" as implementation
+    class "🧪 phase:testing" as testing
+    class "🚀 phase:deployment" as deployment_phase
+    class "📊 phase:monitoring" as monitoring
+}
+
+package "SPECIAL Labels (7)" {
+    class "🔐 security" as security
+    class "💰 cost-watch" as cost
+    class "🔄 dependencies" as dependencies
+    class "🎓 learning" as learning
+    class "🔬 experiment" as experiment
+    class "🚫 wontfix" as wontfix
+    class "🔁 duplicate" as duplicate
+}
+
+package "TRIGGER Labels (4)" <<AGENT_COLOR>> {
+    class "🤖 trigger:agent-execute" as trigger_execute
+    class "📊 trigger:generate-report" as trigger_report
+    class "🚀 trigger:deploy-staging" as trigger_staging
+    class "🚀 trigger:deploy-production" as trigger_production
+}
+
+package "QUALITY Labels (4)" <<QUALITY_COLOR>> {
+    class "⭐ quality:excellent" as quality_excellent
+    class "✅ quality:good" as quality_good
+    class "⚠️ quality:needs-improvement" as quality_needs
+    class "🔴 quality:poor" as quality_poor
+}
+
+package "COMMUNITY Labels (4)" {
+    class "👋 good-first-issue" as first_issue
+    class "🙏 help-wanted" as help
+    class "❓ question" as question
+    class "💬 discussion" as discussion
+}
+
+' State transitions
+pending --> analyzing : CoordinatorAgent
+analyzing --> implementing : Agent assigned
+implementing --> reviewing : PR created
+reviewing --> done : Merge
+implementing --> blocked : Error
+reviewing --> failed : Quality < 80
+
+' Agent triggers
+trigger_execute --> coordinator : Launch
+coordinator --> codegen : Assign
+coordinator --> review : Assign
+coordinator --> deployment : Assign
+
+' Quality flow
+reviewing --> quality_excellent : Score 90+
+reviewing --> quality_good : Score 80-89
+reviewing --> quality_needs : Score 60-79
+reviewing --> quality_poor : Score < 60
+
+' Severity escalation
+sev1 --> security : If security issue
+sev1 --> blocked : Escalate CISO
+
+note bottom
+  **Label System Features**:
+  • Auto-assignment by IssueAgent
+  • State-driven automation
+  • Agent triggering
+  • Quality scoring
+  • Escalation routing
+
+  **Total**: 53 Labels in 10 Categories
+end note
+
+@enduml

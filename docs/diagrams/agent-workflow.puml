@@ -1,0 +1,113 @@
+@startuml Miyabi Agent Workflow
+
+!define AGENT_COLOR #FFF3E0
+!define STATE_COLOR #E8F5E9
+!define ACTION_COLOR #E3F2FD
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam activity {
+    BackgroundColor ACTION_COLOR
+    BorderColor #1976D2
+    DiamondBackgroundColor #FFE082
+}
+
+title Miyabi Agent Workflow\nFrom Issue to PR
+
+start
+
+:User creates GitHub Issue;
+note right
+  **Entity**: Issue (E1)
+  Labels: type, priority
+end note
+
+partition "IssueAgent (E3)" {
+    :Analyze Issue content;
+    :Auto-assign Labels (E5);
+    note right
+      type, priority, severity
+      AI-powered inference
+    end note
+}
+
+if (trigger:agent-execute Label?) then (yes)
+    partition "CoordinatorAgent (E3)" {
+        :Decompose Issue into Tasks (E2);
+        :Build DAG (E11);
+        :Detect circular dependencies;
+
+        if (Has cycles?) then (yes)
+            :Escalate to TechLead (E8);
+            stop
+        else (no)
+            :Topological sort;
+            :Assign Agents to Tasks;
+        endif
+    }
+
+    partition "Parallel Execution" {
+        fork
+            partition "Worktree #1 (E12)" {
+                :Create Worktree;
+                :Execute Task #1;
+                :CodeGenAgent generates code;
+            }
+        fork again
+            partition "Worktree #2 (E12)" {
+                :Create Worktree;
+                :Execute Task #2;
+                :CodeGenAgent generates code;
+            }
+        fork again
+            partition "Worktree #3 (E12)" {
+                :Create Worktree;
+                :Execute Task #3;
+                :CodeGenAgent generates code;
+            }
+        end fork
+
+        :Merge all Worktrees;
+    }
+
+    partition "ReviewAgent (E3)" {
+        :Run ESLint;
+        :Run TypeScript type check;
+        :Security scan (npm audit);
+        :Generate QualityReport (E6);
+
+        if (Score >= 80?) then (yes)
+            :Quality Label: ✅ good;
+        else (no)
+            :Quality Label: 🔴 poor;
+            :Escalate to TechLead (E8);
+            stop
+        endif
+    }
+
+    partition "PRAgent (E3)" {
+        :Generate Conventional Commits title;
+        :Generate PR body;
+        :Create Draft PR (E4);
+        :Attach QualityReport to PR;
+        :Link Issue;
+    }
+
+    :Notify user;
+    :Update Issue state to done;
+
+else (no)
+    :Wait for manual trigger;
+    stop
+endif
+
+:Log to LDD (E10);
+note right
+  Codex Prompt Chain
+  Tool Invocations
+  Memory Bank Updates
+end note
+
+stop
+
+@enduml

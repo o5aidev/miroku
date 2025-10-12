@@ -61,6 +61,7 @@
     "test:improvements": "tsx agents/tests/improvements-test.ts",
     "test:security": "tsx agents/tests/security-validator-test.ts",
     "demo:intelligent": "tsx agents/demo/intelligent-demo.ts",
+    "benchmark:performance": "tsx agents/benchmark/performance-benchmark.ts",
     "check:all": "tsx scripts/setup/parallel-checks.ts",
     "check:all:verbose": "tsx scripts/setup/parallel-checks.ts --verbose",
     "check:all:bail": "tsx scripts/setup/parallel-checks.ts --bail",

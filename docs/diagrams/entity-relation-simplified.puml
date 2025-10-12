@@ -1,0 +1,130 @@
+@startuml Miyabi Entity-Relation Model (Simplified)
+
+!define ENTITY_COLOR #E3F2FD
+!define RELATION_COLOR #90CAF9
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor ENTITY_COLOR
+    BorderColor #1976D2
+    ArrowColor RELATION_COLOR
+}
+
+title Miyabi Entity-Relation Model (Simplified)\nCore Workflow Visualization
+
+' ============================================================================
+' Core Entities (Simplified)
+' ============================================================================
+
+class Issue <<E1>> {
+    number
+    title
+    labels[]
+}
+
+class Task <<E2>> {
+    id
+    type
+    dependencies[]
+}
+
+class Agent <<E3>> {
+    type
+    execute()
+}
+
+class PR <<E4>> {
+    number
+    state
+}
+
+class Label <<E5>> {
+    53 Labels
+    10 Categories
+}
+
+class QualityReport <<E6>> {
+    score
+    passed
+}
+
+class DAG <<E11>> {
+    nodes[]
+    edges[]
+}
+
+class Worktree <<E12>> {
+    path
+    taskId
+}
+
+' ============================================================================
+' Primary Workflow
+' ============================================================================
+
+Issue --> Agent : analyze
+Issue --> Task : decompose
+Issue --> Label : tag
+Task --> Agent : execute
+Task --> DAG : organize
+Task --> Worktree : run-in
+Agent --> PR : generate
+Agent --> QualityReport : create
+PR --> Issue : close
+Label --> Agent : trigger
+
+' ============================================================================
+' Workflow Annotation
+' ============================================================================
+
+note top of Issue
+  **Entry Point**
+  Everything starts
+  with an Issue
+end note
+
+note right of Agent
+  **6 Agent Types**
+  Coordinator, CodeGen,
+  Review, Issue, PR,
+  Deployment
+end note
+
+note bottom of DAG
+  **Parallel Execution**
+  Task dependencies
+  & execution order
+end note
+
+note bottom of Worktree
+  **Isolation**
+  Git Worktree-based
+  parallel execution
+end note
+
+note right of PR
+  **Output**
+  Draft PR with
+  Quality Report
+end note
+
+' ============================================================================
+' Simplified Flow
+' ============================================================================
+
+note as N1
+  **Simplified Workflow**:
+
+  1. Issue Created
+  2. IssueAgent → Analyze & Label
+  3. CoordinatorAgent → Decompose to Tasks
+  4. DAG Construction
+  5. Worktree Creation (1 per Task)
+  6. CodeGenAgent → Generate Code
+  7. ReviewAgent → Quality Check
+  8. PRAgent → Create Draft PR
+  9. Merge → Issue Closed
+end note
+
+@enduml

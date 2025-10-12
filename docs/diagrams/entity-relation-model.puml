@@ -1,0 +1,263 @@
+@startuml Miyabi Entity-Relation Model
+
+!define ENTITY_COLOR #E3F2FD
+!define RELATION_COLOR #90CAF9
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor ENTITY_COLOR
+    BorderColor #1976D2
+    ArrowColor RELATION_COLOR
+}
+
+title Miyabi Entity-Relation Model\n12 Entities × 27 Relations
+
+' ============================================================================
+' Entities
+' ============================================================================
+
+package "Core Entities" {
+    class Issue <<E1>> {
+        +number: number
+        +title: string
+        +body: string
+        +state: 'open' | 'closed'
+        +labels: string[]
+        +assignee?: string
+        +createdAt: string
+        +updatedAt: string
+        +url: string
+    }
+
+    class Task <<E2>> {
+        +id: string
+        +title: string
+        +description: string
+        +type: TaskType
+        +priority: number
+        +severity?: Severity
+        +assignedAgent?: AgentType
+        +dependencies: string[]
+        +estimatedDuration?: number
+        +status?: AgentStatus
+    }
+
+    class Agent <<E3>> {
+        +type: AgentType
+        +authority: Authority
+        +escalationTarget: EscalationTarget
+        --
+        +execute(task: Task): AgentResult
+        +escalate(reason, target): void
+        +logToLDD(): void
+    }
+
+    class PR <<E4>> {
+        +number: number
+        +title: string
+        +body: string
+        +baseBranch: string
+        +headBranch: string
+        +draft: boolean
+        +state: PRState
+        +url: string
+    }
+
+    class Label <<E5>> {
+        +name: string
+        +category: LabelCategory
+        +color: string
+        +description: string
+        --
+        10 Categories
+        53 Labels Total
+    }
+
+    class QualityReport <<E6>> {
+        +score: number
+        +passed: boolean
+        +issues: QualityIssue[]
+        +recommendations: string[]
+        +breakdown: Breakdown
+    }
+}
+
+package "Operation Entities" {
+    class Command <<E7>> {
+        +name: string
+        +description: string
+        +invokesAgent: AgentType
+        --
+        9 Commands Total
+    }
+
+    class Escalation <<E8>> {
+        +reason: string
+        +target: EscalationTarget
+        +severity: Severity
+        +context: Record
+        +timestamp: string
+    }
+
+    class Deployment <<E9>> {
+        +environment: 'staging' | 'production'
+        +version: string
+        +projectId: string
+        +deploymentUrl: string
+        +status: DeploymentStatus
+    }
+
+    class LDDLog <<E10>> {
+        +sessionId: string
+        +date: string
+        +deviceIdentifier: string
+        +codexPromptChain: CodexPromptChain
+        +toolInvocations: ToolInvocation[]
+        +memoryBankUpdates: string[]
+    }
+}
+
+package "Execution Entities" {
+    class DAG <<E11>> {
+        +nodes: Task[]
+        +edges: Edge[]
+        +levels: string[][]
+        --
+        Directed Acyclic Graph
+    }
+
+    class Worktree <<E12>> {
+        +path: string
+        +branch: string
+        +taskId: string
+        +issueNumber?: number
+        +agentType: AgentType
+        +status: WorktreeStatus
+    }
+}
+
+' ============================================================================
+' Issue Processing Flow (6 relations)
+' ============================================================================
+
+Issue "1" --> "1" Agent : R1: analyzed-by\n(IssueAgent)
+Issue "1" --> "*" Task : R2: decomposed-into\n(CoordinatorAgent)
+Issue "1" --> "*" Label : R3: tagged-with
+Issue "1" --> "1" PR : R4: creates
+Label "*" --> "1" Issue : R17: defines-state
+PR "1" --> "1" Issue : R21: attached-to
+
+' ============================================================================
+' Agent Execution (7 relations)
+' ============================================================================
+
+Agent "1" --> "*" Task : R9: executes
+Agent "*" --> "*" PR : R10: generates
+Agent "1" --> "*" QualityReport : R11: creates\n(ReviewAgent)
+Agent "*" --> "*" Escalation : R12: triggers
+Agent "1" --> "*" Deployment : R13: performs\n(DeploymentAgent)
+Agent "*" --> "*" LDDLog : R14: logs-to
+Command "1" --> "*" Agent : R15: invokes
+
+' ============================================================================
+' Task Management (4 relations)
+' ============================================================================
+
+Task "*" --> "1" Agent : R5: assigned-to
+Task "*" --> "*" Task : R6: depends-on\n(DAG)
+Task "*" --> "1" DAG : R7: part-of
+Task "1" --> "1" Worktree : R8: runs-in
+
+' ============================================================================
+' Label Control (3 relations)
+' ============================================================================
+
+Label "1" --> "*" Agent : R16: triggers\n(trigger:agent-execute)
+Label "*" --> "*" Task : R18: categorizes
+
+' ============================================================================
+' Quality Management (3 relations)
+' ============================================================================
+
+PR "1" --> "1" Agent : R19: reviewed-by\n(ReviewAgent)
+PR "1" --> "1" QualityReport : R20: has
+QualityReport "1" --> "1" Agent : R22: evaluated-by\n(ReviewAgent)
+
+' ============================================================================
+' DAG & Parallel Execution (4 relations)
+' ============================================================================
+
+DAG "1" --> "1" Issue : R24: decomposed-from
+DAG "1" --> "*" Task : R25: contains
+Worktree "1" --> "1" Task : R26: executes
+Worktree "1" --> "1" PR : R27: creates
+
+' ============================================================================
+' Agent Types (Specialization)
+' ============================================================================
+
+note right of Agent
+  **6 Agent Types**:
+  • CoordinatorAgent (🔴統括権限)
+  • CodeGenAgent (🔵実行権限)
+  • ReviewAgent (🔵実行権限)
+  • IssueAgent (🟢分析権限)
+  • PRAgent (🔵実行権限)
+  • DeploymentAgent (🔵実行権限)
+end note
+
+note right of Label
+  **10 Categories (53 Labels)**:
+  1. STATE (8) - Lifecycle
+  2. AGENT (6) - Assignment
+  3. PRIORITY (4) - Priority
+  4. TYPE (7) - Classification
+  5. SEVERITY (4) - Escalation
+  6. PHASE (5) - Project Phase
+  7. SPECIAL (7) - Special Ops
+  8. TRIGGER (4) - Automation
+  9. QUALITY (4) - Quality Score
+  10. COMMUNITY (4) - Community
+end note
+
+note right of Command
+  **9 Commands**:
+  • /test
+  • /agent-run
+  • /verify
+  • /deploy
+  • /create-issue
+  • /security-scan
+  • /generate-docs
+  • /miyabi-todos
+  • /miyabi-auto
+end note
+
+' ============================================================================
+' Legend
+' ============================================================================
+
+legend bottom
+  **Miyabi Entity-Relation Model**
+
+  **Statistics**:
+  • 12 Core Entities
+  • 27 Relations
+  • 88 Template Files
+
+  **File References**:
+  • Entity Definitions: agents/types/index.ts
+  • Full Documentation: docs/ENTITY_RELATION_MODEL.md
+  • Template Index: docs/TEMPLATE_MASTER_INDEX.md
+
+  **Relation Categories**:
+  • Issue Processing Flow (6)
+  • Agent Execution (7)
+  • Task Management (4)
+  • Label Control (3)
+  • Quality Management (3)
+  • DAG & Parallel Execution (4)
+end legend
+
+@enduml

@@ -1,0 +1,199 @@
+@startuml mcp-integration
+!theme plain
+skinparam componentStyle rectangle
+
+title MCP統合アーキテクチャ - Claude Code拡張機能
+
+/' Claude Code Core '/
+package "Claude Code" {
+  component "Claude Code CLI" as claude_cli #LightBlue
+  component "Tool Executor" as tool_executor
+  component "Context Manager" as context_mgr
+
+  claude_cli --> tool_executor
+  claude_cli --> context_mgr
+}
+
+/' MCP Protocol '/
+interface "MCP Protocol" as mcp_protocol
+claude_cli --> mcp_protocol
+
+/' MCP Servers '/
+package "MCP Servers" {
+
+  component "Miyabi Integration\n.claude/mcp-servers/\nmiyabi-integration.js" as mcp_miyabi #LightGreen {
+    port "Tools" as miyabi_tools
+    port "Resources" as miyabi_resources
+
+    [Project Coordination]
+    [GitHub Integration]
+    [Agent Orchestration]
+  }
+
+  component "Discord Community\n.claude/mcp-servers/\ndiscord-integration.js" as mcp_discord #LightYellow {
+    port "Tools" as discord_tools
+    port "Resources" as discord_resources
+
+    [Community Management]
+    [Announcement]
+    [GitHub Events]
+    [Support Channels]
+  }
+
+  component "GitHub Enhanced\n@modelcontextprotocol/\nserver-github" as mcp_github #LightCyan {
+    port "Tools" as github_tools
+    port "Resources" as github_resources
+
+    [Issue Management]
+    [PR Operations]
+    [Projects V2]
+    [Discussions]
+  }
+
+  component "Filesystem\n@modelcontextprotocol/\nserver-filesystem" as mcp_filesystem #LightSalmon {
+    port "Tools" as fs_tools
+    port "Resources" as fs_resources
+
+    [Read/Write Files]
+    [Directory Operations]
+    [Search]
+  }
+}
+
+/' Connections '/
+mcp_protocol --> miyabi_tools
+mcp_protocol --> discord_tools
+mcp_protocol --> github_tools
+mcp_protocol --> fs_tools
+
+/' External Services '/
+cloud "External Services" {
+  database "GitHub API" as github_api
+  database "Discord API" as discord_api
+  storage "Workspace Files" as workspace
+}
+
+mcp_miyabi --> github_api : "GITHUB_TOKEN"
+mcp_discord --> discord_api : "DISCORD_BOT_TOKEN\nGUILD_ID"
+mcp_github --> github_api : "GITHUB_PERSONAL_\nACCESS_TOKEN"
+mcp_filesystem --> workspace : "File Access"
+
+/' Configuration '/
+component ".claude/mcp.json\nConfiguration" as mcp_config #LightGray {
+  note right
+    {
+      "mcpServers": {
+        "miyabi-integration": {
+          "command": "node",
+          "args": [".claude/mcp-servers/miyabi-integration.js"],
+          "env": {
+            "GITHUB_TOKEN": "${env:GITHUB_TOKEN}",
+            "REPOSITORY": "${env:REPOSITORY}"
+          }
+        },
+        "discord-community": {
+          "command": "node",
+          "args": [".claude/mcp-servers/discord-integration.js"],
+          "env": {
+            "DISCORD_BOT_TOKEN": "${env:DISCORD_BOT_TOKEN}",
+            "DISCORD_GUILD_ID": "${env:DISCORD_GUILD_ID}"
+          }
+        }
+      }
+    }
+  end note
+}
+
+mcp_config ..> mcp_miyabi : "configures"
+mcp_config ..> mcp_discord : "configures"
+mcp_config ..> mcp_github : "configures"
+mcp_config ..> mcp_filesystem : "configures"
+
+/' Use Cases '/
+package "Use Cases" {
+  usecase "Issue作成・管理" as uc_issue
+  usecase "Agent実行制御" as uc_agent
+  usecase "コミュニティ通知" as uc_community
+  usecase "ファイル操作" as uc_file
+}
+
+claude_cli --> uc_issue
+claude_cli --> uc_agent
+claude_cli --> uc_community
+claude_cli --> uc_file
+
+uc_issue --> mcp_github
+uc_agent --> mcp_miyabi
+uc_community --> mcp_discord
+uc_file --> mcp_filesystem
+
+/' MCP Tools Details '/
+note top of mcp_miyabi
+  **提供ツール:**
+  - miyabi_status
+  - miyabi_agent_run
+  - miyabi_issue_analyze
+  - miyabi_pr_create
+  - miyabi_deploy
+end note
+
+note top of mcp_discord
+  **提供ツール:**
+  - discord_announce
+  - discord_github_event
+  - discord_support_message
+  - discord_channel_list
+end note
+
+note top of mcp_github
+  **提供ツール:**
+  - create_issue
+  - update_issue
+  - create_pull_request
+  - list_issues
+  - fork_repository
+  - create_or_update_file
+end note
+
+note top of mcp_filesystem
+  **提供ツール:**
+  - read_file
+  - write_file
+  - list_directory
+  - search_files
+  - get_file_info
+end note
+
+/' Environment Variables '/
+component "Environment\nVariables" as env_vars #LightPink {
+  [GITHUB_TOKEN]
+  [REPOSITORY]
+  [DISCORD_BOT_TOKEN]
+  [DISCORD_GUILD_ID]
+  [DISCORD_ANNOUNCE_CHANNEL]
+  [DISCORD_GITHUB_CHANNEL]
+  [DISCORD_SUPPORT_JP_CHANNEL]
+  [DISCORD_SUPPORT_EN_CHANNEL]
+}
+
+env_vars ..> mcp_config : "referenced by"
+
+legend right
+  |= MCP Server |= 機能 |= 依存 |
+  | **miyabi-integration** | プロジェクト統合・Agent制御 | GitHub API |
+  | **discord-community** | コミュニティ管理・通知 | Discord API |
+  | **github-enhanced** | GitHub拡張操作 | GitHub API |
+  | **filesystem** | ファイルシステムアクセス | Workspace |
+
+  **MCP Protocol Features:**
+  - Tools: 実行可能なコマンド
+  - Resources: 読み取り可能なデータ
+  - Prompts: 再利用可能なプロンプト
+
+  **環境変数の管理:**
+  - .envファイルで管理
+  - ${env:VARIABLE_NAME} で参照
+  - gitignoreで除外（機密情報保護）
+endlegend
+
+@enduml
