@@ -1,0 +1,8 @@
+{
+  "taskId": "test-complex-1",
+  "agentType": "TestAgent",
+  "durationMs": 130,
+  "qualityScore": 85,
+  "testsAdded": 3,
+  "timestamp": "2025-10-12T01:52:14.822Z"
+}
