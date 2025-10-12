@@ -37,6 +37,8 @@ jobs:
         run: |
           npm run test -- --run --reporter=verbose tests/ReviewAgent.test.ts
         continue-on-error: true
+        env:
+          CI: true  # Ensures worktrees are excluded in CI
 
       - name: Check for snapshot changes
         id: snapshot-check
