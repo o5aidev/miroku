@@ -110,8 +110,9 @@ docs/GENERATED_CODE.md
 # Generated files and temporary directories
 generated/
 claude-plugin/
-.gitignore.update
-package.json.migration-update.js
+
+# Archive directory
+.archive/
 
 # Work-in-progress/experimental code (not integrated)
 # Only exclude root-level directories, not packages/*/src/
