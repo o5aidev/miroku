@@ -23,6 +23,9 @@ COPY packages/miyabi-agent-sdk/package.json ./packages/miyabi-agent-sdk/
 COPY packages/core/package.json ./packages/core/
 COPY packages/cli/package.json ./packages/cli/
 
+# Copy postinstall script (required before pnpm install)
+COPY packages/cli/scripts/postinstall.js ./packages/cli/scripts/
+
 # Install pnpm
 RUN npm install -g pnpm@9
 
