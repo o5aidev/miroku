@@ -64,7 +64,7 @@ function getRepositoryInfo(): { owner: string; repo: string } {
   try {
     const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
 
-    const match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+    const match = remoteUrl.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
 
     if (match) {
       return { owner: match[1], repo: match[2] };

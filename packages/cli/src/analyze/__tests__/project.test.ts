@@ -119,7 +119,7 @@ describe('project analysis', () => {
       vi.mocked(execSync).mockReturnValue('https://github.com/test-owner/test-repo.git');
 
       const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
-      const match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+      const match = remoteUrl.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
 
       expect(match).toBeTruthy();
       expect(match![1]).toBe('test-owner');
@@ -130,11 +130,22 @@ describe('project analysis', () => {
       vi.mocked(execSync).mockReturnValue('git@github.com:test-owner/test-repo.git');
 
       const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
-      const match = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+      const match = remoteUrl.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
 
       expect(match).toBeTruthy();
       expect(match![1]).toBe('test-owner');
       expect(match![2]).toBe('test-repo');
+    });
+
+    it('should parse repository name with dots (semantic versioning)', () => {
+      vi.mocked(execSync).mockReturnValue('https://github.com/customer-cloud/ai-course-content-generator-v.0.0.1.git');
+
+      const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf-8' }).trim();
+      const match = remoteUrl.match(/github\.com[/:]([^/]+)\/(.+?)(?:\.git)?$/);
+
+      expect(match).toBeTruthy();
+      expect(match![1]).toBe('customer-cloud');
+      expect(match![2]).toBe('ai-course-content-generator-v.0.0.1');
     });
 
     it('should throw error if not a git repository', () => {
