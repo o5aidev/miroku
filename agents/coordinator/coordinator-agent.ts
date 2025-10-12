@@ -27,6 +27,7 @@ import {
   AgentStatus,
 } from '../types/index.js';
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
+import { DAGManager } from '../utils/dag-manager.js';
 
 export class CoordinatorAgent extends BaseAgent {
   constructor(config: AgentConfig) {
@@ -100,11 +101,11 @@ export class CoordinatorAgent extends BaseAgent {
     // Extract task information from Issue body
     const tasks = await this.extractTasks(issue);
 
-    // Build dependency graph
-    const dag = await this.buildDAG(tasks);
+    // Build dependency graph using DAGManager
+    const dag = DAGManager.buildDAG(tasks);
 
-    // Check for circular dependencies
-    const hasCycles = this.detectCycles(dag);
+    // Check for circular dependencies using DAGManager
+    const hasCycles = DAGManager.detectCycles(dag);
 
     // Estimate total duration
     const estimatedTotalDuration = tasks.reduce(
@@ -112,8 +113,8 @@ export class CoordinatorAgent extends BaseAgent {
       0
     );
 
-    // Generate recommendations
-    const recommendations = this.generateRecommendations(tasks, dag);
+    // Generate recommendations using DAGManager
+    const recommendations = DAGManager.generateRecommendations(tasks, dag);
 
     return {
       originalIssue: issue,
@@ -225,165 +226,13 @@ export class CoordinatorAgent extends BaseAgent {
   }
 
   // ============================================================================
-  // DAG Construction
+  // DAG Construction (Delegated to DAGManager)
   // ============================================================================
-
-  /**
-   * Build Directed Acyclic Graph from tasks
-   */
-  async buildDAG(tasks: Task[]): Promise<DAG> {
-    this.log('🔗 Building task dependency graph (DAG)');
-
-    const nodes = tasks;
-    const edges: Array<{ from: string; to: string }> = [];
-
-    // Build edges from dependencies
-    for (const task of tasks) {
-      for (const depId of task.dependencies) {
-        // Find dependency task
-        const depTask = tasks.find((t) => t.id === depId || t.metadata?.issueNumber === parseInt(depId.replace('issue-', '')));
-        if (depTask) {
-          edges.push({ from: depTask.id, to: task.id });
-        }
-      }
-    }
-
-    // Topological sort
-    const levels = this.topologicalSort(nodes, edges);
-
-    this.log(`   Graph: ${nodes.length} nodes, ${edges.length} edges, ${levels.length} levels`);
-
-    return { nodes, edges, levels };
-  }
-
-  /**
-   * Topological sort - returns task IDs grouped by execution level
-   */
-  private topologicalSort(
-    tasks: Task[],
-    edges: Array<{ from: string; to: string }>
-  ): string[][] {
-    const inDegree = new Map<string, number>();
-    const adjList = new Map<string, string[]>();
-
-    // Initialize
-    for (const task of tasks) {
-      inDegree.set(task.id, 0);
-      adjList.set(task.id, []);
-    }
-
-    // Build adjacency list and in-degree count
-    for (const edge of edges) {
-      adjList.get(edge.from)!.push(edge.to);
-      inDegree.set(edge.to, (inDegree.get(edge.to) || 0) + 1);
-    }
-
-    // Kahn's algorithm for topological sorting
-    const levels: string[][] = [];
-    let currentLevel = tasks
-      .filter((t) => inDegree.get(t.id) === 0)
-      .map((t) => t.id);
-
-    while (currentLevel.length > 0) {
-      levels.push([...currentLevel]);
-
-      const nextLevel: string[] = [];
-      for (const taskId of currentLevel) {
-        const neighbors = adjList.get(taskId) || [];
-        for (const neighbor of neighbors) {
-          const newInDegree = (inDegree.get(neighbor) || 0) - 1;
-          inDegree.set(neighbor, newInDegree);
-          if (newInDegree === 0) {
-            nextLevel.push(neighbor);
-          }
-        }
-      }
-
-      currentLevel = nextLevel;
-    }
-
-    return levels;
-  }
-
-  /**
-   * Detect circular dependencies using DFS
-   */
-  private detectCycles(dag: DAG): boolean {
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-
-    const adjList = new Map<string, string[]>();
-    for (const node of dag.nodes) {
-      adjList.set(node.id, []);
-    }
-    for (const edge of dag.edges) {
-      adjList.get(edge.from)!.push(edge.to);
-    }
-
-    const hasCycle = (nodeId: string): boolean => {
-      visited.add(nodeId);
-      recursionStack.add(nodeId);
-
-      const neighbors = adjList.get(nodeId) || [];
-      for (const neighbor of neighbors) {
-        if (!visited.has(neighbor)) {
-          if (hasCycle(neighbor)) return true;
-        } else if (recursionStack.has(neighbor)) {
-          return true; // Cycle detected
-        }
-      }
-
-      recursionStack.delete(nodeId);
-      return false;
-    };
-
-    for (const node of dag.nodes) {
-      if (!visited.has(node.id)) {
-        if (hasCycle(node.id)) {
-          this.log(`🔴 Circular dependency detected!`);
-          return true;
-        }
-      }
-    }
-
-    this.log(`✅ No circular dependencies found`);
-    return false;
-  }
-
-  /**
-   * Generate recommendations for task execution
-   */
-  private generateRecommendations(tasks: Task[], dag: DAG): string[] {
-    const recommendations: string[] = [];
-
-    // Check for high parallelism opportunities
-    const maxLevelSize = Math.max(...dag.levels.map((l) => l.length));
-    if (maxLevelSize > 3) {
-      recommendations.push(
-        `High parallelism opportunity: Level with ${maxLevelSize} independent tasks`
-      );
-    }
-
-    // Check for critical path
-    const criticalTasks = tasks.filter(
-      (t) => t.severity === 'Sev.1-Critical' || t.impact === 'Critical'
-    );
-    if (criticalTasks.length > 0) {
-      recommendations.push(
-        `${criticalTasks.length} critical tasks require immediate attention`
-      );
-    }
-
-    // Check for long duration tasks
-    const longTasks = tasks.filter((t) => t.estimatedDuration > 60);
-    if (longTasks.length > 0) {
-      recommendations.push(
-        `${longTasks.length} tasks estimated >1 hour - consider breaking down`
-      );
-    }
-
-    return recommendations;
-  }
+  // Note: All DAG operations now handled by DAGManager utility class
+  // - DAGManager.buildDAG(tasks)
+  // - DAGManager.detectCycles(dag)
+  // - DAGManager.generateRecommendations(tasks, dag)
+  // - DAGManager.calculateCriticalPath(tasks, dag)
 
   // ============================================================================
   // Execution Planning & Control
