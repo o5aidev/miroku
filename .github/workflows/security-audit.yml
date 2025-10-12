@@ -111,7 +111,7 @@ jobs:
       - name: Run custom secret scanner
         id: secret-scan
         run: |
-          npx tsx scripts/security-manager.ts scan-secrets > secret-scan.log 2>&1 || true
+          npx tsx scripts/security/security-manager.ts scan-secrets > secret-scan.log 2>&1 || true
 
           if grep -q "Found.*potential secrets" secret-scan.log; then
             echo "secrets_found=true" >> $GITHUB_OUTPUT
@@ -130,7 +130,7 @@ jobs:
 
       - name: Generate SBOM
         run: |
-          npx tsx scripts/security-manager.ts sbom
+          npx tsx scripts/security/security-manager.ts sbom
           echo "### 📋 SBOM Generated" >> $GITHUB_STEP_SUMMARY
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -164,7 +164,7 @@ jobs:
           if [ ! -f "CODEOWNERS" ]; then
             echo "### ⚠️ CODEOWNERS file missing" >> $GITHUB_STEP_SUMMARY
             echo "Generating CODEOWNERS file..."
-            npx tsx scripts/security-manager.ts codeowners
+            npx tsx scripts/security/security-manager.ts codeowners
             echo "codeowners_missing=true" >> $GITHUB_OUTPUT
           else
             echo "### ✅ CODEOWNERS file exists" >> $GITHUB_STEP_SUMMARY
@@ -195,7 +195,7 @@ jobs:
       - name: Generate security report
         id: generate-report
         run: |
-          npx tsx scripts/security-manager.ts audit > audit-results.log 2>&1 || true
+          npx tsx scripts/security/security-manager.ts audit > audit-results.log 2>&1 || true
 
           echo "### 📊 Security Audit Results" >> $GITHUB_STEP_SUMMARY
           cat audit-results.log >> $GITHUB_STEP_SUMMARY
@@ -211,7 +211,7 @@ jobs:
           github.event_name == 'schedule' ||
           (github.event_name == 'workflow_dispatch' && inputs.create_issue == 'true')
         run: |
-          npx tsx scripts/security-manager.ts report
+          npx tsx scripts/security/security-manager.ts report
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

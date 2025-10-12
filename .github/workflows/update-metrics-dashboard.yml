@@ -12,8 +12,8 @@ on:
     branches:
       - main
     paths:
-      - 'scripts/generate-realtime-metrics.ts'
-      - 'scripts/projects-graphql.ts'
+      - 'scripts/reporting/generate-realtime-metrics.ts'
+      - 'scripts/github/projects-graphql.ts'
 
 permissions:
   contents: write
@@ -45,7 +45,7 @@ jobs:
           PROJECT_NUMBER: 1
         run: |
           echo "📊 Generating real-time metrics..."
-          npx tsx scripts/generate-realtime-metrics.ts
+          npx tsx scripts/reporting/generate-realtime-metrics.ts
 
       - name: Check for changes
         id: changes

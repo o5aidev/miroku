@@ -43,7 +43,7 @@ jobs:
           ISSUE_LABELS: ${{ toJSON(github.event.issue.labels) }}
         run: |
           echo "📥 Issue Event: $EVENT_TYPE for #$ISSUE_NUMBER"
-          npx tsx scripts/webhook-router.ts issue "$EVENT_TYPE" "$ISSUE_NUMBER"
+          npx tsx scripts/cicd/webhook-router.ts issue "$EVENT_TYPE" "$ISSUE_NUMBER"
 
       - name: Route PR Event
         if: github.event_name == 'pull_request'
@@ -54,7 +54,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "📥 PR Event: $EVENT_TYPE for #$PR_NUMBER"
-          npx tsx scripts/webhook-router.ts pr "$EVENT_TYPE" "$PR_NUMBER"
+          npx tsx scripts/cicd/webhook-router.ts pr "$EVENT_TYPE" "$PR_NUMBER"
 
       - name: Route Push Event
         if: github.event_name == 'push'
@@ -65,7 +65,7 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           echo "📥 Push Event: $BRANCH_NAME @ $COMMIT_SHA"
-          npx tsx scripts/webhook-router.ts push "$BRANCH_NAME" "$COMMIT_SHA"
+          npx tsx scripts/cicd/webhook-router.ts push "$BRANCH_NAME" "$COMMIT_SHA"
 
       - name: Route Comment Event
         if: github.event_name == 'issue_comment'
@@ -76,4 +76,4 @@ jobs:
           COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
         run: |
           echo "📥 Comment Event: #$ISSUE_NUMBER by $COMMENT_AUTHOR"
-          npx tsx scripts/webhook-router.ts comment "$ISSUE_NUMBER" "$COMMENT_AUTHOR"
+          npx tsx scripts/cicd/webhook-router.ts comment "$ISSUE_NUMBER" "$COMMENT_AUTHOR"
