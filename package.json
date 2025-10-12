@@ -104,8 +104,10 @@
     "feedback-loop:docs": "cat docs/FEEDBACK_LOOP_GUIDE.md",
     "integrated:start": "tsx scripts/integrated/integrated-system.ts start",
     "integrated:demo": "tsx scripts/integrated/integrated-system.ts demo",
+    "integrated:demo:simple": "tsx scripts/integrated/integrated-demo-simple.ts",
     "integrated:status": "tsx scripts/integrated/integrated-system.ts status",
-    "integrated:docs": "cat docs/INTEGRATION_GUIDE.md"
+    "integrated:docs": "cat docs/INTEGRATION_GUIDE.md",
+    "integrated:issue:99": "tsx scripts/integrated/issue-99-execution.ts"
   },
   "keywords": [
     "ai",
