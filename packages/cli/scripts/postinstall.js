@@ -3,18 +3,27 @@
 /**
  * Post-install script for Miyabi
  *
- * Automatically runs initial sequence after npm install
- * This ensures users get the full Miyabi experience immediately
+ * Phase 3: Enhanced Postinstall (Progressive Onboarding System)
+ * - Global config directory (~/.miyabi/)
+ * - First-run detection
+ * - Improved immediate value demonstration
+ * - Integration with onboard and doctor commands
  */
 
 import fs from 'fs';
 import path from 'path';
+import { homedir } from 'os';
 import chalk from 'chalk';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Global config paths
+const GLOBAL_CONFIG_DIR = path.join(homedir(), '.miyabi');
+const FIRST_RUN_MARKER = path.join(GLOBAL_CONFIG_DIR, '.first-run');
+const GLOBAL_CONFIG_FILE = path.join(GLOBAL_CONFIG_DIR, 'config.json');
 
 // Colors fallback for older terminals
 const colors = {
@@ -45,7 +54,42 @@ function isUserProject() {
 }
 
 /**
- * Check if this is a fresh install (no .miyabi marker)
+ * Initialize global config directory
+ */
+function initGlobalConfig() {
+  if (!fs.existsSync(GLOBAL_CONFIG_DIR)) {
+    fs.mkdirSync(GLOBAL_CONFIG_DIR, { recursive: true, mode: 0o755 });
+  }
+}
+
+/**
+ * Check if this is a truly first-time install (global)
+ */
+function isGlobalFirstRun() {
+  return !fs.existsSync(FIRST_RUN_MARKER);
+}
+
+/**
+ * Mark global first run as complete
+ */
+function markGlobalFirstRunComplete() {
+  initGlobalConfig();
+
+  const packageJsonPath = path.join(__dirname, '../package.json');
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+  const config = {
+    version: packageJson.version,
+    installedAt: new Date().toISOString(),
+    onboardingCompleted: false,
+  };
+
+  fs.writeFileSync(FIRST_RUN_MARKER, new Date().toISOString(), 'utf-8');
+  fs.writeFileSync(GLOBAL_CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8');
+}
+
+/**
+ * Check if this is a fresh install in current project
  */
 function isFreshInstall() {
   const markerPath = path.join(process.cwd(), '.miyabi-initialized');
@@ -71,7 +115,7 @@ async function createMarker() {
 }
 
 /**
- * Main initial sequence
+ * Main initial sequence (Phase 3: Enhanced)
  */
 async function runInitialSequence() {
   // Only run in user projects
@@ -84,20 +128,29 @@ async function runInitialSequence() {
     return;
   }
 
+  const isGlobalFirst = isGlobalFirstRun();
+
   console.log('\n' + colors.cyan(colors.bold('🌸 Miyabi インストール完了！')));
   console.log(colors.gray('初期セットアップを開始します...\n'));
 
-  // Step 1: Display welcome message
+  // Step 1: Initialize global config (if first time ever)
+  if (isGlobalFirst) {
+    initGlobalConfig();
+    markGlobalFirstRunComplete();
+    console.log(colors.green('✓ グローバル設定を初期化しました (~/.miyabi/)\n'));
+  }
+
+  // Step 2: Display welcome message
   displayWelcome();
 
-  // Step 2: Check environment
+  // Step 3: Check environment
   const envCheck = await checkEnvironment();
   displayEnvironmentStatus(envCheck);
 
-  // Step 3: Create marker to prevent re-running
+  // Step 4: Create project marker to prevent re-running
   await createMarker();
 
-  // Step 4: Display next steps
+  // Step 5: Display next steps
   displayNextSteps(envCheck);
 }
 
@@ -182,14 +235,30 @@ function displayEnvironmentStatus(checks) {
 }
 
 /**
- * Display next steps
+ * Display next steps (Phase 3: Enhanced with onboard/doctor commands)
  */
 function displayNextSteps(checks) {
+  const isGlobalFirst = isGlobalFirstRun();
+
   console.log(colors.cyan(colors.bold('次のステップ:')));
+
+  if (isGlobalFirst) {
+    // Absolutely first time using Miyabi
+    console.log(colors.green('\n🌸 初めての方へ - まずはこちら:'));
+    console.log(colors.bold('   npx miyabi onboard'));
+    console.log(colors.gray('   → 初回セットアップウィザード（5ステップ）\n'));
+
+    console.log(colors.green('または、システムヘルスチェック:'));
+    console.log(colors.gray('   npx miyabi doctor'));
+    console.log(colors.gray('   → 環境チェック・診断（9項目）\n'));
+  } else {
+    // Already used Miyabi before
+    console.log(colors.green('\n✓ Miyabiを既に使用されています'));
+  }
 
   if (!checks.hasGitRepo && !checks.hasPackageJson) {
     // New project scenario
-    console.log(colors.green('\n1️⃣  新しいプロジェクトを作成:'));
+    console.log(colors.green('1️⃣  新しいプロジェクトを作成:'));
     console.log(colors.gray('   npx miyabi init my-project\n'));
 
     console.log(colors.green('2️⃣  または、既存プロジェクトにインストール:'));
@@ -197,7 +266,7 @@ function displayNextSteps(checks) {
     console.log(colors.gray('   npx miyabi install\n'));
   } else {
     // Existing project scenario
-    console.log(colors.green('\n1️⃣  Miyabiを既存プロジェクトに統合:'));
+    console.log(colors.green('1️⃣  Miyabiを既存プロジェクトに統合:'));
     console.log(colors.gray('   npx miyabi install\n'));
 
     console.log(colors.green('2️⃣  プロジェクト状態を確認:'));
@@ -215,6 +284,9 @@ function displayNextSteps(checks) {
 
   console.log(colors.cyan('📚 ドキュメント:'));
   console.log(colors.gray('   https://github.com/ShunsukeHayashi/Miyabi\n'));
+
+  console.log(colors.gray('📝 Note: 現在TypeScript/Node.js最適化済み'));
+  console.log(colors.gray('   他言語: https://github.com/ShunsukeHayashi/Miyabi#-language--framework-support\n'));
 
   console.log(colors.green('🌸 Miyabi - Beauty in Autonomous Development\n'));
 }
