@@ -75,16 +75,15 @@ RUN addgroup -g 1001 -S miyabi && \
 COPY --from=deps --chown=miyabi:miyabi /app/node_modules ./node_modules
 COPY --from=deps --chown=miyabi:miyabi /app/packages ./packages
 
-# Copy built artifacts from builder stage
+# Copy built artifacts from builder stage (exclude packages that weren't built)
 COPY --from=builder --chown=miyabi:miyabi /app/dist ./dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/miyabi-agent-sdk/dist ./packages/miyabi-agent-sdk/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/core/dist ./packages/core/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/cli/dist ./packages/cli/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/context-engineering/dist ./packages/context-engineering/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/dashboard/dist ./packages/dashboard/dist
-COPY --from=builder --chown=miyabi:miyabi /app/packages/dashboard-server/dist ./packages/dashboard-server/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/doc-generator/dist ./packages/doc-generator/dist
-COPY --from=builder --chown=miyabi:miyabi /app/packages/github-projects/dist ./packages/github-projects/dist
+# Note: dashboard-server and github-projects excluded due to TypeScript errors
 
 # Copy runtime configuration
 COPY --chown=miyabi:miyabi package.json ./
