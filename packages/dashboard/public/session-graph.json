@@ -1,0 +1,517 @@
+{
+  "sessionId": "007b697a-3711-4201-9be2-f569051e7745",
+  "startTime": "2025-10-12T15:03:55.701Z",
+  "endTime": "2025-10-12T15:03:55.701Z",
+  "issue": {
+    "number": 52,
+    "title": "Create Discord server and launch community"
+  },
+  "tasks": [
+    {
+      "id": "task-52-1",
+      "title": "Create MEE6 Bot Setup Guide",
+      "status": "completed"
+    },
+    {
+      "id": "task-52-2",
+      "title": "Create GitHub Bot Setup Guide",
+      "status": "completed"
+    },
+    {
+      "id": "task-52-3",
+      "title": "Create Custom Miyabi Bot Specification",
+      "status": "completed"
+    },
+    {
+      "id": "task-52-4",
+      "title": "Create Discord Server Navigation Guide",
+      "status": "completed"
+    },
+    {
+      "id": "task-52-5",
+      "title": "Create Welcome Message Template",
+      "status": "completed"
+    },
+    {
+      "id": "task-52-6",
+      "title": "Create Launch Announcement Templates",
+      "status": "completed"
+    }
+  ],
+  "toolInvocations": [
+    {
+      "toolName": "Read",
+      "parameters": {
+        "file_path": "CLAUDE.md"
+      },
+      "timestamp": "2025-10-12T15:03:55.699Z",
+      "status": "success",
+      "output": "Read project context"
+    },
+    {
+      "toolName": "Read",
+      "parameters": {
+        "file_path": "docs/DISCORD_COMMUNITY_PLAN.md"
+      },
+      "timestamp": "2025-10-12T15:03:55.700Z",
+      "status": "success",
+      "output": "Read community plan"
+    },
+    {
+      "toolName": "Glob",
+      "parameters": {
+        "pattern": "**/*dashboard*.{html,ts,js}"
+      },
+      "timestamp": "2025-10-12T15:03:55.700Z",
+      "status": "success",
+      "output": "Found dashboard files"
+    },
+    {
+      "toolName": "Bash",
+      "parameters": {
+        "command": "git status"
+      },
+      "timestamp": "2025-10-12T15:03:55.700Z",
+      "status": "success",
+      "output": "6 new files staged"
+    }
+  ],
+  "comments": [
+    "User requested: \"全力モードで2時間分タスク作ってやっておいて\"",
+    "Assistant: Created 6 comprehensive Discord community documentation files",
+    "User requested: \"ターミナル上でやっているコメント、タスク、Toolのアップデートをダッシュボードのグラフに表示してほしい\"",
+    "Assistant: Creating Entity-Relation graph visualization"
+  ],
+  "graph": {
+    "sessionId": "007b697a-3711-4201-9be2-f569051e7745",
+    "timestamp": "2025-10-12T15:03:55.701Z",
+    "nodes": [
+      {
+        "id": "issue-52",
+        "type": "Issue",
+        "label": "Issue #52",
+        "issueNumber": 52,
+        "title": "Create Discord server and launch community",
+        "url": "https://github.com/ShunsukeHayashi/Miyabi/issues/52",
+        "state": "open",
+        "labels": [
+          "type:docs",
+          "priority:P2-High",
+          "state:implementing",
+          "phase:planning"
+        ],
+        "metadata": {
+          "branchName": "feat/discord-community-setup-issue-52"
+        },
+        "status": "in_progress",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-1",
+        "type": "Task",
+        "label": "Create MEE6 Bot Setup Guide",
+        "taskId": "task-52-1",
+        "title": "Create MEE6 Bot Setup Guide",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/BOT_SETUP_MEE6.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-2",
+        "type": "Task",
+        "label": "Create GitHub Bot Setup Guide",
+        "taskId": "task-52-2",
+        "title": "Create GitHub Bot Setup Guide",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/BOT_SETUP_GITHUB.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-3",
+        "type": "Task",
+        "label": "Create Custom Miyabi Bot Specification",
+        "taskId": "task-52-3",
+        "title": "Create Custom Miyabi Bot Specification",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/BOT_CUSTOM_MIYABI.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-4",
+        "type": "Task",
+        "label": "Create Discord Server Navigation Guide",
+        "taskId": "task-52-4",
+        "title": "Create Discord Server Navigation Guide",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/SERVER_GUIDE.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-5",
+        "type": "Task",
+        "label": "Create Welcome Message Template",
+        "taskId": "task-52-5",
+        "title": "Create Welcome Message Template",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/WELCOME_MESSAGE.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "task-52-6",
+        "type": "Task",
+        "label": "Create Launch Announcement Templates",
+        "taskId": "task-52-6",
+        "title": "Create Launch Announcement Templates",
+        "taskType": "docs",
+        "assignedAgent": "DocsAgent",
+        "dependencies": [],
+        "metadata": {
+          "files": [
+            "docs/discord/LAUNCH_ANNOUNCEMENT.md"
+          ]
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "agent-docs",
+        "type": "Agent",
+        "label": "DocsAgent",
+        "agentName": "DocsAgent",
+        "agentType": "DocsAgent",
+        "authority": "🔵実行権限",
+        "tasksExecuted": 6,
+        "metadata": {
+          "modelUsed": "Claude Sonnet 4.5",
+          "sessionId": "007b697a-3711-4201-9be2-f569051e7745"
+        },
+        "status": "in_progress",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "tool-read-0",
+        "type": "Command",
+        "label": "Read",
+        "commandName": "Read",
+        "invocationType": "tool",
+        "executionCount": 1,
+        "metadata": {
+          "parameters": {
+            "file_path": "CLAUDE.md"
+          },
+          "output": "Read project context"
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.699Z"
+      },
+      {
+        "id": "tool-read-1",
+        "type": "Command",
+        "label": "Read",
+        "commandName": "Read",
+        "invocationType": "tool",
+        "executionCount": 1,
+        "metadata": {
+          "parameters": {
+            "file_path": "docs/DISCORD_COMMUNITY_PLAN.md"
+          },
+          "output": "Read community plan"
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.700Z"
+      },
+      {
+        "id": "tool-glob-2",
+        "type": "Command",
+        "label": "Glob",
+        "commandName": "Glob",
+        "invocationType": "tool",
+        "executionCount": 1,
+        "metadata": {
+          "parameters": {
+            "pattern": "**/*dashboard*.{html,ts,js}"
+          },
+          "output": "Found dashboard files"
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.700Z"
+      },
+      {
+        "id": "tool-bash-3",
+        "type": "Command",
+        "label": "Bash",
+        "commandName": "Bash",
+        "invocationType": "tool",
+        "executionCount": 1,
+        "metadata": {
+          "parameters": {
+            "command": "git status"
+          },
+          "output": "6 new files staged"
+        },
+        "status": "completed",
+        "timestamp": "2025-10-12T15:03:55.700Z"
+      },
+      {
+        "id": "label-type-docs",
+        "type": "Label",
+        "label": "📚 type:docs",
+        "labelName": "type:docs",
+        "category": "TYPE",
+        "color": "#0366d6",
+        "metadata": {},
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "label-state-implementing",
+        "type": "Label",
+        "label": "🏗️ state:implementing",
+        "labelName": "state:implementing",
+        "category": "STATE",
+        "color": "#fbca04",
+        "metadata": {},
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "label-priority-p2",
+        "type": "Label",
+        "label": "🔶 priority:P2-High",
+        "labelName": "priority:P2-High",
+        "category": "PRIORITY",
+        "color": "#d73a4a",
+        "metadata": {},
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "discord-miyabi-community",
+        "type": "DiscordCommunity",
+        "label": "Miyabi Community",
+        "serverName": "Miyabi Community",
+        "memberCount": 0,
+        "metadata": {
+          "planDocument": "docs/DISCORD_COMMUNITY_PLAN.md",
+          "setupStatus": "documentation_phase"
+        },
+        "status": "pending",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-issue-52-to-agent-docs",
+        "source": "issue-52",
+        "target": "agent-docs",
+        "relationType": "analyzed-by",
+        "label": "analyzed by",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-1",
+        "source": "issue-52",
+        "target": "task-52-1",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-2",
+        "source": "issue-52",
+        "target": "task-52-2",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-3",
+        "source": "issue-52",
+        "target": "task-52-3",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-4",
+        "source": "issue-52",
+        "target": "task-52-4",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-5",
+        "source": "issue-52",
+        "target": "task-52-5",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-task-52-6",
+        "source": "issue-52",
+        "target": "task-52-6",
+        "relationType": "decomposed-into",
+        "label": "decomposed into",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-label-type-docs",
+        "source": "issue-52",
+        "target": "label-type-docs",
+        "relationType": "tagged-with",
+        "label": "tagged with",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-label-state-implementing",
+        "source": "issue-52",
+        "target": "label-state-implementing",
+        "relationType": "tagged-with",
+        "label": "tagged with",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-label-priority-p2",
+        "source": "issue-52",
+        "target": "label-priority-p2",
+        "relationType": "tagged-with",
+        "label": "tagged with",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-1",
+        "source": "agent-docs",
+        "target": "task-52-1",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-2",
+        "source": "agent-docs",
+        "target": "task-52-2",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-3",
+        "source": "agent-docs",
+        "target": "task-52-3",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-4",
+        "source": "agent-docs",
+        "target": "task-52-4",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-5",
+        "source": "agent-docs",
+        "target": "task-52-5",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-agent-docs-to-task-52-6",
+        "source": "agent-docs",
+        "target": "task-52-6",
+        "relationType": "executes",
+        "label": "executes",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-tool-read-0-to-agent-docs",
+        "source": "tool-read-0",
+        "target": "agent-docs",
+        "relationType": "invoked-by",
+        "label": "invoked by",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-tool-read-1-to-agent-docs",
+        "source": "tool-read-1",
+        "target": "agent-docs",
+        "relationType": "invoked-by",
+        "label": "invoked by",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-tool-glob-2-to-agent-docs",
+        "source": "tool-glob-2",
+        "target": "agent-docs",
+        "relationType": "invoked-by",
+        "label": "invoked by",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-tool-bash-3-to-agent-docs",
+        "source": "tool-bash-3",
+        "target": "agent-docs",
+        "relationType": "invoked-by",
+        "label": "invoked by",
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      },
+      {
+        "id": "edge-issue-52-to-discord-miyabi-community",
+        "source": "issue-52",
+        "target": "discord-miyabi-community",
+        "relationType": "notifies-to",
+        "label": "notifies to",
+        "metadata": {
+          "channels": [
+            "#announcements",
+            "#dev-general"
+          ]
+        },
+        "timestamp": "2025-10-12T15:03:55.701Z"
+      }
+    ],
+    "metadata": {
+      "source": "claude-code-session",
+      "issueNumber": 52,
+      "branchName": "feat/discord-community-setup-issue-52",
+      "deviceIdentifier": "Pixel 9 Pro XL"
+    }
+  }
+}

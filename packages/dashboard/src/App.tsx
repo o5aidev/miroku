@@ -5,9 +5,10 @@ import { ERView } from './components/ERView';
 import { IssueDependencyView } from './components/IssueDependencyView';
 import { ImprovementsPanel } from './components/ImprovementsPanel';
 import { DevicePanel } from './components/DevicePanel';
+import { SessionGraphView } from './components/SessionGraphView';
 import { useAccessibilityPreferences } from './hooks/useAccessibilityPreferences';
 
-type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements';
+type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements' | 'session-graph';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('flow');
@@ -89,6 +90,17 @@ function App() {
               >
                 🚀
               </button>
+              <button
+                onClick={() => setViewMode('session-graph')}
+                title="Session Graph"
+                className={`rounded px-2 py-0.5 text-xs transition-all ${
+                  viewMode === 'session-graph'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-white/90 hover:bg-white/10'
+                }`}
+              >
+                🌸
+              </button>
             </div>
           </div>
 
@@ -144,6 +156,16 @@ function App() {
             >
               🚀
             </button>
+            <button
+              onClick={() => setViewMode('session-graph')}
+              className={`rounded px-1.5 py-0.5 text-xs transition ${
+                viewMode === 'session-graph'
+                  ? 'bg-white text-purple-600 shadow'
+                  : 'text-white/90 hover:bg-white/10'
+              }`}
+            >
+              🌸
+            </button>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-1.5">
@@ -194,6 +216,7 @@ function App() {
               <ImprovementsPanel />
             </div>
           )}
+          {viewMode === 'session-graph' && <SessionGraphView />}
         </div>
 
         {/* Device Panel Sidebar */}
