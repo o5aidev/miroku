@@ -16,6 +16,7 @@ import { status } from './commands/status.js';
 import { config } from './commands/config.js';
 import { setup } from './commands/setup.js';
 import { docs } from './commands/docs.js';
+import { doctor } from './commands/doctor.js';
 import { registerAgentCommand } from './commands/agent.js';
 import { registerAutoModeCommand } from './commands/auto.js';
 import { registerTodosCommand } from './commands/todos.js';
@@ -97,7 +98,8 @@ program
       console.log(chalk.cyan('  npx miyabi dashboard open') + chalk.gray('     - ダッシュボードを開く'));
       console.log(chalk.cyan('  npx miyabi docs') + chalk.gray('               - ドキュメント生成'));
       console.log(chalk.cyan('  npx miyabi config') + chalk.gray('             - 設定管理'));
-      console.log(chalk.cyan('  npx miyabi setup') + chalk.gray('              - セットアップガイド\n'));
+      console.log(chalk.cyan('  npx miyabi setup') + chalk.gray('              - セットアップガイド'));
+      console.log(chalk.cyan('  npx miyabi doctor') + chalk.gray('             - ヘルスチェック・診断\n'));
       console.log(chalk.gray('詳細: npx miyabi --help\n'));
       process.exit(0);
     }
@@ -132,6 +134,7 @@ program
           { name: '🆕 新しいプロジェクトを作成', value: 'init' },
           { name: '📦 既存プロジェクトに追加', value: 'install' },
           { name: '📊 ステータス確認', value: 'status' },
+          { name: '🩺 ヘルスチェック・診断', value: 'doctor' },
           { name: '🎨 ダッシュボード管理', value: 'dashboard' },
           { name: '📚 ドキュメント生成', value: 'docs' },
           { name: '⚙️  設定', value: 'config' },
@@ -243,6 +246,20 @@ program
 
         case 'config': {
           await config({});
+          break;
+        }
+
+        case 'doctor': {
+          const { verbose } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'verbose',
+              message: '詳細な診断情報を表示しますか？',
+              default: false,
+            },
+          ]);
+
+          await doctor({ verbose });
           break;
         }
 
@@ -391,6 +408,15 @@ program
   .option('--json', 'JSON形式で出力')
   .action(async (options: { nonInteractive?: boolean; yes?: boolean; skipToken?: boolean; skipConfig?: boolean; json?: boolean }) => {
     await setup(options);
+  });
+
+program
+  .command('doctor')
+  .description('システムヘルスチェックと診断')
+  .option('--json', 'JSON形式で出力')
+  .option('-v, --verbose', '詳細な診断情報を表示')
+  .action(async (options: { json?: boolean; verbose?: boolean }) => {
+    await doctor(options);
   });
 
 // Register agent command
