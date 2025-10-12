@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 interface DeviceState {
   device: {
@@ -56,26 +56,23 @@ const EVENT_ICONS: Record<string, string> = {
 export function DevicePanel() {
   const [devices, setDevices] = useState<DeviceState[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     // Connect to Socket.IO server
-    const newSocket = io('http://localhost:3001', {
+    const socket = io('http://localhost:3001', {
       transports: ['websocket'],
       reconnectionDelay: 1000,
       reconnection: true,
     });
 
-    setSocket(newSocket);
-
     // Initial device states
-    newSocket.on('devices:initial', (data: { devices: DeviceState[] }) => {
+    socket.on('devices:initial', (data: { devices: DeviceState[] }) => {
       console.log('📱 Received initial devices:', data.devices);
       setDevices(data.devices);
     });
 
     // Device update
-    newSocket.on(
+    socket.on(
       'device:update',
       (data: { identifier: string; state: DeviceState }) => {
         console.log('📱 Device update:', data.identifier);
@@ -92,7 +89,7 @@ export function DevicePanel() {
     );
 
     // Device status change
-    newSocket.on(
+    socket.on(
       'device:status-change',
       (data: { identifier: string; status: 'online' | 'offline' | 'idle' }) => {
         console.log('📱 Device status change:', data.identifier, '→', data.status);
@@ -108,13 +105,9 @@ export function DevicePanel() {
 
     // Cleanup
     return () => {
-      newSocket.close();
+      socket.close();
     };
   }, []);
-
-  const selectedDeviceData = selectedDevice
-    ? devices.find((d) => d.device.identifier === selectedDevice)
-    : null;
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);

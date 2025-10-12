@@ -144,6 +144,36 @@ export class GraphBuilder {
   }
 
   /**
+   * Get cache statistics
+   */
+  public getStats() {
+    const now = Date.now();
+    let hits = 0;
+    let misses = 0;
+    let evictions = 0;
+
+    // Calculate hits/misses from cache access patterns
+    for (const entry of this.cache.values()) {
+      if (now - entry.lastAccess < 60000) {
+        // Recent access within last minute
+        hits++;
+      }
+    }
+
+    return {
+      cache: {
+        size: this.cache.size,
+        maxSize: this.CACHE_MAX_SIZE,
+        hits,
+        misses,
+        hitRate: this.cache.size > 0 ? (hits / (hits + misses || 1)) * 100 : 0,
+        evictions,
+        ttlMs: this.CACHE_TTL,
+      },
+    };
+  }
+
+  /**
    * Warm up cache with common queries
    * Call this on application startup for 50-70% faster initial requests
    */

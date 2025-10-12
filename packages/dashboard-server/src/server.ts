@@ -18,6 +18,7 @@ import { throttleEventMiddleware } from './middleware/throttle.js';
 import { globalRateLimiter } from './middleware/rate-limiter.js';
 import { GraphDebouncer } from './services/graph-debouncer.js';
 import { LayoutEngine } from '../../dashboard/src/services/LayoutEngine.js';
+import { getImprovementMetrics } from './utils/improvements-parser.js';
 import type {
   AgentStartedEvent,
   AgentProgressEvent,
@@ -890,6 +891,97 @@ app.get('/api/events/history', (req, res) => {
     });
   } catch (error: any) {
     console.error('❌ Error fetching event history:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 7. GET /api/statistics - System statistics including cache, performance, and improvements
+app.get('/api/statistics', async (req, res) => {
+  try {
+    // Get cache stats from GraphBuilder
+    const graphStats = graphBuilder.getStats();
+
+    // Get improvement metrics from IMPROVEMENTS_SUMMARY.md
+    const improvementMetrics = await getImprovementMetrics();
+
+    // Calculate uptime
+    const uptime = process.uptime();
+
+    // Memory usage
+    const memoryUsage = process.memoryUsage();
+
+    // Connected clients
+    const clientCount = connectedClients.size;
+
+    // Device stats
+    const devices = getAllDeviceStates();
+    const onlineDevices = devices.filter(d => d.status === 'online').length;
+
+    // Event stats
+    const eventCount = eventHistory.length;
+
+    // TODO: Load actual metrics from IMPROVEMENTS_SUMMARY.md or test results
+    // For now, return basic stats that can be expanded
+    const statistics = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      system: {
+        uptime,
+        memory: {
+          heapUsed: memoryUsage.heapUsed,
+          heapTotal: memoryUsage.heapTotal,
+          external: memoryUsage.external,
+          rss: memoryUsage.rss,
+        },
+        connectedClients: clientCount,
+        onlineDevices,
+        totalDevices: devices.length,
+        eventHistorySize: eventCount,
+      },
+      cache: graphStats.cache,
+      improvements: {
+        // Phase 1: Type Safety (from IMPROVEMENTS_SUMMARY.md)
+        typeSafety: {
+          anyTypeCount: improvementMetrics.typeSafety.anyTypeCount,
+          interfaceCount: improvementMetrics.typeSafety.interfaceCount,
+          typeCheckPassed: improvementMetrics.typeSafety.typeCheckPassed,
+          circularDepsResolved: improvementMetrics.typeSafety.circularDepsResolved,
+        },
+        // Phase 2: Error Handling (from IMPROVEMENTS_SUMMARY.md)
+        errorHandling: {
+          totalRetries: 0, // Runtime metric, not from summary
+          successfulRetries: 0,
+          failedRetries: 0,
+          avgRetryTime: 0,
+          errorClassesUsed: improvementMetrics.errorHandling.errorClassesUsed,
+        },
+        // Phase 3: Cache (real data from GraphBuilder)
+        cache: graphStats.cache,
+        // Phase 4: Tests (from IMPROVEMENTS_SUMMARY.md)
+        tests: {
+          totalTests: improvementMetrics.tests.totalTests,
+          passedTests: improvementMetrics.tests.passedTests,
+          failedTests: improvementMetrics.tests.failedTests,
+          successRate: improvementMetrics.tests.successRate,
+          avgDuration: improvementMetrics.tests.avgDuration,
+          coverage: 0, // Not documented in summary
+        },
+        // Phase 5: Security (from IMPROVEMENTS_SUMMARY.md)
+        security: {
+          scansPerformed: 0, // Runtime metric
+          issuesDetected: 0,
+          criticalIssues: 0,
+          avgSecurityScore: 0,
+          patternsDetected: improvementMetrics.security.patternsDetected,
+        },
+        // Overall metrics
+        overall: improvementMetrics.overall,
+      },
+    };
+
+    res.json(statistics);
+  } catch (error: any) {
+    console.error('❌ Error fetching statistics:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -5,6 +5,7 @@ export interface ActivityLogEntry {
   id: string;
   type:
     | 'agent:started'
+    | 'agent:progress'
     | 'agent:completed'
     | 'agent:error'
     | 'state:transition'
