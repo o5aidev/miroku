@@ -10,7 +10,7 @@
  *   npx tsx scripts/setup-agentic-os.ts
  */
 
-import { logger, theme } from '../agents/ui/index.js';
+import { logger, theme } from '../../agents/ui/index.js';
 import { execSync } from 'child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, cpSync } from 'fs';
 import * as readline from 'readline/promises';

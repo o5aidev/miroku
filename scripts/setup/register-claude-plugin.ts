@@ -1,11 +1,21 @@
 /**
  * Script to register Miyabi as a Claude Plugin
+ *
+ * NOTE: This script requires the PluginRegistrationManager module which
+ * needs to be implemented. Currently disabled pending implementation.
  */
 
-import { PluginRegistrationManager } from '../src/plugin/registration.js';
-import { logger } from '../src/ui/index.js';
+// TODO: Implement PluginRegistrationManager
+// import { PluginRegistrationManager } from '../../packages/core/plugin/registration.js';
+import { logger } from '../../agents/ui/index.js';
 
 async function main(): Promise<void> {
+  logger.warning('⚠️  Plugin Registration Not Implemented');
+  logger.info('This feature requires the PluginRegistrationManager module.');
+  logger.info('TODO: Implement plugin registration system in packages/core/');
+
+  // TODO: Uncomment when PluginRegistrationManager is implemented
+  /*
   try {
     logger.info('🌸 Miyabi Claude Plugin Registration', 'SCRIPT');
     logger.info('=====================================', 'SCRIPT');
@@ -18,7 +28,7 @@ async function main(): Promise<void> {
     // Submit registration
     logger.info('Step 2: Submitting to Claude Plugin Marketplace...', 'SCRIPT');
     const success = await PluginRegistrationManager.submitRegistration(registration);
-    
+
     if (success) {
       logger.success('✓ Registration submitted successfully', 'SCRIPT');
     } else {
@@ -38,6 +48,7 @@ async function main(): Promise<void> {
     logger.error(error instanceof Error ? error.message : String(error), 'SCRIPT');
     process.exit(1);
   }
+  */
 }
 
 // Run script

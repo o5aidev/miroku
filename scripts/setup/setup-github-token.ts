@@ -5,7 +5,7 @@
  * Interactive script to help users set up their GitHub token with correct scopes
  */
 
-import { logger, theme } from '../agents/ui/index.js';
+import { logger, theme } from '../../agents/ui/index.js';
 import { execSync } from 'child_process';
 import { existsSync, writeFileSync, readFileSync } from 'fs';
 import * as readline from 'readline/promises';
