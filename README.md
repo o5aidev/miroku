@@ -2,6 +2,9 @@
 
 # 🌸 Miyabi
 
+[![Discord](https://img.shields.io/discord/YOUR_SERVER_ID?label=Discord&logo=discord&logoColor=white&color=7289DA)](https://discord.gg/autonomous-operations)
+
+
 ### *Beauty in Autonomous Development*
 
 **一つのコマンドで全てが完結する自律型開発フレームワーク**

@@ -1,0 +1,114 @@
+{
+  "server_name": "Autonomous-Operations Community",
+  "description": "Discord Community Setup",
+  "channels": [
+    {
+      "name": "announcements",
+      "type": "text",
+      "category": "Information",
+      "description": "Official announcements and updates",
+      "permissions": {
+        "send_messages": [
+          "@Moderator",
+          "@Admin"
+        ]
+      }
+    },
+    {
+      "name": "rules",
+      "type": "text",
+      "category": "Information",
+      "description": "Server rules and guidelines",
+      "permissions": {
+        "send_messages": [
+          "@Moderator",
+          "@Admin"
+        ]
+      }
+    },
+    {
+      "name": "faq",
+      "type": "text",
+      "category": "Information",
+      "description": "Frequently asked questions",
+      "permissions": {
+        "send_messages": [
+          "@Moderator",
+          "@Admin"
+        ]
+      }
+    },
+    {
+      "name": "general",
+      "type": "text",
+      "category": "Community",
+      "description": "General discussion"
+    },
+    {
+      "name": "introductions",
+      "type": "text",
+      "category": "Community",
+      "description": "Introduce yourself to the community"
+    },
+    {
+      "name": "help",
+      "type": "text",
+      "category": "Support",
+      "description": "Get help from the community"
+    },
+    {
+      "name": "showcase",
+      "type": "text",
+      "category": "Community",
+      "description": "Share your projects and creations"
+    },
+    {
+      "name": "feedback",
+      "type": "text",
+      "category": "Development",
+      "description": "Provide feedback and suggestions"
+    },
+    {
+      "name": "bug-reports",
+      "type": "text",
+      "category": "Development",
+      "description": "Report bugs and issues"
+    }
+  ],
+  "roles": [
+    {
+      "name": "Admin",
+      "color": "#FF0000",
+      "permissions": [
+        "administrator"
+      ]
+    },
+    {
+      "name": "Moderator",
+      "color": "#00FF00",
+      "permissions": [
+        "manage_messages",
+        "kick_members",
+        "ban_members"
+      ]
+    },
+    {
+      "name": "Contributor",
+      "color": "#0000FF",
+      "permissions": []
+    },
+    {
+      "name": "Member",
+      "color": "#CCCCCC",
+      "permissions": []
+    }
+  ],
+  "welcome_channel": "introductions",
+  "rules_channel": "rules",
+  "moderation": {
+    "auto_mod_enabled": true,
+    "spam_protection": true,
+    "word_filter_enabled": true,
+    "raid_protection": true
+  }
+}
