@@ -98,6 +98,8 @@ npx miyabi init my-project
 
 ## 🚀 Quick Start
 
+> **📝 Note:** Miyabi is currently optimized for **TypeScript/Node.js** projects. For other languages (Python, Go, Rust, etc.), see [Language & Framework Support](#-language--framework-support) below for adaptation instructions.
+
 ### For Humans 👨‍💻
 
 #### Interactive Mode (Easiest)
@@ -319,6 +321,134 @@ What happens:
 </td>
 </tr>
 </table>
+
+---
+
+## 🌍 Language & Framework Support
+
+### Current Implementation (v0.13.0)
+
+**Primary Support: TypeScript/Node.js**
+
+Miyabi's GitHub Actions and workflows are currently optimized for:
+- **Language**: TypeScript, JavaScript
+- **Runtime**: Node.js ≥18
+- **Package Manager**: npm
+- **Testing**: Vitest
+- **Build Tools**: tsc, esbuild
+
+**Workflows affected:**
+- `autonomous-agent.yml` - Uses `npm run typecheck`, `npm run agents:parallel:exec`
+- `deploy-pages.yml` - Node.js app deployment
+- `weekly-report.yml` - TypeScript/Node.js implementation
+- `weekly-kpi-report.yml` - TypeScript/Node.js KPI reporting
+
+### Multi-Language Roadmap
+
+**Phase 1 (Current)**: TypeScript/Node.js optimized templates
+**Phase 2 (v0.14+)**: Language-agnostic workflow templates
+**Phase 3 (2026+)**: Fully autonomous language detection
+
+### Adapting for Other Languages/Frameworks
+
+**You can easily adapt Miyabi for your stack using Claude Code:**
+
+<details>
+<summary><strong>Example: Python + FastAPI</strong></summary>
+
+```bash
+# 1. Install Miyabi (creates TypeScript templates)
+npx miyabi install
+
+# 2. Ask Claude Code to adapt
+# In Claude Code, run:
+```
+
+**Prompt for Claude Code:**
+```
+.claude/commands と .claude/agents について、
+元の指示の意図を変えずに、Python と FastAPI 用に書き換えてください。
+
+以下を変更:
+- npm → pip/poetry
+- TypeScript → Python
+- Vitest → pytest
+- tsc → mypy
+- Node.js → Python 3.11+
+
+ワークフローファイルも同様に書き換えてください。
+```
+
+**Result:** All workflows adapted for Python!
+</details>
+
+<details>
+<summary><strong>Example: Go + Gin</strong></summary>
+
+**Prompt for Claude Code:**
+```
+.claude/commands と .claude/agents について、
+Go言語とGinフレームワーク用に書き換えてください。
+
+以下を変更:
+- npm → go mod
+- TypeScript → Go
+- Vitest → go test
+- tsc → go build
+- Node.js → Go 1.21+
+
+ワークフローファイルも同様に書き換えてください。
+```
+</details>
+
+<details>
+<summary><strong>Example: Rust + Actix</strong></summary>
+
+**Prompt for Claude Code:**
+```
+.claude/commands と .claude/agents について、
+Rust言語とActixフレームワーク用に書き換えてください。
+
+以下を変更:
+- npm → cargo
+- TypeScript → Rust
+- Vitest → cargo test
+- tsc → cargo build
+- Node.js → Rust 1.70+
+
+ワークフローファイルも同様に書き換えてください。
+```
+</details>
+
+### Supported Stacks (with adaptation)
+
+| Language | Framework | Package Manager | Testing | Status |
+|----------|-----------|----------------|---------|--------|
+| TypeScript | Express/Next.js | npm/yarn/pnpm | Vitest | ✅ Native |
+| JavaScript | React/Vue | npm/yarn/pnpm | Jest | ✅ Native |
+| Python | FastAPI/Django | pip/poetry | pytest | 🔄 Adapt |
+| Go | Gin/Echo | go mod | go test | 🔄 Adapt |
+| Rust | Actix/Rocket | cargo | cargo test | 🔄 Adapt |
+| Ruby | Rails/Sinatra | bundler | rspec | 🔄 Adapt |
+| Java | Spring Boot | maven/gradle | junit | 🔄 Adapt |
+| C# | .NET | nuget | xunit | 🔄 Adapt |
+
+**Legend:**
+- ✅ Native: Works out-of-the-box
+- 🔄 Adapt: Use Claude Code to adapt workflows
+
+### Best Practices for Adaptation
+
+1. **Keep workflow intentions intact** - Don't change what workflows do, only how they do it
+2. **Preserve label system** - The 53-label system is language-agnostic
+3. **Maintain agent roles** - CoordinatorAgent, CodeGenAgent, etc. work with any language
+4. **Update documentation** - Document your language-specific setup
+
+### Contributing Multi-Language Templates
+
+We welcome contributions for other languages! See:
+- [CONTRIBUTING.md](../../CONTRIBUTING.md) - Contribution guidelines
+- [docs/MULTI_LANGUAGE_GUIDE.md](../../docs/MULTI_LANGUAGE_GUIDE.md) - Template creation guide
 
 ---
 
