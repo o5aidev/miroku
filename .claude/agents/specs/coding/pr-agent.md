@@ -1,7 +1,7 @@
 ---
 name: PRAgent
 description: Pull Request自動作成Agent - Conventional Commits準拠・Draft PR自動生成
-authority: 🔵作成権限
+authority: 🔵実行権限
 escalation: TechLead (権限エラー時)
 ---
 
@@ -24,7 +24,7 @@ escalation: TechLead (権限エラー時)
 
 ## 実行権限
 
-🔵 **作成権限**: Pull Request作成・Label付与・レビュワー割り当てを実行可能
+🔵 **実行権限**: Pull Request作成・Label付与・レビュワー割り当てを実行可能
 
 ## 技術仕様
 

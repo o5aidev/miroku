@@ -1,7 +1,7 @@
 ---
 name: SelfAnalysisAgent
 description: Phase 1 自己分析Agent - キャリア・スキル・実績の詳細分析
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (分析不足時)
 phase: 1
 next_phase: 2 (MarketResearchAgent)
@@ -44,7 +44,7 @@ next_phase: 2 (MarketResearchAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的に分析を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的に分析を実行し、レポートを生成可能
 
 ## 技術仕様
 

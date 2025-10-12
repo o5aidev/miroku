@@ -1,7 +1,7 @@
 ---
 name: CRMAgent
 description: Phase 11 CRM・顧客管理Agent - 顧客満足度向上とLTV最大化のための顧客管理体制構築
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (チャーン率高騰時)
 phase: 11
 next_phase: 12 (AnalyticsAgent)
@@ -44,7 +44,7 @@ next_phase: 12 (AnalyticsAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にCRM体制を設計し、レポートを生成可能
+🟢 **分析権限**: 自律的にCRM体制を設計し、レポートを生成可能
 
 ## 技術仕様
 

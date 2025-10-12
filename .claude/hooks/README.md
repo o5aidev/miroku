@@ -1,14 +1,162 @@
-# Claude Code Hooks - Agent Dashboard Integration
+# Claude Code Hooks
 
 ## 概要
 
-`.claude/hooks/`には、Agent実行時にMiyabi Dashboardへイベントを送信するhookスクリプトがあります。
+`.claude/hooks/`には、Claude Code実行時やGit操作時に自動実行されるフックスクリプトが含まれています。
+
+**4種類のフック:**
+- **auto-format.sh** - ESLint/Prettier自動フォーマット
+- **validate-typescript.sh** - TypeScript型チェック
+- **log-commands.sh** - コマンドログ記録（LDD準拠）
+- **agent-event.sh** - Agent実行イベント送信
 
 ---
 
 ## 利用可能なHook
 
-### `agent-event.sh`
+### 1. `auto-format.sh` ✅
+
+コミット前に自動的にESLint/Prettierを実行し、コードをフォーマットします。
+
+**機能:**
+- ESLintによるコード検査と自動修正
+- Prettierによるコードフォーマット
+- ステージングされたファイルのみ処理
+- 修正不能なエラーがある場合はコミット中断
+
+**使用方法:**
+```bash
+# Git pre-commitフックとして登録
+ln -s ../../.claude/hooks/auto-format.sh .git/hooks/pre-commit
+
+# 手動実行
+./.claude/hooks/auto-format.sh
+```
+
+**出力例:**
+```
+🔧 Auto-format hook running...
+📝 Found 5 files to check
+
+🔍 Running ESLint...
+✅ ESLint passed
+
+✨ Running Prettier...
+✅ Prettier formatting complete
+
+📦 Re-staging formatted files...
+✅ Auto-format complete - ready to commit
+```
+
+---
+
+### 2. `validate-typescript.sh` ✅
+
+TypeScriptコンパイルエラーをチェックし、型エラーがある場合はコミットを中断します。
+
+**機能:**
+- TypeScript型チェック（strict mode準拠）
+- コンパイルエラーの詳細表示
+- エラーがある場合はコミット中断
+
+**使用方法:**
+```bash
+# Git pre-commitフックとして登録
+ln -s ../../.claude/hooks/validate-typescript.sh .git/hooks/pre-commit
+
+# 手動実行
+./.claude/hooks/validate-typescript.sh
+```
+
+**出力例（成功時）:**
+```
+🔍 TypeScript validation hook running...
+📝 Found 8 TypeScript files
+
+🔧 Running TypeScript compiler (tsc --noEmit)...
+
+✅ TypeScript validation passed - all types are correct
+```
+
+**出力例（エラー時）:**
+```
+🔍 TypeScript validation hook running...
+📝 Found 8 TypeScript files
+
+🔧 Running TypeScript compiler (tsc --noEmit)...
+
+❌ TypeScript validation failed
+
+╔═══════════════════════════════════════════════════════════════╗
+║               TypeScript Compilation Errors Found            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Total Errors: 3
+
+First errors:
+src/agents/coordinator.ts:42:5 - error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+
+How to fix:
+  1. Review the errors above
+  2. Fix type errors in your TypeScript files
+  3. Run 'npm run typecheck' to verify fixes
+  4. Re-stage your files with 'git add'
+```
+
+---
+
+### 3. `log-commands.sh` ✅
+
+Claude Codeコマンドを`.ai/logs/`に記録します（LDD準拠）。
+
+**機能:**
+- 日次ログファイル生成（`YYYY-MM-DD.md`形式）
+- タイムスタンプ付きコマンド記録
+- codex_prompt_chain形式対応
+
+**使用方法:**
+```bash
+# Claude Code hooks設定に追加
+# .claude/settings.local.json:
+{
+  "hooks": {
+    "userPromptSubmit": ".claude/hooks/log-commands.sh"
+  }
+}
+
+# 手動実行
+./.claude/hooks/log-commands.sh "your command here"
+```
+
+**ログファイル例（`.ai/logs/2025-10-12.md`）:**
+```markdown
+# Log-Driven Development Log - 2025-10-12
+
+**Device**: MacBook-Pro
+**Project**: Autonomous-Operations
+**Date**: 2025-10-12
+
+---
+
+## codex_prompt_chain
+
+**intent**:
+**plan**:
+**implementation**:
+**verification**:
+
+## tool_invocations
+
+### [2025-10-12T03:15:00Z]
+- **command**: `npm run agents:parallel:exec -- --issues=270`
+- **workdir**: `/Users/shunsuke/Dev/Autonomous-Operations`
+- **status**: running
+- **notes**: Command executed via Claude Code
+```
+
+---
+
+### 4. `agent-event.sh` ✅
 
 Agent実行イベントをダッシュボードにリアルタイム送信します。
 

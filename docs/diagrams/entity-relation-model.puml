@@ -1,23 +1,33 @@
-@startuml Miyabi Entity-Relation Model
+@startuml Miyabi Complete Entity-Relation Model
 
-!define ENTITY_COLOR #E3F2FD
+' ============================================================================
+' Color Definitions
+' ============================================================================
+!define CORE_ENTITY_COLOR #E3F2FD
+!define AGENT_COLOR #C8E6C9
+!define OPERATION_COLOR #FFF9C4
+!define EXECUTION_COLOR #FFCCBC
+!define COMMUNITY_COLOR #E1BEE7
+!define INFRASTRUCTURE_COLOR #B2DFDB
 !define RELATION_COLOR #90CAF9
 
 skinparam backgroundColor #FAFAFA
 skinparam shadowing false
+skinparam packageStyle rectangle
+
 skinparam class {
-    BackgroundColor ENTITY_COLOR
-    BorderColor #1976D2
+    BorderColor #424242
     ArrowColor RELATION_COLOR
+    ArrowThickness 2
 }
 
-title Miyabi Entity-Relation Model\n12 Entities × 27 Relations
+title **Miyabi Complete Entity-Relation Model**\n13 Core Entities × 35 Relations × 21 Agents × 5 MCP Servers × 4 Hooks
 
 ' ============================================================================
-' Entities
+' Core Entities (E1-E6)
 ' ============================================================================
 
-package "Core Entities" {
+package "Core Entities" <<Rectangle>> #CORE_ENTITY_COLOR {
     class Issue <<E1>> {
         +number: number
         +title: string
@@ -28,19 +38,29 @@ package "Core Entities" {
         +createdAt: string
         +updatedAt: string
         +url: string
+        --
+        **Type**: agents/types/index.ts:54-64
+        **Agent**: IssueAgent
     }
 
     class Task <<E2>> {
-        +id: string
+        +id: string (UUID)
         +title: string
         +description: string
         +type: TaskType
         +priority: number
         +severity?: Severity
+        +impact?: ImpactLevel
         +assignedAgent?: AgentType
         +dependencies: string[]
         +estimatedDuration?: number
         +status?: AgentStatus
+        +startTime?: number
+        +endTime?: number
+        +metadata?: Record<string, any>
+        --
+        **Type**: agents/types/index.ts:37-52
+        **Created by**: CoordinatorAgent
     }
 
     class Agent <<E3>> {
@@ -48,20 +68,57 @@ package "Core Entities" {
         +authority: Authority
         +escalationTarget: EscalationTarget
         --
+        **Methods**:
         +execute(task: Task): AgentResult
         +escalate(reason, target): void
         +logToLDD(): void
+        --
+        **21 Agents Total**:
+        **Coding (7)**:
+        • CoordinatorAgent (🔴統括)
+        • CodeGenAgent (🔵実行)
+        • ReviewAgent (🔵実行)
+        • IssueAgent (🟢分析)
+        • PRAgent (🔵実行)
+        • DeploymentAgent (🔵実行)
+        • Hooks Integration (-)
+
+        **Business (14)**:
+        • AIEntrepreneurAgent (🔴統括)
+        • ProductConceptAgent (🔵実行)
+        • ProductDesignAgent (🔵実行)
+        • FunnelDesignAgent (🔵実行)
+        • PersonaAgent (🟢分析)
+        • SelfAnalysisAgent (🟢分析)
+        • MarketResearchAgent (🟢分析)
+        • MarketingAgent (🔵実行)
+        • ContentCreationAgent (🔵実行)
+        • SNSStrategyAgent (🔵実行)
+        • YouTubeAgent (🔵実行)
+        • SalesAgent (🔵実行)
+        • CRMAgent (🔵実行)
+        • AnalyticsAgent (🟢分析)
+        --
+        **Type**: agents/types/index.ts:15-22
+        **Base**: agents/base-agent.ts
     }
 
     class PR <<E4>> {
         +number: number
-        +title: string
-        +body: string
+        +title: string (Conventional Commits)
+        +body: string (Markdown)
         +baseBranch: string
         +headBranch: string
         +draft: boolean
-        +state: PRState
+        +state: 'draft' | 'open' | 'merged' | 'closed'
         +url: string
+        +issueNumber?: number
+        +labels?: string[]
+        +reviewers?: string[]
+        +createdAt: string
+        --
+        **Type**: agents/types/index.ts:240-257
+        **Created by**: PRAgent
     }
 
     class Label <<E5>> {
@@ -70,61 +127,135 @@ package "Core Entities" {
         +color: string
         +description: string
         --
-        10 Categories
-        53 Labels Total
+        **53 Labels in 10 Categories**:
+        1. STATE (8) - Lifecycle
+        2. AGENT (6) - Assignment
+        3. PRIORITY (4) - Priority
+        4. TYPE (7) - Classification
+        5. SEVERITY (4) - Escalation
+        6. PHASE (5) - Project Phase
+        7. SPECIAL (7) - Special Ops
+        8. TRIGGER (4) - Automation
+        9. QUALITY (4) - Quality Score
+        10. COMMUNITY (4) - Community
+        --
+        **Doc**: docs/LABEL_SYSTEM_GUIDE.md
+        **Config**: .github/labels.yml
     }
 
     class QualityReport <<E6>> {
-        +score: number
-        +passed: boolean
+        +score: number (0-100)
+        +passed: boolean (score >= 80)
         +issues: QualityIssue[]
         +recommendations: string[]
-        +breakdown: Breakdown
+        +breakdown: {
+            +eslintScore: number (40%)
+            +typeScriptScore: number (30%)
+            +securityScore: number (20%)
+            +testCoverageScore: number (10%)
+        }
+        --
+        **Type**: agents/types/index.ts:108-130
+        **Created by**: ReviewAgent
     }
 }
 
-package "Operation Entities" {
+' ============================================================================
+' Operation Entities (E7-E10)
+' ============================================================================
+
+package "Operation Entities" <<Rectangle>> #OPERATION_COLOR {
     class Command <<E7>> {
         +name: string
         +description: string
         +invokesAgent: AgentType
+        +execution: string
         --
-        9 Commands Total
+        **9 Commands**:
+        • /test - Test execution
+        • /agent-run - Agent manual execution
+        • /verify - System verification
+        • /deploy - Deployment
+        • /create-issue - Interactive issue creation
+        • /security-scan - Security scan
+        • /generate-docs - Doc generation
+        • /miyabi-todos - TODO detection
+        • /miyabi-auto - Full auto mode
+        --
+        **Location**: .claude/commands/*.md
     }
 
     class Escalation <<E8>> {
         +reason: string
         +target: EscalationTarget
         +severity: Severity
-        +context: Record
-        +timestamp: string
+        +context: Record<string, any>
+        +timestamp: string (ISO 8601)
+        --
+        **Targets**:
+        • TechLead - Architecture issues
+        • PO - Business decisions
+        • CISO - Security (Sev.1-2)
+        • CTO - System failures
+        • DevOps - Infrastructure issues
+        --
+        **Type**: agents/types/index.ts:96-102
+        **Triggered by**: Any Agent
     }
 
     class Deployment <<E9>> {
         +environment: 'staging' | 'production'
-        +version: string
+        +version: string (Semantic Versioning)
         +projectId: string
+        +targets: string[]
         +deploymentUrl: string
-        +status: DeploymentStatus
+        +deployedAt: string
+        +durationMs: number
+        +status: 'success' | 'failed' | 'rolled_back'
+        +autoRollback: boolean
+        +healthCheckUrl: string
+        --
+        **Type**: agents/types/index.ts:262-281
+        **Performed by**: DeploymentAgent
     }
 
     class LDDLog <<E10>> {
-        +sessionId: string
-        +date: string
+        +sessionId: string (UUID)
+        +date: string (YYYY-MM-DD)
         +deviceIdentifier: string
-        +codexPromptChain: CodexPromptChain
+        +codexPromptChain: {
+            +intent: string
+            +plan: string[]
+            +implementation: string[]
+            +verification: string[]
+        }
         +toolInvocations: ToolInvocation[]
         +memoryBankUpdates: string[]
+        +nextSteps: string
+        --
+        **Type**: agents/types/index.ts:284-312
+        **Output**: .ai/logs/YYYY-MM-DD.md
+        **Format**: Markdown (LDD compliant)
     }
 }
 
-package "Execution Entities" {
+' ============================================================================
+' Execution Entities (E11-E12)
+' ============================================================================
+
+package "Execution Entities" <<Rectangle>> #EXECUTION_COLOR {
     class DAG <<E11>> {
         +nodes: Task[]
         +edges: Edge[]
         +levels: string[][]
         --
-        Directed Acyclic Graph
+        **Directed Acyclic Graph**:
+        • Topological sort
+        • Cycle detection
+        • Parallel execution planning
+        --
+        **Type**: agents/types/index.ts:66-70
+        **Built by**: CoordinatorAgent
     }
 
     class Worktree <<E12>> {
@@ -133,131 +264,232 @@ package "Execution Entities" {
         +taskId: string
         +issueNumber?: number
         +agentType: AgentType
-        +status: WorktreeStatus
+        +status: 'active' | 'completed' | 'failed'
+        --
+        **Git Worktree-based Isolation**:
+        • .worktrees/issue-{N}/
+        • No merge conflicts
+        • Parallel execution
+        --
+        **Doc**: CLAUDE.md (Git Worktree Architecture)
+        **Implementation**: scripts/parallel-executor.ts
     }
 }
 
 ' ============================================================================
-' Issue Processing Flow (6 relations)
+' Community Entity (E13)
 ' ============================================================================
 
-Issue "1" --> "1" Agent : R1: analyzed-by\n(IssueAgent)
-Issue "1" --> "*" Task : R2: decomposed-into\n(CoordinatorAgent)
-Issue "1" --> "*" Label : R3: tagged-with
-Issue "1" --> "1" PR : R4: creates
-Label "*" --> "1" Issue : R17: defines-state
-PR "1" --> "1" Issue : R21: attached-to
+package "Community Entity" <<Rectangle>> #COMMUNITY_COLOR {
+    class DiscordCommunity <<E13>> {
+        +serverId: string
+        +serverName: string
+        +channels: DiscordChannel[] (15+)
+        +roles: DiscordRole[] (Progressive)
+        +members: number
+        +webhooks: WebhookConfig[]
+        +botIntegrations: BotConfig[]
+        +createdAt: string
+        --
+        **Channels**:
+        • #announcements
+        • #dev-general
+        • #dev-agents
+        • #dev-pull-requests
+        • #release-notes
+        • #help-general
+        --
+        **Webhook Events**:
+        • Issue created/updated
+        • PR created/merged
+        • Agent execution
+        • Quality reports
+        • Deployments
+        • Escalations
+        --
+        **Doc**: docs/DISCORD_COMMUNITY_PLAN.md
+        **Issue**: #52
+    }
+}
 
 ' ============================================================================
-' Agent Execution (7 relations)
+' Infrastructure Entities (NEW)
 ' ============================================================================
 
-Agent "1" --> "*" Task : R9: executes
-Agent "*" --> "*" PR : R10: generates
-Agent "1" --> "*" QualityReport : R11: creates\n(ReviewAgent)
-Agent "*" --> "*" Escalation : R12: triggers
-Agent "1" --> "*" Deployment : R13: performs\n(DeploymentAgent)
-Agent "*" --> "*" LDDLog : R14: logs-to
-Command "1" --> "*" Agent : R15: invokes
+package "Infrastructure Entities" <<Rectangle>> #INFRASTRUCTURE_COLOR {
+    class MCPServer <<Infrastructure>> {
+        +name: string
+        +command: string
+        +args: string[]
+        +disabled: boolean
+        +description: string
+        --
+        **5 MCP Servers**:
+        1. ide-integration
+           - mcp__ide__getDiagnostics
+           - mcp__ide__executeCode
+        2. github-enhanced
+           - Issue/PR management
+           - Projects V2 integration
+        3. project-context
+           - package.json analysis
+           - Dependency graph
+        4. filesystem
+           - File read/write
+           - Search operations
+        5. miyabi-integration
+           - Miyabi CLI integration
+           - Agent execution
+        --
+        **Config**: .claude/mcp.json
+        **Servers**: .claude/mcp-servers/*.js
+    }
+
+    class Hook <<Infrastructure>> {
+        +name: string
+        +type: 'pre-commit' | 'user-prompt-submit' | 'custom'
+        +script: string
+        +description: string
+        --
+        **4 Hooks**:
+        1. auto-format.sh
+           - ESLint + Prettier
+           - Pre-commit formatting
+        2. validate-typescript.sh
+           - tsc --noEmit
+           - Type checking
+        3. log-commands.sh
+           - LDD logging
+           - .ai/logs/ output
+        4. agent-event.sh
+           - Dashboard events
+           - WebSocket/REST
+        --
+        **Location**: .claude/hooks/*.sh
+        **Doc**: .claude/hooks/README.md
+    }
+}
 
 ' ============================================================================
-' Task Management (4 relations)
+' Issue Processing Flow (R1-R4, R17, R21)
 ' ============================================================================
 
-Task "*" --> "1" Agent : R5: assigned-to
-Task "*" --> "*" Task : R6: depends-on\n(DAG)
-Task "*" --> "1" DAG : R7: part-of
-Task "1" --> "1" Worktree : R8: runs-in
+Issue "1" -right-> "1" Agent : **R1**: analyzed-by\n(IssueAgent)
+Issue "1" -down-> "*" Task : **R2**: decomposed-into\n(CoordinatorAgent)
+Issue "1" -down-> "*" Label : **R3**: tagged-with\n(53 Labels)
+Issue "1" -right-> "1" PR : **R4**: creates\n(PRAgent)
+Label "*" -up-> "1" Issue : **R17**: defines-state\n(STATE labels)
+PR "1" -left-> "1" Issue : **R21**: attached-to\n(Closes #N)
 
 ' ============================================================================
-' Label Control (3 relations)
+' Agent Execution (R5, R9-R15)
 ' ============================================================================
 
-Label "1" --> "*" Agent : R16: triggers\n(trigger:agent-execute)
-Label "*" --> "*" Task : R18: categorizes
+Task "*" -up-> "1" Agent : **R5**: assigned-to\n(by Coordinator)
+Agent "1" -down-> "*" Task : **R9**: executes\n(parallel)
+Agent "*" -right-> "*" PR : **R10**: generates\n(PRAgent)
+Agent "1" -down-> "*" QualityReport : **R11**: creates\n(ReviewAgent)
+Agent "*" -right-> "*" Escalation : **R12**: triggers\n(conditionally)
+Agent "1" -right-> "*" Deployment : **R13**: performs\n(DeploymentAgent)
+Agent "*" -down-> "*" LDDLog : **R14**: logs-to\n(all agents)
+Command "1" -up-> "*" Agent : **R15**: invokes\n(9 commands)
 
 ' ============================================================================
-' Quality Management (3 relations)
+' Task Management (R6-R8)
 ' ============================================================================
 
-PR "1" --> "1" Agent : R19: reviewed-by\n(ReviewAgent)
-PR "1" --> "1" QualityReport : R20: has
-QualityReport "1" --> "1" Agent : R22: evaluated-by\n(ReviewAgent)
+Task "*" -right-> "*" Task : **R6**: depends-on\n(DAG edges)
+Task "*" -down-> "1" DAG : **R7**: part-of\n(DAG nodes)
+Task "1" -right-> "1" Worktree : **R8**: runs-in\n(isolated)
 
 ' ============================================================================
-' DAG & Parallel Execution (4 relations)
+' Label Control (R16, R18)
 ' ============================================================================
 
-DAG "1" --> "1" Issue : R24: decomposed-from
-DAG "1" --> "*" Task : R25: contains
-Worktree "1" --> "1" Task : R26: executes
-Worktree "1" --> "1" PR : R27: creates
+Label "1" -up-> "*" Agent : **R16**: triggers\n(trigger:agent-execute)
+Label "*" -down-> "*" Task : **R18**: categorizes\n(TYPE labels)
 
 ' ============================================================================
-' Agent Types (Specialization)
+' Quality Management (R19-R20, R22-R23)
 ' ============================================================================
 
-note right of Agent
-  **6 Agent Types**:
-  • CoordinatorAgent (🔴統括権限)
-  • CodeGenAgent (🔵実行権限)
-  • ReviewAgent (🔵実行権限)
-  • IssueAgent (🟢分析権限)
-  • PRAgent (🔵実行権限)
-  • DeploymentAgent (🔵実行権限)
-end note
+PR "1" -up-> "1" Agent : **R19**: reviewed-by\n(ReviewAgent)
+PR "1" -down-> "1" QualityReport : **R20**: has\n(attached)
+QualityReport "1" -up-> "1" Agent : **R22**: evaluated-by\n(ReviewAgent)
+QualityReport "1" -up-> "1" PR : **R23**: attached-to\n(comment)
 
-note right of Label
-  **10 Categories (53 Labels)**:
-  1. STATE (8) - Lifecycle
-  2. AGENT (6) - Assignment
-  3. PRIORITY (4) - Priority
-  4. TYPE (7) - Classification
-  5. SEVERITY (4) - Escalation
-  6. PHASE (5) - Project Phase
-  7. SPECIAL (7) - Special Ops
-  8. TRIGGER (4) - Automation
-  9. QUALITY (4) - Quality Score
-  10. COMMUNITY (4) - Community
-end note
+' ============================================================================
+' DAG & Parallel Execution (R24-R27)
+' ============================================================================
 
-note right of Command
-  **9 Commands**:
-  • /test
-  • /agent-run
-  • /verify
-  • /deploy
-  • /create-issue
-  • /security-scan
-  • /generate-docs
-  • /miyabi-todos
-  • /miyabi-auto
-end note
+DAG "1" -up-> "1" Issue : **R24**: decomposed-from\n(origin)
+DAG "1" -down-> "*" Task : **R25**: contains\n(all tasks)
+Worktree "1" -up-> "1" Task : **R26**: executes\n(Claude Code)
+Worktree "1" -right-> "1" PR : **R27**: creates\n(gh pr create)
+
+' ============================================================================
+' Community Integration (R28-R35)
+' ============================================================================
+
+Issue "*" -down-> "1" DiscordCommunity : **R28**: notifies-to\n(#announcements)
+Agent "*" -down-> "1" DiscordCommunity : **R29**: posts-to\n(#dev-general)
+QualityReport "*" -down-> "1" DiscordCommunity : **R30**: announces-in\n(#dev-pull-requests)
+PR "*" -down-> "1" DiscordCommunity : **R31**: announces-in\n(#release-notes)
+Deployment "*" -down-> "1" DiscordCommunity : **R32**: notifies-to\n(#announcements)
+Label "*" -down-> "1" DiscordCommunity : **R33**: triggers-notification-to\n(critical labels)
+Escalation "*" -down-> "1" DiscordCommunity : **R34**: notifies-to\n(#help-general)
+Command "*" -down-> "1" DiscordCommunity : **R35**: integrated-with\n(/miyabi bot)
+
+' ============================================================================
+' Infrastructure Integration
+' ============================================================================
+
+Agent "*" .down.> MCPServer : uses (5 servers)
+Agent "*" .down.> Hook : triggers (4 hooks)
+Worktree "*" .right.> Hook : pre-commit hooks
+LDDLog "*" .left.> Hook : log-commands.sh
 
 ' ============================================================================
 ' Legend
 ' ============================================================================
 
-legend bottom
-  **Miyabi Entity-Relation Model**
+legend bottom left
+  **Miyabi Complete Entity-Relation Model**
 
   **Statistics**:
-  • 12 Core Entities
-  • 27 Relations
+  • 13 Core Entities (E1-E13)
+  • 35 Relations (R1-R35)
+  • 21 Agents (Coding: 7, Business: 14)
+  • 5 MCP Servers (IDE, GitHub, Context, Filesystem, Miyabi)
+  • 4 Hooks (format, validate, log, events)
+  • 53 Labels (10 categories)
+  • 9 Commands (/test, /agent-run, etc.)
   • 88 Template Files
 
-  **File References**:
-  • Entity Definitions: agents/types/index.ts
-  • Full Documentation: docs/ENTITY_RELATION_MODEL.md
-  • Template Index: docs/TEMPLATE_MASTER_INDEX.md
-
   **Relation Categories**:
-  • Issue Processing Flow (6)
-  • Agent Execution (7)
-  • Task Management (4)
-  • Label Control (3)
-  • Quality Management (3)
-  • DAG & Parallel Execution (4)
+  • Issue Processing Flow (6 relations)
+  • Agent Execution (7 relations)
+  • Task Management (4 relations)
+  • Label Control (3 relations)
+  • Quality Management (3 relations)
+  • DAG & Parallel Execution (4 relations)
+  • Community Integration (8 relations)
+
+  **Key Files**:
+  • Entity Definitions: agents/types/index.ts
+  • Full Documentation: docs/ENTITY_RELATION_MODEL.md (1,721 lines)
+  • Template Index: docs/TEMPLATE_MASTER_INDEX.md
+  • Label Guide: docs/LABEL_SYSTEM_GUIDE.md
+  • Agent Specs: .claude/agents/specs/
+  • Agent Prompts: .claude/agents/prompts/
+
+  **Color Legend**:
+  • Light Blue - Core Entities (E1-E6)
+  • Green - Agent Entity (E3) - 21 Agents
+  • Yellow - Operation Entities (E7-E10)
+  • Orange - Execution Entities (E11-E12)
+  • Purple - Community Entity (E13)
+  • Teal - Infrastructure (MCP/Hooks)
 end legend
 
 @enduml

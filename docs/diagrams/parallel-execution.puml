@@ -1,181 +1,601 @@
-@startuml Parallel Task Execution Flow
+@startuml Miyabi - Complete Parallel Execution (Entity-Relation Integrated)
 !theme cerulean-outline
 skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam BoxPadding 10
 
-title Parallel Task Execution - Multi-Agent Coordination
+title **Miyabi - Complete Parallel Execution Flow**\nEntity-Relation Model (R1-R35) | 21 Agents | DAG Dependencies | Worktree Isolation | 53 Labels
 
-actor "Developer" as Dev
-participant "Parallel\nExecutor" as Executor
-participant "Coordinator\nAgent" as Coord
-queue "Task Queue" as Queue
-participant "Worker 1" as W1
-participant "Worker 2" as W2
-participant "Worker 3" as W3
-participant "GitHub\nProjects" as Projects
-database "Results\nStorage" as Results
+' Participants
+actor "Developer" as Dev #LightBlue
+participant "Parallel\nExecutor" as Executor #FFE0B2
+participant "Coordinator\nAgent" as Coord #81C784
+participant "DAG\nBuilder" as DAGBuilder #FFF9C4
+participant "Lock\nManager" as LockMgr #FFCCBC
+participant "Worktree\nManager" as WorktreeMgr #C5E1A5
+participant "CodeGen\nAgent #1" as CG1 #BA68C8
+participant "CodeGen\nAgent #2" as CG2 #BA68C8
+participant "CodeGen\nAgent #3" as CG3 #BA68C8
+participant "Review\nAgent" as Review #FFB74D
+participant "Projects\nV2" as Projects #FFF9C4
+participant "Discord" as Discord #9FA8DA
+participant "Hooks" as Hooks #FFCCBC
+participant "MCP\nServers" as MCP #C5E1A5
 
-== Initialization ==
-Dev -> Executor: npm run agents:parallel:issues\n--issues "1,2,3,4,5"
+== 🚀 Initialization ==
+
+Dev -> Executor: npm run agents:parallel:exec\n--issues "270,271,272,273,274" --concurrency 3
 activate Executor
-
-Executor -> Executor: Parse Configuration
-note right
-  **Config:**
-  - Max Workers: 3
-  - Rate Limit: 100/hour
-  - Timeout: 5 minutes
+note right of Executor
+  **Command Execution**:
+  - Issues: 5 (270, 271, 272, 273, 274)
+  - Max Concurrency: 3
+  - Timeout: 10 minutes per task
+  - Rate Limit: 100 API calls/hour
 end note
 
-Executor -> Projects: Fetch Issues
+Executor -> Executor: Parse configuration
+note right of Executor
+  **Config Validation**:
+  ✓ GitHub token present
+  ✓ API rate limit OK
+  ✓ Worktree directory available
+  ✓ Concurrency limit: 3
+end note
+
+Executor -> Hooks: log-commands.sh
+activate Hooks
+note right of Hooks
+  **E10: LDDLog Entity**
+  Log saved to: .ai/logs/2025-10-12.md
+
+  **Hook**: log-commands.sh
+end note
+Hooks --> Executor: Logged
+deactivate Hooks
+
+Executor -> Projects: Fetch Issues (270-274)
 activate Projects
-Projects --> Executor: 5 Issues Retrieved
+note right of Projects
+  **E1: Issue Entity** (5 issues)
+  - #270: Add OAuth 2.0 authentication
+  - #271: Fix payment gateway bug
+  - #272: Refactor user management
+  - #273: Add export functionality
+  - #274: Update documentation
+end note
+Projects --> Executor: 5 Issues retrieved
 deactivate Projects
 
-== Task Decomposition ==
-Executor -> Coord: Decompose Issues
-activate Coord
+Executor -> Discord: **R28**: notifies-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  🚀 **Parallel Execution Started**
+  Issues: 270, 271, 272, 273, 274
+  Concurrency: 3
+  Estimated Time: 45 minutes
+end note
+Discord --> Executor: Notified
+deactivate Discord
 
-loop For Each Issue
-  Coord -> Coord: Analyze Issue
-  Coord -> Coord: Create Task DAG
-  Coord -> Queue: Enqueue Tasks
-  activate Queue
+== 🧠 Task Decomposition & DAG Construction ==
+
+Executor -> Coord: **R1**: analyzed-by → CoordinatorAgent\nDecompose 5 issues
+activate Coord
+note right of Coord
+  **E3: Agent Entity**
+  - type: 'CoordinatorAgent'
+  - authority: '🔴統括権限'
+  - escalation: TechLead
+end note
+
+loop For Each Issue (270-274)
+  Coord -> MCP: Get project context
+  activate MCP
+  note right of MCP
+    **MCP Server**: project-context
+    - Dependency analysis
+    - File structure
+    - Tech stack detection
+  end note
+  MCP --> Coord: Context data
+  deactivate MCP
+
+  Coord -> DAGBuilder: **R2**: decomposed-into → Task[]
+  activate DAGBuilder
+  note right of DAGBuilder
+    **E11: DAG Entity**
+
+    **Issue #270** (OAuth 2.0):
+    T1: Models (User, Token, Session)
+    T2: Service (authorize, token, refresh) [depends: T1]
+    T3: Endpoints (GET/POST /oauth/*) [depends: T2]
+    T4: Tests (E2E OAuth flow) [depends: T2, T3]
+
+    **Issue #271** (Payment bug):
+    T5: Fix payment calculation
+    T6: Add validation tests [depends: T5]
+
+    **Issue #272** (Refactor):
+    T7: Extract user service
+    T8: Update references [depends: T7]
+
+    **Issue #273** (Export):
+    T9: Export service
+    T10: Export endpoint [depends: T9]
+
+    **Issue #274** (Docs):
+    T11: Update API docs
+  end note
+
+  DAGBuilder -> DAGBuilder: Build DAG
+  note right of DAGBuilder
+    **R6**: Task depends-on Task
+    **R7**: Tasks part-of DAG
+    **R24**: DAG decomposed-from Issue
+    **R25**: DAG contains Tasks
+
+    **Topological Sort**:
+    Level 0: [T1, T5, T7, T9, T11] (5 tasks - no deps)
+    Level 1: [T2, T6, T8, T10] (4 tasks)
+    Level 2: [T3] (1 task)
+    Level 3: [T4] (1 task)
+
+    **Total**: 11 tasks across 4 levels
+  end note
+
+  DAGBuilder -> DAGBuilder: Detect circular dependencies
+  alt No Cycles
+    DAGBuilder --> Coord: DAG built successfully
+  else Circular Dependency Detected
+    DAGBuilder -> Coord: **E8: Escalation**
+    note right of Coord
+      **R12**: triggers → Escalation
+      - target: TechLead
+      - severity: Sev.2-High
+      - reason: "Circular dependency detected"
+    end note
+    Coord -> Discord: **R34**: notifies-to → Discord
+    activate Discord
+    Discord --> Coord: Escalation sent
+    deactivate Discord
+    stop
+  end
+  deactivate DAGBuilder
 end
 
-Coord --> Executor: Decomposition Complete
+Coord -> Projects: Update labels\nstate:pending → state:analyzing
+activate Projects
+note right of Projects
+  **R17**: Label defines-state
+  **R3**: tagged-with → Label[]
+
+  📥 state:pending → 🔍 state:analyzing
+end note
+Projects --> Coord: Updated
+deactivate Projects
+
+Coord --> Executor: Decomposition complete\n11 tasks in 4 levels
 deactivate Coord
 
-note over Queue
-  **Task Queue**
-  Total: 15 tasks
-  - Issue #1: 3 tasks
-  - Issue #2: 2 tasks
-  - Issue #3: 4 tasks
-  - Issue #4: 3 tasks
-  - Issue #5: 3 tasks
+== 🌳 Worktree Setup ==
+
+Executor -> WorktreeMgr: Create worktrees for all tasks
+activate WorktreeMgr
+note right of WorktreeMgr
+  **E12: Worktree Entity**
+  **R8**: Task runs-in → Worktree
+
+  ```bash
+  # Level 0 tasks (5 worktrees)
+  git worktree add .worktrees/task-1 -b feat/oauth-models
+  git worktree add .worktrees/task-5 -b fix/payment-calculation
+  git worktree add .worktrees/task-7 -b refactor/user-service
+  git worktree add .worktrees/task-9 -b feat/export-service
+  git worktree add .worktrees/task-11 -b docs/api-update
+
+  # Level 1-3 worktrees (6 more)
+  # ... (created on-demand)
+  ```
+
+  **Isolation Benefits**:
+  - No merge conflicts
+  - Independent commits
+  - Parallel execution
+  - Easy rollback
 end note
+WorktreeMgr --> Executor: 11 worktrees ready
+deactivate WorktreeMgr
 
-== Parallel Execution ==
-Executor -> W1: Start Worker 1
-activate W1
-Executor -> W2: Start Worker 2
-activate W2
-Executor -> W3: Start Worker 3
-activate W3
+Executor -> LockMgr: Initialize lock system
+activate LockMgr
+note right of LockMgr
+  **Lock Manager**:
+  - File-based locking (.task-locks/)
+  - Atomic operations
+  - Deadlock prevention
+  - Conflict detection
+end note
+LockMgr --> Executor: Lock system ready
+deactivate LockMgr
 
-par Worker 1: Issue #1
-  W1 -> Queue: Dequeue Task
-  Queue --> W1: Task 1.1
-  deactivate Queue
-  W1 -> W1: Execute Task 1.1\n(Create models)
-  W1 -> Results: Store Result
-  activate Results
-  Results --> W1: Saved
-  deactivate Results
-  W1 -> Projects: Update Progress
+Executor -> Projects: Update state\nstate:analyzing → state:implementing
+activate Projects
+note right of Projects
+  🔍 state:analyzing → 🏗️ state:implementing
+end note
+Projects --> Executor: Updated
+deactivate Projects
+
+== 🔄 Parallel Execution - Level 0 (5 tasks, 3 workers) ==
+
+Executor -> LockMgr: Assign Level 0 tasks to workers
+activate LockMgr
+LockMgr -> LockMgr: acquireLock(T1, CG1)\nacquireLock(T5, CG2)\nacquireLock(T7, CG3)
+note right of LockMgr
+  **Locks Acquired**:
+  - T1 → CodeGenAgent #1
+  - T5 → CodeGenAgent #2
+  - T7 → CodeGenAgent #3
+
+  **Queued** (waiting for worker):
+  - T9, T11
+end note
+LockMgr --> Executor: 3 tasks locked
+deactivate LockMgr
+
+par Worker 1: T1 (OAuth Models)
+  Executor -> CG1: **R5**: assigned-to → CodeGenAgent #1\n**R9**: executes Task-1
+  activate CG1
+  note right of CG1
+    **E2: Task Entity**
+    - id: "task-1"
+    - type: TaskType.CodeGeneration
+    - priority: 1
+    - dependencies: []
+    - status: "in_progress"
+  end note
+
+  CG1 -> Hooks: agent-event.sh started
+  activate Hooks
+  Hooks --> CG1: Event logged
+  deactivate Hooks
+
+  CG1 -> MCP: Load prompt (.claude/agents/prompts/coding/codegen-agent-prompt.md)
+  activate MCP
+  MCP --> CG1: Prompt loaded
+  deactivate MCP
+
+  CG1 -> CG1: Generate code\nsrc/models/oauth/\n- User.ts\n- Token.ts\n- Session.ts
+  note right of CG1
+    **AI Code Generation**:
+    - TypeScript strict mode
+    - Zod validation
+    - Prisma models
+    - Unit tests (Vitest)
+  end note
+
+  CG1 -> Hooks: auto-format.sh + validate-typescript.sh
+  activate Hooks
+  note right of Hooks
+    **Pre-commit Hooks**:
+    ✓ ESLint + Prettier
+    ✓ TypeScript validation
+  end note
+  Hooks --> CG1: Validated
+  deactivate Hooks
+
+  CG1 -> CG1: **R14**: logs-to → LDDLog\ngit commit
+  note right of CG1
+    feat(oauth): add OAuth 2.0 models
+
+    🤖 Generated with Claude Code
+    Co-Authored-By: Claude
+  end note
+
+  CG1 -> Projects: updateProgress(T1, 100%)
   activate Projects
-  Projects --> W1: Updated
+  Projects --> CG1: Updated
   deactivate Projects
 
-  W1 -> Queue: Dequeue Task
-  activate Queue
-  Queue --> W1: Task 1.2
-  deactivate Queue
-  W1 -> W1: Execute Task 1.2\n(Add service)
-  W1 -> Results: Store Result
-  activate Results
-  Results --> W1: Saved
-  deactivate Results
-else Worker 2: Issue #2
-  W2 -> Queue: Dequeue Task
-  activate Queue
-  Queue --> W2: Task 2.1
-  deactivate Queue
-  W2 -> W2: Execute Task 2.1\n(Fix bug)
-  W2 -> Results: Store Result
-  activate Results
-  Results --> W2: Saved
-  deactivate Results
-  W2 -> Projects: Update Progress
+  CG1 --> Executor: **Task-1 Complete**
+  deactivate CG1
+
+else Worker 2: T5 (Payment Bug Fix)
+  Executor -> CG2: **R9**: executes Task-5
+  activate CG2
+
+  CG2 -> Hooks: agent-event.sh started
+  activate Hooks
+  Hooks --> CG2: Logged
+  deactivate Hooks
+
+  CG2 -> MCP: Load prompt
+  activate MCP
+  MCP --> CG2: Prompt loaded
+  deactivate MCP
+
+  CG2 -> CG2: Fix payment calculation\nsrc/services/payment/calculator.ts
+  note right of CG2
+    **Bug Fix**:
+    - Correct rounding errors
+    - Add edge case handling
+    - Update unit tests
+  end note
+
+  CG2 -> Hooks: format + validate
+  activate Hooks
+  Hooks --> CG2: Validated
+  deactivate Hooks
+
+  CG2 -> CG2: git commit
+  note right of CG2
+    fix(payment): correct calculation rounding
+
+    🤖 Generated with Claude Code
+  end note
+
+  CG2 -> Projects: updateProgress(T5, 100%)
   activate Projects
-  Projects --> W2: Updated
+  Projects --> CG2: Updated
   deactivate Projects
 
-  W2 -> Queue: Dequeue Task
-  activate Queue
-  Queue --> W2: Task 3.1
-  deactivate Queue
-  W2 -> W2: Execute Task 3.1\n(Add feature)
-else Worker 3: Issue #4
-  W3 -> Queue: Dequeue Task
-  activate Queue
-  Queue --> W3: Task 4.1
-  deactivate Queue
-  W3 -> W3: Execute Task 4.1\n(Refactor)
-  W3 -> Results: Store Result
-  activate Results
-  Results --> W3: Saved
-  deactivate Results
-  W3 -> Projects: Update Progress
+  CG2 --> Executor: **Task-5 Complete**
+  deactivate CG2
+
+else Worker 3: T7 (Refactor)
+  Executor -> CG3: **R9**: executes Task-7
+  activate CG3
+
+  CG3 -> Hooks: agent-event.sh started
+  activate Hooks
+  Hooks --> CG3: Logged
+  deactivate Hooks
+
+  CG3 -> CG3: Extract user service\nsrc/services/user/UserService.ts
+  note right of CG3
+    **Refactoring**:
+    - Extract service class
+    - Add dependency injection
+    - Update tests
+  end note
+
+  CG3 -> Hooks: format + validate
+  activate Hooks
+  Hooks --> CG3: Validated
+  deactivate Hooks
+
+  CG3 -> CG3: git commit
+  note right of CG3
+    refactor(user): extract user service
+
+    🤖 Generated with Claude Code
+  end note
+
+  CG3 -> Projects: updateProgress(T7, 100%)
   activate Projects
-  Projects --> W3: Updated
+  Projects --> CG3: Updated
   deactivate Projects
 
-  W3 -> Queue: Dequeue Task
-  activate Queue
-  Queue --> W3: Task 5.1
-  deactivate Queue
-  W3 -> W3: Execute Task 5.1\n(Documentation)
+  CG3 --> Executor: **Task-7 Complete**
+  deactivate CG3
 end
 
-note over W1, W3
-  Workers continue processing
-  tasks from the queue until
-  all tasks are completed
+note over CG1, CG3
+  **Level 0 Complete**: 3/5 tasks done
+  **Remaining**: T9, T11 (will be picked up next)
 end note
 
-W1 --> Executor: Worker 1 Complete
-deactivate W1
-W2 --> Executor: Worker 2 Complete
-deactivate W2
-W3 --> Executor: Worker 3 Complete
-deactivate W3
+== 🔄 Continue Parallel Execution - Remaining Levels ==
 
-== Results Aggregation ==
-Executor -> Results: Aggregate Results
-activate Results
-Results --> Executor: All Results
-deactivate Results
+note over Executor
+  **Execution continues for**:
+  - Level 0 remaining: T9, T11
+  - Level 1: T2, T6, T8, T10 (depends on Level 0)
+  - Level 2: T3 (depends on T2)
+  - Level 3: T4 (depends on T2, T3)
 
-Executor -> Executor: Generate Summary Report
+  **Pattern repeats**: Lock → Execute → Commit → Release
+end note
 
-alt All Tasks Successful
-  Executor -> Projects: Update All Issues\n"Completed"
+== 🔀 Merge All Worktrees ==
+
+Executor -> WorktreeMgr: Merge all 11 worktrees
+activate WorktreeMgr
+note right of WorktreeMgr
+  **Merge Strategy**:
+  1. Rebase each branch on main
+  2. Run tests for each branch
+  3. Fast-forward merge to main
+  4. Cleanup worktrees
+
+  ```bash
+  git checkout main
+  git merge feat/oauth-models --ff-only
+  git merge fix/payment-calculation --ff-only
+  git merge refactor/user-service --ff-only
+  # ... (8 more merges)
+
+  git worktree remove .worktrees/task-1
+  # ... (10 more removals)
+  ```
+
+  **Result**: All changes merged\nNo conflicts (isolated worktrees)
+end note
+WorktreeMgr --> Executor: All tasks merged
+deactivate WorktreeMgr
+
+Executor -> Projects: Update state\nstate:implementing → state:reviewing
+activate Projects
+note right of Projects
+  🏗️ state:implementing → 👀 state:reviewing
+end note
+Projects --> Executor: Updated
+deactivate Projects
+
+== ✅ Quality Assurance ==
+
+Executor -> Review: **R9**: executes → Quality Review\nReview all 5 issues
+activate Review
+note right of Review
+  **E3: ReviewAgent**
+  - type: 'ReviewAgent'
+  - authority: '🔵実行権限'
+  - escalation: CISO (security)
+end note
+
+Review -> MCP: Get diagnostics
+activate MCP
+note right of MCP
+  **MCP Server**: ide-integration
+  - mcp__ide__getDiagnostics
+  - ESLint results
+  - TypeScript errors
+end note
+MCP --> Review: Diagnostics data
+deactivate MCP
+
+Review -> Review: **R11**: creates → QualityReport\nAnalyze all changes
+note right of Review
+  **E6: QualityReport Entity** (5 reports)
+
+  **Overall Score**: 92/100 ⭐
+
+  **Breakdown**:
+  - Issue #270 (OAuth): 95/100 ⭐
+  - Issue #271 (Payment): 90/100 ⭐
+  - Issue #272 (Refactor): 88/100 ✅
+  - Issue #273 (Export): 94/100 ⭐
+  - Issue #274 (Docs): 98/100 ⭐
+
+  **Scoring**:
+  - ESLint: 40% weight
+  - TypeScript: 30% weight
+  - Security: 20% weight
+  - Test Coverage: 10% weight
+end note
+
+alt All Quality Checks Pass (Score >= 80)
+  Review -> Projects: Apply quality labels
   activate Projects
-  Projects --> Executor: Updated
+  note right of Projects
+    **Labels Applied**:
+    ⭐ quality:excellent (3 issues)
+    ✅ quality:good (2 issues)
+  end note
+  Projects --> Review: Labels applied
   deactivate Projects
 
-  Executor --> Dev: ✓ Success Report\n15/15 tasks completed
-  deactivate Executor
-else Some Tasks Failed
-  Executor -> Projects: Mark Failed Tasks
-  activate Projects
-  Projects --> Executor: Updated
-  deactivate Projects
+  Review -> Discord: **R30**: announces-in → Discord
+  activate Discord
+  note right of Discord
+    **Channel**: #dev-pull-requests
+    📊 **Quality Report - Parallel Execution**
+    Issues: 270-274 (5 issues)
+    Overall Score: 92/100 ⭐
+    All checks passed ✓
+  end note
+  Discord --> Review: Posted
+  deactivate Discord
 
-  Executor --> Dev: ⚠ Partial Success\n12/15 tasks completed
-  deactivate Executor
+else Quality Issues Found
+  Review -> Executor: **Quality issues detected**
+  note right of Executor
+    **E8: Escalation** would be triggered
+    for scores < 80 or security issues
+  end note
 end
 
-note over Dev, Projects
-  **Performance Metrics**
+Review --> Executor: **R22**: Quality approved
+deactivate Review
 
-  Sequential Execution: 75 minutes (15 tasks × 5 min)
-  Parallel Execution: 25 minutes (3 workers)
-  Time Saved: 67% faster
+== 📊 Results Aggregation ==
 
-  Throughput: 3x increase
-  Resource Utilization: Optimal
+Executor -> Executor: Generate summary report
+note right of Executor
+  **Parallel Execution Summary**:
+
+  **Issues Processed**: 5 (270-274)
+  **Tasks Completed**: 11/11 (100%)
+  **Quality Score**: 92/100 ⭐
+  **Time Taken**: 28 minutes
+
+  **Performance**:
+  - Sequential time: ~110 minutes (11 tasks × 10 min)
+  - Parallel time: 28 minutes (3 workers)
+  - **Time Saved**: 75% (3.9x speedup)
+
+  **Worktrees**:
+  - Created: 11
+  - Merged: 11
+  - Conflicts: 0
+
+  **Agent Activity**:
+  - CoordinatorAgent: 1 session
+  - CodeGenAgent: 11 sessions (3 parallel)
+  - ReviewAgent: 1 session
+end note
+
+Executor -> Projects: Update all issues\nstate:reviewing → state:done
+activate Projects
+note right of Projects
+  **Final State Update**:
+  All 5 issues → ✅ state:done
+
+  **Final Labels**:
+  - Issue #270: ✅ state:done, ⭐ quality:excellent
+  - Issue #271: ✅ state:done, ⭐ quality:excellent
+  - Issue #272: ✅ state:done, ✅ quality:good
+  - Issue #273: ✅ state:done, ⭐ quality:excellent
+  - Issue #274: ✅ state:done, ⭐ quality:excellent
+end note
+Projects --> Executor: All updated
+deactivate Projects
+
+Executor -> Discord: **R29**: posts-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  ✅ **Parallel Execution Complete**
+  Issues: 270-274 (5 issues)
+  Tasks: 11/11 completed
+  Quality: 92/100 ⭐
+  Time: 28 minutes (75% faster)
+  Speedup: 3.9x
+end note
+Discord --> Executor: Posted
+deactivate Discord
+
+Executor --> Dev: ✅ **Execution Summary**\n5 issues completed\n11 tasks (100% success)\n92/100 quality score
+deactivate Executor
+
+note over Dev, MCP
+  **🌸 Miyabi Parallel Execution Complete**
+
+  **Entity-Relation Integration**:
+  - E1: 5 Issues (270-274)
+  - E2: 11 Tasks (T1-T11)
+  - E3: 4 Agents (Coordinator, CodeGen×3, Review)
+  - E6: 5 QualityReports (92/100 avg)
+  - E10: LDDLog (all commands logged)
+  - E11: DAG (4 levels, 11 tasks)
+  - E12: 11 Worktrees (zero conflicts)
+  - E13: Discord (3 notifications)
+
+  **Relations Used**: R1, R2, R3, R5, R6, R7, R8, R9, R11, R14,
+                      R17, R22, R24, R25, R28, R29, R30, R34
+
+  **Labels Applied**: STATE, QUALITY, TYPE, PRIORITY
+
+  **Parallel Execution Benefits**:
+  ✓ 11 tasks in 28 minutes (sequential: 110 min)
+  ✓ 75% time savings (3.9x speedup)
+  ✓ Zero merge conflicts (Worktree isolation)
+  ✓ Quality score: 92/100 ⭐
+  ✓ Full Entity-Relation traceability
+  ✓ Automatic quality scoring
+  ✓ DAG dependency resolution
 end note
 
 @enduml

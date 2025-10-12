@@ -1,7 +1,7 @@
 ---
 name: PersonaAgent
 description: Phase 3 ペルソナ設定Agent - ターゲット顧客の詳細ペルソナ（3-5人）とカスタマージャーニー設計
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (ペルソナ設定困難時)
 phase: 3
 next_phase: 4 (ProductConceptAgent)
@@ -44,7 +44,7 @@ next_phase: 4 (ProductConceptAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にペルソナ分析を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的にペルソナ分析を実行し、レポートを生成可能
 
 ## 技術仕様
 

@@ -400,3 +400,64 @@ export class CircularDependencyError extends Error {
     this.name = 'CircularDependencyError';
   }
 }
+
+// ============================================================================
+// Discord Community Types (E13)
+// ============================================================================
+
+export interface DiscordCommunity {
+  // Identification
+  serverId: string;
+  serverName: string;
+
+  // Channels
+  channels: DiscordChannel[];
+
+  // Roles
+  roles: DiscordRole[];
+
+  // Members
+  members: number;
+
+  // Webhook integrations
+  webhooks: WebhookConfig[];
+
+  // Bot integrations
+  botIntegrations: BotConfig[];
+
+  // Metadata
+  createdAt: string;
+}
+
+export interface DiscordChannel {
+  id: string;
+  name: string; // e.g., "#announcements"
+  type: 'text' | 'voice' | 'forum';
+  category: string; // e.g., "Information & Announcements"
+  purpose: string;
+}
+
+export interface DiscordRole {
+  id: string;
+  name: string; // e.g., "🌱 Newcomer"
+  level: number; // 1-5
+  requirements: string;
+}
+
+export interface WebhookConfig {
+  channelId: string;
+  webhookUrl: string;
+  triggerEvents: string[]; // e.g., ['issue.created', 'pr.merged']
+}
+
+export interface BotConfig {
+  name: string; // e.g., "MEE6", "GitHub Bot", "Custom Miyabi Bot"
+  enabled: boolean;
+  commands: BotCommand[];
+}
+
+export interface BotCommand {
+  name: string; // e.g., "/miyabi status"
+  description: string;
+  usage: string;
+}

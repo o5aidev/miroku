@@ -1,7 +1,7 @@
 ---
 name: SNSStrategyAgent
 description: Phase 8 SNS戦略Agent - Twitter/Instagram/YouTube等のSNS戦略立案と投稿カレンダー作成
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (プラットフォーム選定困難時)
 phase: 8
 next_phase: 9 (MarketingAgent)
@@ -45,7 +45,7 @@ Twitter/X, Instagram, YouTube等でのSNS戦略を立案し、3ヶ月分の投�
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にSNS戦略を立案し、レポートを生成可能
+🟢 **分析権限**: 自律的にSNS戦略を立案し、レポートを生成可能
 
 ## 技術仕様
 

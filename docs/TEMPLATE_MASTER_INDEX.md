@@ -607,6 +607,101 @@ interface DAG {
 
 ---
 
+### E13: DiscordCommunity
+
+**関連テンプレート（5ファイル）**:
+
+| テンプレート | 役割 | 関係性 |
+|------------|------|--------|
+| `agents/types/index.ts` | DiscordCommunity型定義 | 型システム |
+| `docs/ENTITY_RELATION_MODEL.md` | ERモデル | DiscordCommunity定義 |
+| `docs/DISCORD_COMMUNITY_PLAN.md` | Discord設定ガイド | コミュニティ構築計画 |
+| `docs/diagrams/entity-relation-model.puml` | PlantUMLダイアグラム | Entity-Relation可視化 |
+| `.github/workflows/` | Webhook統合（将来） | GitHub → Discord通知 |
+
+**Discord Community統合**:
+- **15+チャンネル**: Information, Development, Community, Help & Support
+- **Progressive Role System**: 🌱 Newcomer → 🌳 Expert (5レベル)
+- **Webhook統合**: GitHub/Agent通知を各チャンネルへ配信
+- **Bot統合**: MEE6, GitHub Bot, Custom Miyabi Bot
+
+**8つの新規Relation (R28-R35)**:
+
+| Relation | 説明 | トリガー条件 |
+|----------|------|------------|
+| R28 | Issue → DiscordCommunity (notifies-to #announcements) | Issue作成時 |
+| R29 | Agent → DiscordCommunity (posts-to #dev-general) | Agent実行完了時 |
+| R30 | QualityReport → DiscordCommunity (announces-in #dev-pull-requests) | PR品質スコア算出時 |
+| R31 | PR → DiscordCommunity (announces-in #release-notes) | PRマージ時 |
+| R32 | Deployment → DiscordCommunity (notifies-to #announcements) | デプロイ成功/失敗時 |
+| R33 | Label → DiscordCommunity (triggers-notification-to) | 特定Label付与時 |
+| R34 | Escalation → DiscordCommunity (notifies-to #help-general) | エスカレーション発生時 |
+| R35 | Command → DiscordCommunity (integrated-with /miyabi bot) | Botコマンド実行時 |
+
+**チャンネル構造**:
+```
+📢 Information & Announcements
+├── #announcements         - R28: Issue通知, R32: Deployment通知
+├── #release-notes         - R31: PR通知
+
+💻 Development
+├── #dev-general          - R29: Agent実行ログ
+├── #dev-pull-requests    - R30: QualityReport
+
+👥 Community
+├── #general              - 一般雑談
+├── #introductions        - 自己紹介
+
+❓ Help & Support
+├── #help-general         - R34: Escalation通知
+└── #help-troubleshooting
+```
+
+**Bot Commands (R35)**:
+```bash
+/miyabi status              # システムステータス確認
+/miyabi agent-run <issue>   # Agent手動実行
+/miyabi deploy <env>        # デプロイ実行
+/miyabi quality <pr>        # 品質レポート表示
+```
+
+**使用フロー**:
+1. Discord Server作成 (`docs/DISCORD_COMMUNITY_PLAN.md` Phase 1)
+2. Webhook設定 (`.github/workflows/` → Discord Webhook URL)
+3. Bot統合 (MEE6 + GitHub Bot + Custom Miyabi Bot)
+4. チャンネル権限設定 (Progressive Role System)
+5. コミュニティ運用開始 (Phase 2-4)
+
+**型定義** (`agents/types/index.ts:404-463`):
+```typescript
+interface DiscordCommunity {
+  serverId: string;
+  serverName: string;
+  channels: DiscordChannel[];      // 15+チャンネル
+  roles: DiscordRole[];            // Progressive Role System
+  members: number;
+  webhooks: WebhookConfig[];       // GitHub/Agent通知用
+  botIntegrations: BotConfig[];    // MEE6, GitHub Bot, Custom Miyabi Bot
+  createdAt: string;
+}
+```
+
+**実装例 (R28: Issue → Discord)**:
+```typescript
+// Issue作成時、#announcementsチャンネルに通知
+const webhook = discord.webhooks.find(w => w.channelId === 'announcements');
+await sendWebhook(webhook.webhookUrl, {
+  content: `📢 **New Issue Created**\n\nIssue #${issue.number}: ${issue.title}\n${issue.url}`
+});
+```
+
+**参照ドキュメント**:
+- [ENTITY_RELATION_MODEL.md](./ENTITY_RELATION_MODEL.md) - E13定義とR28-R35
+- [DISCORD_COMMUNITY_PLAN.md](./DISCORD_COMMUNITY_PLAN.md) - 4フェーズ構築計画
+- [entity-relation-model.puml](./diagrams/entity-relation-model.puml) - PlantUMLダイアグラム
+
+---
+
 ## ユースケース別フロー
 
 ### 🎯 ユースケース1: 新機能追加 (Full Autonomous)
@@ -1135,6 +1230,13 @@ gh pr view 1
 - **アーキテクチャ**: `CLAUDE.md` (Git Worktree並列実行)
 - **実装**: `scripts/parallel-executor.ts`
 - **プロンプト**: `.claude/agents/prompts/\*-agent-prompt.md`
+
+#### DiscordCommunity関連
+- **型定義**: `agents/types/index.ts:404-463`
+- **ERモデル**: `docs/ENTITY_RELATION_MODEL.md`
+- **構築計画**: `docs/DISCORD_COMMUNITY_PLAN.md`
+- **PlantUML**: `docs/diagrams/entity-relation-model.puml`
+- **8つの新規Relation**: R28-R35
 
 ---
 

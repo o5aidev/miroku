@@ -1,138 +1,575 @@
-@startuml Agentic OS - Autonomous Workflow Sequence
+@startuml Miyabi - Complete Autonomous Workflow (Entity-Relation Integrated)
 !theme cerulean-outline
 skinparam backgroundColor #FEFEFE
 skinparam sequenceMessageAlign center
+skinparam BoxPadding 10
 
-title Agentic OS - Autonomous Workflow Sequence\nFrom Issue Creation to Deployment
+title **Miyabi - Complete Autonomous Workflow Sequence**\nEntity-Relation Model (R1-R35) | 53 Label System | MCP/Hook Integration
 
-actor "Developer" as Dev
-participant "GitHub\nIssues" as Issues
-participant "Coordinator\nAgent" as Coord
-participant "CodeGen\nAgent" as CodeGen
-participant "Review\nAgent" as Review
-participant "GitHub\nActions" as Actions
-participant "Projects\nV2" as Projects
-participant "Claude\nLLM" as Claude
+' Actor & Participants
+actor "Developer" as Dev #LightBlue
+participant "GitHub\nIssues" as Issues #FFE0B2
+participant "Issue\nAgent" as IssueAgent #90CAF9
+participant "Coordinator\nAgent" as Coord #81C784
+participant "CodeGen\nAgent" as CodeGen #BA68C8
+participant "Review\nAgent" as Review #FFB74D
+participant "PR\nAgent" as PRAgent #4FC3F7
+participant "Deploy\nAgent" as DeployAgent #FF8A65
+participant "GitHub\nActions" as Actions #BDBDBD
+participant "Projects\nV2" as Projects #FFF9C4
+participant "Discord\nCommunity" as Discord #9FA8DA
+participant "Claude\nLLM" as Claude #E1BEE7
+participant "MCP\nServers" as MCP #C5E1A5
+participant "Hooks\n(4 scripts)" as Hooks #FFCCBC
 
-== Issue Creation ==
+== 📥 Issue Creation & Initial Setup ==
+
 Dev -> Issues: Create Issue\n"Add user authentication"
 activate Issues
-Issues -> Projects: Add to Project Board
+note right of Issues
+  **E1: Issue Entity**
+  - number: 123
+  - title: "Add user authentication"
+  - state: open
+  - labels: []
+end note
+
+Issues -> Projects: R4: Add to Project Board
 activate Projects
 Projects --> Issues: Item Created
 deactivate Projects
+
+Issues -> Discord: **R28**: notifies-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #announcements
+  📢 **New Issue Created**
+  Issue #123: Add user authentication
+  https://github.com/.../issues/123
+end note
+Discord --> Issues: Notification Sent
+deactivate Discord
+
 Issues --> Dev: Issue #123 Created
 deactivate Issues
 
-== Automatic Analysis ==
-Issues -> Coord: Webhook Trigger
-activate Coord
-Coord -> Claude: Analyze Issue Context
-activate Claude
-Claude --> Coord: Understanding & Requirements
-deactivate Claude
+== 🤖 Issue Analysis (IssueAgent + 53 Label System) ==
 
-Coord -> Coord: Task Decomposition
-note right
-  **Decomposed Tasks:**
-  1. Create auth models
-  2. Implement JWT service
-  3. Add login endpoint
-  4. Write unit tests
+Issues -> IssueAgent: **R1**: analyzed-by → IssueAgent
+activate IssueAgent
+note right of IssueAgent
+  **E3: Agent Entity**
+  type: 'IssueAgent'
+  authority: '🟢分析権限'
 end note
 
-Coord -> Coord: Build DAG\n(Dependency Graph)
-Coord -> Projects: Update Status\n"In Progress"
+IssueAgent -> MCP: Request IDE Diagnostics
+activate MCP
+note right of MCP
+  **MCP Server**: ide-integration
+  - mcp__ide__getDiagnostics
+  - Context analysis
+end note
+MCP --> IssueAgent: Context Data
+deactivate MCP
+
+IssueAgent -> Claude: **AI-based Label Inference**
+activate Claude
+note right of Claude
+  **MCP Integration**:
+  - Context from MCP servers
+  - Semantic analysis
+
+  **Analyze**:
+  - Type (feature/bug/refactor/docs/test/deployment/chore)
+  - Priority (P0-Critical → P3-Low)
+  - Severity (Sev.1-Critical → Sev.5-Trivial)
+  - Complexity estimation
+end note
+Claude --> IssueAgent: **Label Recommendations**
+deactivate Claude
+
+IssueAgent -> Issues: **R3**: tagged-with → Label[]
+note right of Issues
+  **53 Label System Applied**:
+
+  **STATE** (8 labels):
+  📥 state:pending
+
+  **TYPE** (7 labels):
+  ✨ type:feature
+
+  **PRIORITY** (4 labels):
+  🔥 priority:P1-High
+
+  **SEVERITY** (4 labels):
+  ⚠️ severity:Sev.2-High
+
+  **AGENT** (6 labels):
+  🤖 agent:coordinator
+
+  **TRIGGER** (4 labels):
+  🤖 trigger:agent-execute
+end note
+
+IssueAgent -> Discord: **R29**: posts-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  🤖 **IssueAgent Complete**
+  Issue #123 analyzed
+  Labels: feature, P1-High, Sev.2-High
+end note
+Discord --> IssueAgent: Posted
+deactivate Discord
+
+IssueAgent --> Issues: **Labels Applied** (R17: defines-state)
+deactivate IssueAgent
+
+== 🧠 Automatic Analysis & Task Decomposition ==
+
+Issues -> Coord: **R16**: triggers → Agent\n(Label: trigger:agent-execute)
+activate Coord
+note right of Coord
+  **E3: CoordinatorAgent**
+  authority: '🔴統括権限'
+  escalation: TechLead
+end note
+
+Coord -> Hooks: **Hook Execution**: log-commands.sh
+activate Hooks
+note right of Hooks
+  **4 Hooks Active**:
+  ✅ log-commands.sh - LDD logging
+  ✅ auto-format.sh - ESLint/Prettier (pre-commit)
+  ✅ validate-typescript.sh - Type check (pre-commit)
+  ✅ agent-event.sh - Dashboard events
+end note
+Hooks --> Coord: Logged to .ai/logs/
+deactivate Hooks
+
+Coord -> MCP: Get Project Context
+activate MCP
+note right of MCP
+  **MCP Server**: project-context
+  - package.json analysis
+  - Dependency graph
+  - Tech stack detection
+end note
+MCP --> Coord: Project Context
+deactivate MCP
+
+Coord -> Claude: **R2**: Analyze Issue Context\n(for Task Decomposition)
+activate Claude
+Claude --> Coord: **Understanding & Requirements**
+deactivate Claude
+
+Coord -> Coord: **R2**: decomposed-into → Task[]\n**R24**: DAG decomposed-from Issue
+note right of Coord
+  **E2: Task Entity** (4 tasks created)
+  **E11: DAG Entity** (Dependency Graph)
+
+  **Decomposed Tasks**:
+  T1: Create auth models [No deps]
+  T2: Implement JWT service [Deps: T1]
+  T3: Add login endpoint [Deps: T2]
+  T4: Write unit tests [Deps: T2, T3]
+
+  **R7**: Tasks part-of DAG
+  **R6**: Task depends-on Task
+  **R18**: Label categorizes Task
+
+  **DAG Levels** (R25: contains Tasks):
+  Level 0: [T1]
+  Level 1: [T2]
+  Level 2: [T3]
+  Level 3: [T4]
+end note
+
+Coord -> Projects: Update Status → "analyzing" → "implementing"
 activate Projects
+note right of Projects
+  **Label State Transition**:
+  state:pending → state:analyzing → state:implementing
+end note
 Projects --> Coord: Updated
 deactivate Projects
 
-== Parallel Code Generation ==
-par Parallel Execution
-  Coord -> CodeGen: Generate auth models
+Coord -> Discord: **R29**: posts-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  🤖 **CoordinatorAgent Execution**
+  Issue #123 analyzed
+  Tasks: 4 created
+  DAG: Built successfully
+  Estimated Duration: 45 minutes
+end note
+Discord --> Coord: Posted
+deactivate Discord
+
+== 🌳 Worktree Creation & Parallel Execution ==
+
+Coord -> Coord: **R8**: Task runs-in → Worktree\nCreate Git Worktrees
+note right of Coord
+  **E12: Worktree Entity**
+
+  \`\`\`bash
+  git worktree add .worktrees/task-1 -b feature/task-1
+  git worktree add .worktrees/task-2 -b feature/task-2
+  git worktree add .worktrees/task-3 -b feature/task-3
+  git worktree add .worktrees/task-4 -b feature/task-4
+  \`\`\`
+
+  **Directory Structure**:
+  .worktrees/
+  ├── task-1/ (auth models) - Isolated
+  ├── task-2/ (JWT service) - Isolated
+  ├── task-3/ (login endpoint) - Isolated
+  └── task-4/ (unit tests) - Isolated
+
+  **No conflicts possible** - Each worktree is independent
+end note
+
+par **Worktree-based Parallel Execution (R26: executes Task)**
+  Coord -> CodeGen: **R5**: assigned-to → CodeGenAgent\n**R9**: executes Task-1\n(.worktrees/task-1/)
   activate CodeGen
-  CodeGen -> Claude: Generate code\n(models)
+
+  CodeGen -> Hooks: agent-event.sh started
+  activate Hooks
+  Hooks --> CodeGen: Event logged
+  deactivate Hooks
+
+  CodeGen -> MCP: Load Worktree prompt
+  activate MCP
+  note right of MCP
+    **MCP Server**: filesystem
+    Read: .claude/agents/prompts/
+          codegen-agent-prompt.md
+  end note
+  MCP --> CodeGen: Prompt loaded
+  deactivate MCP
+
+  CodeGen -> Claude: **Generate Code** (auth models)
   activate Claude
-  Claude --> CodeGen: Code + Tests
+  note right of Claude
+    **AI Code Generation**:
+    - TypeScript strict mode
+    - ESM format
+    - Unit tests (Vitest)
+    - Documentation
+  end note
+  Claude --> CodeGen: Code + Tests + Docs
   deactivate Claude
-  CodeGen -> CodeGen: Create Branch\nfeature/issue-123-models
-  CodeGen --> Coord: Task Complete
+
+  CodeGen -> Hooks: auto-format.sh (pre-commit)
+  activate Hooks
+  note right of Hooks
+    **ESLint + Prettier**:
+    - Auto-fix issues
+    - Code formatting
+    - Re-stage files
+  end note
+  Hooks --> CodeGen: Formatted
+  deactivate Hooks
+
+  CodeGen -> Hooks: validate-typescript.sh (pre-commit)
+  activate Hooks
+  note right of Hooks
+    **TypeScript Check**:
+    - tsc --noEmit
+    - Type validation
+    - Strict mode compliance
+  end note
+  Hooks --> CodeGen: Type Check Passed
+  deactivate Hooks
+
+  CodeGen -> CodeGen: **R14**: logs-to → LDDLog\ngit commit
+  note right of CodeGen
+    **E10: LDDLog Entity**
+    Log saved to: .ai/logs/2025-10-12.md
+
+    Commit message:
+    feat(auth): add authentication models
+
+    🤖 Generated with Claude Code
+    Co-Authored-By: Claude <noreply@anthropic.com>
+  end note
+
+  CodeGen -> Hooks: agent-event.sh progress 50
+  activate Hooks
+  Hooks --> CodeGen: Progress logged
+  deactivate Hooks
+
+  CodeGen -> Hooks: agent-event.sh completed
+  activate Hooks
+  Hooks --> CodeGen: Completion logged
+  deactivate Hooks
+
+  CodeGen --> Coord: **Task-1 Complete**
   deactivate CodeGen
-else
-  Coord -> CodeGen: Generate JWT service
+
+else **Task-2 (depends on Task-1)**
+  Coord -> CodeGen: **R9**: executes Task-2\n(.worktrees/task-2/)
   activate CodeGen
-  CodeGen -> Claude: Generate code\n(service)
+  note right of CodeGen
+    **R6**: depends-on Task-1
+    Waits for T1 completion
+  end note
+  CodeGen -> Claude: Generate code (JWT service)
   activate Claude
   Claude --> CodeGen: Code + Tests
   deactivate Claude
-  CodeGen -> CodeGen: Create Branch\nfeature/issue-123-jwt
-  CodeGen --> Coord: Task Complete
+  CodeGen -> CodeGen: git commit
+  CodeGen --> Coord: **Task-2 Complete**
   deactivate CodeGen
-else
-  Coord -> CodeGen: Generate login endpoint
+
+else **Task-3 (depends on Task-2)**
+  Coord -> CodeGen: **R9**: executes Task-3\n(.worktrees/task-3/)
   activate CodeGen
-  CodeGen -> Claude: Generate code\n(endpoint)
+  note right of CodeGen
+    **R6**: depends-on Task-2
+    Waits for T2 completion
+  end note
+  CodeGen -> Claude: Generate code (login endpoint)
   activate Claude
   Claude --> CodeGen: Code + Tests
   deactivate Claude
-  CodeGen -> CodeGen: Create Branch\nfeature/issue-123-login
-  CodeGen --> Coord: Task Complete
+  CodeGen -> CodeGen: git commit
+  CodeGen --> Coord: **Task-3 Complete**
+  deactivate CodeGen
+
+else **Task-4 (depends on Task-2 & Task-3)**
+  Coord -> CodeGen: **R9**: executes Task-4\n(.worktrees/task-4/)
+  activate CodeGen
+  note right of CodeGen
+    **R6**: depends-on Task-2, Task-3
+    Waits for both completions
+  end note
+  CodeGen -> Claude: Generate tests
+  activate Claude
+  Claude --> CodeGen: Unit Tests + Integration Tests
+  deactivate Claude
+  CodeGen -> CodeGen: git commit
+  CodeGen --> Coord: **Task-4 Complete**
   deactivate CodeGen
 end
 
-== Quality Assurance ==
-Coord -> Review: Review All Changes
+Coord -> Coord: **Merge All Worktrees** to main
+note right of Coord
+  \`\`\`bash
+  git worktree remove .worktrees/task-1
+  git worktree remove .worktrees/task-2
+  git worktree remove .worktrees/task-3
+  git worktree remove .worktrees/task-4
+  \`\`\`
+
+  All changes merged to main branch
+  No merge conflicts (isolated worktrees)
+end note
+
+== ✅ Quality Assurance (ReviewAgent) ==
+
+Coord -> Review: **R9**: executes → Quality Review
 activate Review
-Review -> Claude: Analyze Code Quality
+note right of Review
+  **E3: ReviewAgent**
+  authority: '🔵実行権限'
+  escalation: CISO (security issues)
+end note
+
+Review -> MCP: Get IDE Diagnostics
+activate MCP
+note right of MCP
+  **MCP Server**: ide-integration
+  - mcp__ide__getDiagnostics
+  - ESLint results
+  - TypeScript errors
+end note
+MCP --> Review: Diagnostics Data
+deactivate MCP
+
+Review -> Claude: **R11**: creates → QualityReport\nAnalyze Code Quality
 activate Claude
-Claude --> Review: Review Results
+note right of Claude
+  **E6: QualityReport Entity**
+
+  **Analysis**:
+  - ESLint (40% weight)
+  - TypeScript (30% weight)
+  - Security (20% weight)
+  - Test Coverage (10% weight)
+end note
+Claude --> Review: **Quality Results**
 deactivate Claude
 
-alt All Checks Pass
-  Review -> Review: ✓ TypeScript Types\n✓ ESLint\n✓ Security Scan\n✓ Test Coverage
-  Review --> Coord: Approved
+alt **All Checks Pass (Score >= 80)**
+  Review -> Review: **Calculate Score**
+  note right of Review
+    **QualityReport**:
+    ✓ TypeScript Types: 100/100
+    ✓ ESLint: 95/100
+    ✓ Security Scan: 90/100
+    ✓ Test Coverage: 92%
+
+    **Final Score: 95/100** ✅
+    **Label**: ⭐ quality:excellent
+  end note
+
+  Review -> Discord: **R30**: announces-in → Discord
+  activate Discord
+  note right of Discord
+    **Channel**: #dev-pull-requests
+    📊 **Quality Report**
+    Score: 95/100 (Excellent)
+    ESLint: ✓ Pass
+    TypeScript: ✓ Pass
+    Security: ✓ Pass
+    Coverage: 92%
+  end note
+  Discord --> Review: Posted
+  deactivate Discord
+
+  Review --> Coord: **R22**: Approved (evaluated-by Review)
   deactivate Review
-else Issues Found
-  Review --> Coord: Fixes Required
+
+else **Issues Found (Score < 80)**
+  Review --> Coord: **Fixes Required**
   deactivate Review
-  Coord -> CodeGen: Apply Fixes
-  activate CodeGen
-  CodeGen --> Coord: Fixed
-  deactivate CodeGen
+
+  alt **Critical Security Issue (Sev.1)**
+    Coord -> Coord: **R12**: triggers → Escalation
+    note right of Coord
+      **E8: Escalation Entity**
+      reason: "Security vulnerability detected"
+      target: CISO
+      severity: Sev.1-Critical
+    end note
+
+    Coord -> Discord: **R34**: notifies-to → Discord\n(Escalation)
+    activate Discord
+    note right of Discord
+      **Channel**: #help-general
+      ⚠️ **Escalation Required**
+      Severity: Sev.1-Critical
+      Target: @CISO
+      Issue: Security vulnerability detected
+      Requires: Human intervention
+    end note
+    Discord --> Coord: Alert Sent
+    deactivate Discord
+
+    Coord --> Dev: **Escalation to CISO**
+
+  else **Fixable Issues**
+    Coord -> CodeGen: Apply Fixes
+    activate CodeGen
+    CodeGen --> Coord: Fixed
+    deactivate CodeGen
+  end
 end
 
-== Pull Request Creation ==
-Coord -> Issues: Create Draft PR
+== 🔄 Pull Request Creation ==
+
+Coord -> PRAgent: **R10**: generates → PR
+activate PRAgent
+note right of PRAgent
+  **E4: PR Entity**
+  type: PRRequest
+  draft: true
+end note
+
+PRAgent -> Claude: **Generate PR Content**
+activate Claude
+note right of Claude
+  **Generate**:
+  - Title (Conventional Commits)
+  - Body (Change Summary)
+  - Link to Issue #123
+  - Quality Report attachment
+end note
+Claude --> PRAgent: PR Content
+deactivate Claude
+
+PRAgent -> Issues: **R4**: creates → PR\n**R21**: attached-to → Issue
 activate Issues
-Issues --> Coord: PR #456 Created
+note right of Issues
+  **PR Format**:
+  \`\`\`
+  feat(auth): add user authentication
+
+  Closes #123
+
+  ## Changes
+  - Auth models (User, Session, Token)
+  - JWT service (sign, verify, refresh)
+  - Login endpoint (POST /auth/login)
+  - Unit tests (92% coverage)
+
+  ## Quality Report
+  Score: 95/100 ✅
+
+  🤖 Generated with Claude Code
+
+  Co-Authored-By: Claude <noreply@anthropic.com>
+  \`\`\`
+end note
+Issues --> PRAgent: **PR #456 Created**
 deactivate Issues
 
-Coord -> Actions: Trigger CI Pipeline
+PRAgent -> Discord: **R31**: announces-in → Discord
+activate Discord
+note right of Discord
+  **Channel**: #release-notes
+  🎉 **New Pull Request**
+  PR #456: feat(auth): add user authentication
+  Status: Draft
+  Quality: 95/100 ✅
+end note
+Discord --> PRAgent: Announced
+deactivate Discord
+
+PRAgent --> Coord: **R10**: PR Created
+deactivate PRAgent
+
+Coord -> Actions: **Trigger CI Pipeline**
 activate Actions
 Actions -> Actions: Run Tests\nBuild Project\nSecurity Scan
 
-alt CI Success
+alt **CI Success**
   Actions --> Coord: ✓ All Checks Passed
   deactivate Actions
-  Coord -> Projects: Update Status\n"Ready for Review"
+
+  Coord -> Projects: Update Status → "reviewing"
   activate Projects
+  note right of Projects
+    **Label Transition**:
+    state:implementing → state:reviewing
+  end note
   Projects --> Coord: Updated
   deactivate Projects
 
-  Coord -> Issues: Add PR Comment\n"Ready for review"
+  Coord -> Issues: Add Comment "Ready for review"
   activate Issues
   Issues --> Dev: Notification
   deactivate Issues
-else CI Failure
+
+else **CI Failure**
   Actions --> Coord: ✗ Tests Failed
   deactivate Actions
-  Coord -> Projects: Update Status\n"Needs Attention"
+
+  Coord -> Projects: Update Status → "blocked"
   activate Projects
+  note right of Projects
+    **Label Applied**:
+    state:blocked
+  end note
   Projects --> Coord: Updated
   deactivate Projects
 end
 
-== Human Review ==
+== 👤 Human Review & Approval ==
+
 Dev -> Issues: Review PR
 activate Issues
 Issues --> Dev: Code & Tests Displayed
@@ -140,35 +577,126 @@ Dev -> Issues: Approve PR
 Issues --> Dev: Approved
 deactivate Issues
 
-== Deployment ==
+== 🚀 Deployment (DeploymentAgent) ==
+
 Dev -> Issues: Merge PR
 activate Issues
+
+Issues -> Discord: **R31**: announces-in → Discord\n(PR Merged)
+activate Discord
+note right of Discord
+  **Channel**: #release-notes
+  🎉 **PR Merged**
+  PR #456: feat(auth): add user authentication
+  Closes Issue #123
+  Deploying to: Production
+end note
+Discord --> Issues: Announced
+deactivate Discord
+
 Issues -> Actions: Trigger Deploy
 activate Actions
-Actions -> Actions: Deploy to Production
-Actions --> Issues: Deployed ✓
+Actions -> DeployAgent: **R13**: performs → Deployment
+activate DeployAgent
+note right of DeployAgent
+  **E9: Deployment Entity**
+  environment: 'production'
+  version: 'v1.2.0'
+  autoRollback: true
+end note
+
+DeployAgent -> Hooks: agent-event.sh started
+activate Hooks
+Hooks --> DeployAgent: Event logged
+deactivate Hooks
+
+DeployAgent -> DeployAgent: **Build & Test**
+note right of DeployAgent
+  **Steps**:
+  1. npm run build
+  2. npm run test
+  3. Verify artifacts
+  4. Environment variables check
+end note
+
+DeployAgent -> DeployAgent: **Deploy to Production**
+note right of DeployAgent
+  **Deploy**:
+  - Platform: Firebase/Vercel/AWS
+  - Environment: production
+  - Version: v1.2.0
+  - Targets: hosting, functions, database
+end note
+
+DeployAgent -> DeployAgent: **Health Check**
+note right of DeployAgent
+  **Check**:
+  ✓ API responding (200 OK)
+  ✓ Database connected
+  ✓ Services healthy
+  ✓ Response time < 500ms
+end note
+
+DeployAgent -> Hooks: agent-event.sh completed
+activate Hooks
+Hooks --> DeployAgent: Completion logged
+deactivate Hooks
+
+DeployAgent --> Actions: **Deployed ✓**
+deactivate DeployAgent
+
+Actions -> Discord: **R32**: notifies-to → Discord\n(Deployment)
+activate Discord
+note right of Discord
+  **Channel**: #announcements
+  🚀 **Deployment Complete**
+  Version: v1.2.0
+  Environment: Production
+  Status: ✓ Success
+  Health Check: ✓ Pass
+  Duration: 2m 34s
+end note
+Discord --> Actions: Notified
+deactivate Discord
+
+Actions --> Issues: **Deployment Success**
 deactivate Actions
 
-Issues -> Projects: Update Status\n"Done"
+Issues -> Projects: **Update Status** → "done"
 activate Projects
+note right of Projects
+  **Label Transition**:
+  state:reviewing → state:done
+
+  **Final Labels**:
+  ✅ state:done
+  ⭐ quality:excellent
+  🚀 deployed:production
+end note
 Projects --> Issues: Updated
 deactivate Projects
 
 Issues -> Issues: Close Issue #123
-Issues --> Dev: Issue Closed
+Issues --> Dev: **Issue Closed**
 deactivate Issues
 
-Dev -> Dev: ⏱️ Total Time:\n5-10 minutes
+Dev -> Dev: ⏱️ **Total Time: 8-12 minutes**
 
-note over Dev, Claude
-  **Autonomous Operation Complete**
+note over Dev, Hooks
+  **🌸 Miyabi Autonomous Operation Complete**
 
-  Human Involvement: ~2 minutes (review & approve)
-  AI Agents Work: ~8 minutes (parallel)
-  Total Time: ~10 minutes
+  **Human Involvement**: ~3 minutes (review & approve)
+  **AI Agents Work**: ~9 minutes (parallel execution in worktrees)
+  **Total Time**: ~12 minutes (end-to-end)
 
-  Traditional Process: Days to weeks
-  Time Saved: 95%+ automation
+  **Traditional Process**: Days to weeks
+  **Time Saved**: 95%+ automation
+
+  **Entity-Relation Model Integration**: 35 relationships (R1-R35)
+  **Label System**: 53 labels applied across lifecycle
+  **MCP Servers**: 5 servers active (IDE, GitHub, Context, Filesystem, Miyabi)
+  **Hooks**: 4 scripts executed (log, format, validate, events)
+  **Agents**: 7 coding agents orchestrated (21 total available: Coding 7 + Business 14)
 end note
 
 @enduml

@@ -1,7 +1,7 @@
 ---
 name: ReviewAgent
 description: コード品質判定Agent - 静的解析・セキュリティスキャン・品質スコアリング
-authority: 🟡判定権限
+authority: 🔵実行権限
 escalation: CISO (Critical脆弱性)、TechLead (アーキテクチャ違反)
 ---
 
@@ -22,7 +22,7 @@ escalation: CISO (Critical脆弱性)、TechLead (アーキテクチャ違反)
 
 ## 実行権限
 
-🟡 **判定権限**: コード品質の合否判定を実行可能 (80点以上で合格)
+🔵 **実行権限**: コード品質の合否判定を実行可能 (80点以上で合格)
 
 ## 技術仕様
 

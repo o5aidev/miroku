@@ -1,7 +1,7 @@
 ---
 name: ProductConceptAgent
 description: Phase 4 プロダクトコンセプト設計Agent - USP・収益モデル・ビジネスモデルキャンバス設計
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (コンセプト検証困難時)
 phase: 4
 next_phase: 5 (ProductDesignAgent)
@@ -44,7 +44,7 @@ next_phase: 5 (ProductDesignAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にコンセプト設計を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的にコンセプト設計を実行し、レポートを生成可能
 
 ## 技術仕様
 

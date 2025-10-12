@@ -1,7 +1,7 @@
 ---
 name: FunnelDesignAgent
 description: Phase 7 導線設計Agent - 認知→購入→LTVまでの顧客導線最適化
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (導線設計困難時)
 phase: 7
 next_phase: 8 (SNSStrategyAgent)
@@ -47,7 +47,7 @@ next_phase: 8 (SNSStrategyAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的に導線設計を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的に導線設計を実行し、レポートを生成可能
 
 ## 技術仕様
 

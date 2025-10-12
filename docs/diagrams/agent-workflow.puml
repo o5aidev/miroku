@@ -1,8 +1,10 @@
-@startuml Miyabi Agent Workflow
+@startuml Miyabi Complete Agent Workflow (21 Agents)
 
 !define AGENT_COLOR #FFF3E0
 !define STATE_COLOR #E8F5E9
 !define ACTION_COLOR #E3F2FD
+!define BUSINESS_COLOR #FCE4EC
+!define ESCALATION_COLOR #FFCCBC
 
 skinparam backgroundColor #FAFAFA
 skinparam shadowing false
@@ -12,102 +14,820 @@ skinparam activity {
     DiamondBackgroundColor #FFE082
 }
 
-title Miyabi Agent Workflow\nFrom Issue to PR
+title **Miyabi Complete Agent Workflow**\n21 Agents (Coding: 7 | Business: 14) | Entity-Relation Model | 53 Labels | Authority Levels
 
 start
 
-:User creates GitHub Issue;
+:User creates GitHub Issue or Business Request;
 note right
-  **Entity**: Issue (E1)
-  Labels: type, priority
+  **E1: Issue Entity**
+  - number: issue number
+  - title: string
+  - body: markdown
+  - state: 'open'
+  - labels: [] (initially empty)
+
+  **Initial State**: 📥 state:pending
 end note
 
-partition "IssueAgent (E3)" {
-    :Analyze Issue content;
-    :Auto-assign Labels (E5);
-    note right
-      type, priority, severity
-      AI-powered inference
-    end note
-}
+' ============================================================================
+' WORKFLOW BRANCH: Coding vs Business
+' ============================================================================
 
-if (trigger:agent-execute Label?) then (yes)
-    partition "CoordinatorAgent (E3)" {
-        :Decompose Issue into Tasks (E2);
-        :Build DAG (E11);
-        :Detect circular dependencies;
+if (Issue Type?) then (🔧 Coding Task)
 
-        if (Has cycles?) then (yes)
-            :Escalate to TechLead (E8);
-            stop
-        else (no)
-            :Topological sort;
-            :Assign Agents to Tasks;
-        endif
+  ' ==========================================================================
+  ' CODING WORKFLOW (7 Agents)
+  ' ==========================================================================
+
+  partition "🔧 **CODING WORKFLOW** (7 Agents)" #E3F2FD {
+
+    ' ----------------------------------------------------------------------
+    ' 1. IssueAgent (🟢分析権限)
+    ' ----------------------------------------------------------------------
+    partition "**1. IssueAgent** (🟢分析)" #90CAF9 {
+      :Fetch Issue content;
+      :Analyze with Claude AI;
+      note right
+        **E3: Agent Entity**
+        - type: 'IssueAgent'
+        - authority: '🟢分析権限'
+        - escalation: PO (business decisions)
+
+        **MCP Integration**:
+        - mcp__ide__getDiagnostics
+        - project-context analysis
+      end note
+
+      :**R3**: tagged-with → Label[];
+      note right
+        **53 Label System**:
+        ✨ type:feature / 🐛 type:bug / 📚 type:docs
+        🔥 priority:P0-P3
+        ⚠️ severity:Sev.1-Sev.4
+        🤖 agent:coordinator
+        🤖 trigger:agent-execute
+      end note
+
+      :Post to Discord #dev-general;
+      note right
+        **R29**: posts-to → Discord
+        🤖 IssueAgent Complete
+        Labels applied
+      end note
     }
 
-    partition "Parallel Execution" {
+    ' ----------------------------------------------------------------------
+    ' 2. Check for trigger:agent-execute label
+    ' ----------------------------------------------------------------------
+
+    if (**R16**: trigger:agent-execute Label?) then (✅ yes)
+
+      ' --------------------------------------------------------------------
+      ' 3. CoordinatorAgent (🔴統括権限)
+      ' --------------------------------------------------------------------
+      partition "**2. CoordinatorAgent** (🔴統括)" #81C784 {
+        :Fetch Issue and Labels;
+        :Log to LDD (.ai/logs/);
+        note right
+          **E3: Agent Entity**
+          - type: 'CoordinatorAgent'
+          - authority: '🔴統括権限'
+          - escalation: TechLead (architecture)
+
+          **E10: LDDLog Entity**
+          - Codex Prompt Chain
+          - Tool Invocations
+          - Memory Bank Updates
+
+          **Hook**: log-commands.sh
+        end note
+
+        :Analyze dependencies;
+        :**R2**: decomposed-into → Task[];
+        :Build **E11: DAG** (dependency graph);
+        note right
+          **DAG Construction**:
+          - Topological sort
+          - Detect circular dependencies
+          - **R6**: Task depends-on Task
+          - **R7**: Tasks part-of DAG
+          - **R24**: DAG decomposed-from Issue
+          - **R25**: DAG contains Tasks
+        end note
+
+        if (Circular dependencies?) then (🚨 yes)
+          :Create **E8: Escalation**;
+          note right
+            **R12**: triggers → Escalation
+            - target: TechLead
+            - severity: Sev.2-High
+            - reason: "Circular dependency detected"
+          end note
+          :Notify Discord #help-general;
+          note right
+            **R34**: notifies-to → Discord
+            ⚠️ Escalation Required
+            @TechLead
+          end note
+          stop
+        else (✅ no)
+          :Assign specialist agents to tasks;
+          note right
+            **R5**: assigned-to → Agent
+            - CodeGenAgent (🔵実行)
+            - ReviewAgent (🔵実行)
+            - PRAgent (🔵実行)
+            - DeploymentAgent (🔵実行)
+          end note
+
+          :Update state: pending → analyzing;
+          note right
+            **R17**: Label defines-state
+            📥 state:pending → 🔍 state:analyzing
+          end note
+        endif
+      }
+
+      ' --------------------------------------------------------------------
+      ' 4. CodeGenAgent (🔵実行権限) - Parallel Execution
+      ' --------------------------------------------------------------------
+      partition "**3. CodeGenAgent** (🔵実行)" #BA68C8 {
+        :Create Git Worktrees (**E12**);
+        note right
+          **R8**: Task runs-in → Worktree
+
+          ```bash
+          git worktree add .worktrees/task-1
+          git worktree add .worktrees/task-2
+          git worktree add .worktrees/task-3
+          ```
+
+          **Isolation Benefits**:
+          - No merge conflicts
+          - Parallel execution
+          - Independent commits
+        end note
+
         fork
-            partition "Worktree #1 (E12)" {
-                :Create Worktree;
-                :Execute Task #1;
-                :CodeGenAgent generates code;
-            }
+          partition "Worktree #1" {
+            :Load agent prompt;
+            note right
+              **MCP**: filesystem
+              .claude/agents/prompts/
+              codegen-agent-prompt.md
+            end note
+            :Generate code with Claude AI;
+            :Run auto-format.sh (Hook);
+            note right
+              **Hook**: ESLint + Prettier
+            end note
+            :Run validate-typescript.sh (Hook);
+            note right
+              **Hook**: TypeScript validation
+            end note
+            :git commit;
+            note right
+              **R14**: logs-to → LDDLog
+              Conventional Commits format
+
+              feat(module): add feature
+
+              🤖 Generated with Claude Code
+              Co-Authored-By: Claude
+            end note
+          }
         fork again
-            partition "Worktree #2 (E12)" {
-                :Create Worktree;
-                :Execute Task #2;
-                :CodeGenAgent generates code;
-            }
+          partition "Worktree #2" {
+            :Generate code (parallel);
+            :Format & validate;
+            :git commit;
+          }
         fork again
-            partition "Worktree #3 (E12)" {
-                :Create Worktree;
-                :Execute Task #3;
-                :CodeGenAgent generates code;
-            }
+          partition "Worktree #3" {
+            :Generate code (parallel);
+            :Format & validate;
+            :git commit;
+          }
         end fork
 
-        :Merge all Worktrees;
-    }
+        :Merge all worktrees to main;
+        :Update state: analyzing → implementing;
+        note right
+          🔍 state:analyzing → 🏗️ state:implementing
+        end note
 
-    partition "ReviewAgent (E3)" {
-        :Run ESLint;
-        :Run TypeScript type check;
-        :Security scan (npm audit);
-        :Generate QualityReport (E6);
+        :Notify Discord #dev-general;
+        note right
+          **R29**: posts-to → Discord
+          🤖 CodeGenAgent Complete
+          3 tasks merged
+        end note
+      }
 
-        if (Score >= 80?) then (yes)
-            :Quality Label: ✅ good;
-        else (no)
-            :Quality Label: 🔴 poor;
-            :Escalate to TechLead (E8);
-            stop
+      ' --------------------------------------------------------------------
+      ' 5. ReviewAgent (🔵実行権限)
+      ' --------------------------------------------------------------------
+      partition "**4. ReviewAgent** (🔵実行)" #FFB74D {
+        :Fetch code changes;
+        :Run **mcp__ide__getDiagnostics**;
+        note right
+          **MCP Server**: ide-integration
+          - ESLint diagnostics
+          - TypeScript errors
+          - Security scan results
+        end note
+
+        :Analyze code quality with Claude AI;
+        :Calculate quality score;
+        note right
+          **E6: QualityReport Entity**
+          **R11**: creates → QualityReport
+
+          **Scoring**:
+          - ESLint (40%)
+          - TypeScript (30%)
+          - Security (20%)
+          - Test Coverage (10%)
+
+          **Total**: 0-100 points
+        end note
+
+        if (Quality Score?) then (⭐ >= 90)
+          :Apply label: ⭐ quality:excellent;
+        else if (✅ >= 80)
+          :Apply label: ✅ quality:good;
+        else if (⚠️ >= 60)
+          :Apply label: ⚠️ quality:needs-improvement;
+        else (🔴 < 60)
+          :Apply label: 🔴 quality:poor;
         endif
+
+        if (Score >= 80?) then (✅ Pass)
+          :Post to Discord #dev-pull-requests;
+          note right
+            **R30**: announces-in → Discord
+            📊 Quality Report
+            Score: 95/100 ⭐
+          end note
+
+          :Update state: implementing → reviewing;
+          note right
+            🏗️ state:implementing → 👀 state:reviewing
+          end note
+        else (🔴 Fail)
+          if (Security Issue?) then (🔐 yes)
+            :Create **E8: Escalation**;
+            note right
+              **R12**: triggers → Escalation
+              - target: CISO
+              - severity: Sev.1-Critical
+              - reason: "Security vulnerability"
+            end note
+            :Notify Discord #help-general;
+            note right
+              **R34**: notifies-to → Discord
+              🚨 Critical Security Issue
+              @CISO
+            end note
+            stop
+          else (no)
+            :Escalate to TechLead;
+            note right
+              **E8: Escalation**
+              - target: TechLead
+              - severity: Sev.3-Medium
+              - reason: "Quality score < 80"
+            end note
+            stop
+          endif
+        endif
+      }
+
+      ' --------------------------------------------------------------------
+      ' 6. PRAgent (🔵実行権限)
+      ' --------------------------------------------------------------------
+      partition "**5. PRAgent** (🔵実行)" #4FC3F7 {
+        :Analyze commits;
+        :Generate PR title (Conventional Commits);
+        :Generate PR body (markdown);
+        note right
+          **E4: PR Entity**
+          **R10**: generates → PR
+
+          **PR Format**:
+          feat(module): add feature
+
+          Closes #123
+
+          ## Changes
+          - Feature 1
+          - Feature 2
+
+          ## Quality Report
+          Score: 95/100 ⭐
+
+          🤖 Generated with Claude Code
+          Co-Authored-By: Claude
+        end note
+
+        :Attach QualityReport (**E6**);
+        note right
+          **R20**: PR has QualityReport
+          **R23**: QualityReport attached-to PR
+        end note
+
+        :Create Draft PR;
+        note right
+          **R4**: Issue creates → PR
+          **R21**: PR attached-to → Issue
+        end note
+
+        :Post to Discord #release-notes;
+        note right
+          **R31**: announces-in → Discord
+          🎉 New Pull Request
+          PR #456: feat(auth)
+          Quality: 95/100 ⭐
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' 7. DeploymentAgent (🔵実行権限)
+      ' --------------------------------------------------------------------
+
+      :Human reviews & merges PR;
+
+      partition "**6. DeploymentAgent** (🔵実行)" #FF8A65 {
+        :Trigger on PR merge;
+        :Run tests;
+        :Build project;
+        note right
+          **E3: Agent Entity**
+          - type: 'DeploymentAgent'
+          - authority: '🔵実行権限'
+          - escalation: CTO (production)
+
+          **Hook**: agent-event.sh
+        end note
+
+        if (Target Environment?) then (🚀 Production)
+          if (Requires CTO Approval?) then (yes)
+            :Create **E8: Escalation**;
+            note right
+              **R12**: triggers → Escalation
+              - target: CTO
+              - severity: Sev.1-Critical
+              - reason: "Production deployment"
+            end note
+            :Wait for CTO approval;
+          else (no)
+          endif
+        else (🧪 Staging)
+        endif
+
+        :Deploy to target;
+        :Health check;
+        note right
+          **E9: Deployment Entity**
+          **R13**: performs → Deployment
+
+          - environment: 'production' | 'staging'
+          - version: 'v1.2.0'
+          - autoRollback: true
+          - healthCheckUrl: string
+        end note
+
+        if (Health Check?) then (✅ Pass)
+          :Post to Discord #announcements;
+          note right
+            **R32**: notifies-to → Discord
+            🚀 Deployment Complete
+            Version: v1.2.0
+            Environment: Production
+          end note
+
+          :Update state: reviewing → done;
+          note right
+            👀 state:reviewing → ✅ state:done
+          end note
+        else (🔴 Fail)
+          :Auto-rollback;
+          :Escalate to DevOps;
+          note right
+            **E8: Escalation**
+            - target: DevOps
+            - severity: Sev.1-Critical
+            - reason: "Deployment health check failed"
+          end note
+          stop
+        endif
+      }
+
+      ' --------------------------------------------------------------------
+      ' 8. Hooks Integration (7th Coding Agent)
+      ' --------------------------------------------------------------------
+      partition "**7. Hooks Integration**" #FFCCBC {
+        note right
+          **4 Hooks Active**:
+          ✅ auto-format.sh - ESLint/Prettier
+          ✅ validate-typescript.sh - Type check
+          ✅ log-commands.sh - LDD logging
+          ✅ agent-event.sh - Dashboard events
+
+          **Integration Points**:
+          - Pre-commit: format + validate
+          - Post-execution: logging + events
+          - Dashboard: Real-time Agent status
+        end note
+      }
+
+    else (❌ no)
+      :Wait for manual trigger;
+      stop
+    endif
+
+  }
+
+else (💼 Business Task)
+
+  ' ==========================================================================
+  ' BUSINESS WORKFLOW (14 Agents)
+  ' ==========================================================================
+
+  partition "💼 **BUSINESS WORKFLOW** (14 Agents)" #FCE4EC {
+
+    :Determine business phase;
+
+    if (Business Phase?) then (Phase 1-3: Research)
+
+      ' --------------------------------------------------------------------
+      ' Phase 1: Self Analysis
+      ' --------------------------------------------------------------------
+      partition "**Phase 1: SelfAnalysisAgent** (🟢分析)" #F8BBD0 {
+        :Analyze user profile;
+        :Extract skills & experience;
+        :Identify strengths & weaknesses;
+        note right
+          **E3: Agent Entity**
+          - type: 'SelfAnalysisAgent'
+          - authority: '🟢分析権限'
+          - escalation: PO
+
+          **Output**: Profile analysis report
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 2: Market Research
+      ' --------------------------------------------------------------------
+      partition "**Phase 2: MarketResearchAgent** (🟢分析)" #F8BBD0 {
+        :Research market trends;
+        :Analyze 20+ competitors;
+        :Identify market gaps;
+        note right
+          **E3: Agent Entity**
+          - type: 'MarketResearchAgent'
+          - authority: '🟢分析権限'
+
+          **Output**: Market analysis (20+ companies)
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 3: Persona Definition
+      ' --------------------------------------------------------------------
+      partition "**Phase 3: PersonaAgent** (🟢分析)" #F8BBD0 {
+        :Define 3-5 target personas;
+        :Create customer journey maps;
+        :Identify pain points;
+        note right
+          **E3: Agent Entity**
+          - type: 'PersonaAgent'
+          - authority: '🟢分析権限'
+
+          **Output**: 3-5 detailed personas
+        end note
+      }
+
+    else if (Phase 4-5: Product Design)
+
+      ' --------------------------------------------------------------------
+      ' Phase 4: Product Concept
+      ' --------------------------------------------------------------------
+      partition "**Phase 4: ProductConceptAgent** (🔵実行)" #F48FB1 {
+        :Define USP (Unique Selling Proposition);
+        :Design business model canvas;
+        :Define revenue model;
+        note right
+          **E3: Agent Entity**
+          - type: 'ProductConceptAgent'
+          - authority: '🔵実行権限'
+          - escalation: PO
+
+          **Output**: Business model canvas
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 5: Product Design
+      ' --------------------------------------------------------------------
+      partition "**Phase 5: ProductDesignAgent** (🔵実行)" #F48FB1 {
+        :Define 6-month content plan;
+        :Design technical stack;
+        :Define MVP scope;
+        note right
+          **E3: Agent Entity**
+          - type: 'ProductDesignAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: 6-month roadmap + MVP definition
+        end note
+      }
+
+    else if (Phase 6-8: Marketing)
+
+      ' --------------------------------------------------------------------
+      ' Phase 6: Content Creation
+      ' --------------------------------------------------------------------
+      partition "**Phase 6: ContentCreationAgent** (🔵実行)" #F48FB1 {
+        :Create video content;
+        :Write blog articles;
+        :Design educational materials;
+        note right
+          **E3: Agent Entity**
+          - type: 'ContentCreationAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: Video/Article/Tutorial content
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 7: Funnel Design
+      ' --------------------------------------------------------------------
+      partition "**Phase 7: FunnelDesignAgent** (🔵実行)" #F48FB1 {
+        :Design customer funnel;
+        :Optimize conversion paths;
+        :Calculate LTV (Lifetime Value);
+        note right
+          **E3: Agent Entity**
+          - type: 'FunnelDesignAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: Funnel design (認知→購入→LTV)
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 8: SNS Strategy
+      ' --------------------------------------------------------------------
+      partition "**Phase 8: SNSStrategyAgent** (🔵実行)" #F48FB1 {
+        :Define Twitter/Instagram/YouTube strategy;
+        :Create posting calendar;
+        :Plan engagement tactics;
+        note right
+          **E3: Agent Entity**
+          - type: 'SNSStrategyAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: SNS strategy + posting calendar
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' YouTube Agent (Special)
+      ' --------------------------------------------------------------------
+      partition "**YouTubeAgent** (🔵実行)" #F48FB1 {
+        :Design channel concept;
+        :Plan 13-week workflow;
+        :Optimize video strategy;
+        note right
+          **E3: Agent Entity**
+          - type: 'YouTubeAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: YouTube channel plan
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 9: Marketing
+      ' --------------------------------------------------------------------
+      partition "**Phase 9: MarketingAgent** (🔵実行)" #F48FB1 {
+        :Execute ad campaigns (Google/Facebook/Twitter);
+        :Optimize SEO strategy;
+        :Manage SNS campaigns;
+        note right
+          **E3: Agent Entity**
+          - type: 'MarketingAgent'
+          - authority: '🔵実行権限'
+          - escalation: PO (budget decisions)
+
+          **Output**: Marketing execution plan
+        end note
+      }
+
+    else if (Phase 10-11: Sales & CRM)
+
+      ' --------------------------------------------------------------------
+      ' Phase 10: Sales
+      ' --------------------------------------------------------------------
+      partition "**Phase 10: SalesAgent** (🔵実行)" #F48FB1 {
+        :Optimize lead → customer conversion;
+        :Design sales process;
+        :Create sales materials;
+        note right
+          **E3: Agent Entity**
+          - type: 'SalesAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: Sales process + materials
+        end note
+      }
+
+      ' --------------------------------------------------------------------
+      ' Phase 11: CRM
+      ' --------------------------------------------------------------------
+      partition "**Phase 11: CRMAgent** (🔵実行)" #F48FB1 {
+        :Build customer satisfaction system;
+        :Optimize LTV (Lifetime Value);
+        :Design retention strategy;
+        note right
+          **E3: Agent Entity**
+          - type: 'CRMAgent'
+          - authority: '🔵実行権限'
+
+          **Output**: CRM system + retention strategy
+        end note
+      }
+
+    else (Phase 12: Analytics)
+
+      ' --------------------------------------------------------------------
+      ' Phase 12: Analytics
+      ' --------------------------------------------------------------------
+      partition "**Phase 12: AnalyticsAgent** (🟢分析)" #F8BBD0 {
+        :Analyze all data sources;
+        :Execute PDCA cycle;
+        :Generate improvement recommendations;
+        note right
+          **E3: Agent Entity**
+          - type: 'AnalyticsAgent'
+          - authority: '🟢分析権限'
+
+          **Output**: Data analysis + PDCA report
+        end note
+      }
+
+    endif
+
+    ' ------------------------------------------------------------------------
+    ' AIEntrepreneurAgent (統括Agent)
+    ' ------------------------------------------------------------------------
+    partition "**AIEntrepreneurAgent** (🔴統括)" #C2185B {
+      :Coordinate all 14 business agents;
+      :Generate comprehensive business plan;
+      :Create 8-phase execution roadmap;
+      note right
+        **E3: Agent Entity**
+        - type: 'AIEntrepreneurAgent'
+        - authority: '🔴統括権限'
+        - escalation: PO (business strategy)
+
+        **Output**: Complete business plan
+        **Coordinates**: All 14 business agents
+        **Phases**: 1-12 (Self Analysis → Analytics)
+      end note
+
+      :Post to Discord #announcements;
+      note right
+        **R29**: posts-to → Discord
+        🎯 Business Plan Complete
+        14 agents coordinated
+        8-phase roadmap generated
+      end note
     }
 
-    partition "PRAgent (E3)" {
-        :Generate Conventional Commits title;
-        :Generate PR body;
-        :Create Draft PR (E4);
-        :Attach QualityReport to PR;
-        :Link Issue;
-    }
+  }
 
-    :Notify user;
-    :Update Issue state to done;
-
-else (no)
-    :Wait for manual trigger;
-    stop
 endif
 
-:Log to LDD (E10);
+' ============================================================================
+' FINAL LOGGING & COMPLETION
+' ============================================================================
+
+:Log to **E10: LDDLog**;
 note right
-  Codex Prompt Chain
-  Tool Invocations
-  Memory Bank Updates
+  **R14**: logs-to → LDDLog
+
+  **.ai/logs/YYYY-MM-DD.md**:
+  - Codex Prompt Chain
+  - Tool Invocations
+  - Memory Bank Updates
+  - Next Steps
+end note
+
+:Close Issue or Complete Business Plan;
+note right
+  **Final Labels**:
+  ✅ state:done
+  ⭐ quality:excellent (Coding)
+  🎯 business:complete (Business)
 end note
 
 stop
+
+' ============================================================================
+' LEGEND
+' ============================================================================
+
+legend bottom left
+  **Miyabi Complete Agent Workflow**
+
+  **21 Agents Total**:
+
+  **🔧 Coding Agents (7)**:
+  1. IssueAgent (🟢分析) - Issue analysis & labeling
+  2. CoordinatorAgent (🔴統括) - Task decomposition & DAG
+  3. CodeGenAgent (🔵実行) - AI code generation
+  4. ReviewAgent (🔵実行) - Quality scoring (0-100)
+  5. PRAgent (🔵実行) - PR creation (Conventional Commits)
+  6. DeploymentAgent (🔵実行) - CI/CD deployment
+  7. Hooks Integration (-) - 4 hooks (format/validate/log/events)
+
+  **💼 Business Agents (14)**:
+  8. AIEntrepreneurAgent (🔴統括) - Business plan coordination
+  9. SelfAnalysisAgent (🟢分析) - Phase 1: Self analysis
+  10. MarketResearchAgent (🟢分析) - Phase 2: Market research (20+ companies)
+  11. PersonaAgent (🟢分析) - Phase 3: Persona definition (3-5 personas)
+  12. ProductConceptAgent (🔵実行) - Phase 4: Product concept & USP
+  13. ProductDesignAgent (🔵実行) - Phase 5: Product design (6-month plan)
+  14. ContentCreationAgent (🔵実行) - Phase 6: Content creation
+  15. FunnelDesignAgent (🔵実行) - Phase 7: Customer funnel design
+  16. SNSStrategyAgent (🔵実行) - Phase 8: SNS strategy
+  17. YouTubeAgent (🔵実行) - YouTube channel optimization
+  18. MarketingAgent (🔵実行) - Phase 9: Marketing execution
+  19. SalesAgent (🔵実行) - Phase 10: Sales optimization
+  20. CRMAgent (🔵実行) - Phase 11: Customer satisfaction & LTV
+  21. AnalyticsAgent (🟢分析) - Phase 12: Data analysis & PDCA
+
+  **Authority Levels**:
+  - 🔴統括 (Coordinator): CoordinatorAgent, AIEntrepreneurAgent
+  - 🔵実行 (Execution): CodeGen, Review, PR, Deploy, Business Execution
+  - 🟢分析 (Analysis): IssueAgent, SelfAnalysis, MarketResearch, Persona, Analytics
+
+  **Escalation Targets**:
+  - TechLead: Architecture issues, circular dependencies
+  - PO: Business decisions, budget approvals
+  - CISO: Security vulnerabilities (Sev.1)
+  - CTO: Production deployments (Sev.1)
+  - DevOps: Infrastructure failures
+
+  **Entity-Relation Integration**:
+  - E1: Issue, E2: Task, E3: Agent, E4: PR, E6: QualityReport
+  - E8: Escalation, E9: Deployment, E10: LDDLog, E11: DAG, E12: Worktree
+  - E13: DiscordCommunity
+  - R1-R34: All relations integrated
+
+  **53 Label System**:
+  - STATE (8): pending → analyzing → implementing → reviewing → done
+  - AGENT (6): agent:coordinator, agent:codegen, etc.
+  - PRIORITY (4): P0-Critical → P3-Low
+  - TYPE (7): feature, bug, docs, refactor, test, architecture, deployment
+  - SEVERITY (4): Sev.1-Critical → Sev.4-Low
+  - QUALITY (4): excellent (90-100), good (80-89), needs-improvement (60-79), poor (0-59)
+  - TRIGGER (4): trigger:agent-execute, trigger:deploy-staging, etc.
+  - SPECIAL (7): security, cost-watch, dependencies, etc.
+  - PHASE (5): planning, implementation, testing, deployment, monitoring
+  - COMMUNITY (4): good-first-issue, help-wanted, question, discussion
+
+  **MCP Servers (5)**:
+  - ide-integration: Diagnostics & code execution
+  - github-enhanced: Issue/PR management
+  - project-context: Dependency analysis
+  - filesystem: File operations & prompt loading
+  - miyabi-integration: Miyabi CLI integration
+
+  **Hooks (4)**:
+  - auto-format.sh: ESLint + Prettier (pre-commit)
+  - validate-typescript.sh: Type checking (pre-commit)
+  - log-commands.sh: LDD logging (user-prompt-submit)
+  - agent-event.sh: Dashboard events (agent lifecycle)
+
+  **Discord Integration**:
+  - R28: Issue notifications (#announcements)
+  - R29: Agent execution (#dev-general)
+  - R30: Quality reports (#dev-pull-requests)
+  - R31: PR announcements (#release-notes)
+  - R32: Deployment notifications (#announcements)
+  - R34: Escalations (#help-general)
+
+  **Key Documentation**:
+  - Entity Model: docs/ENTITY_RELATION_MODEL.md (1,721 lines)
+  - Label Guide: docs/LABEL_SYSTEM_GUIDE.md (53 labels)
+  - Agent Specs: .claude/agents/specs/ (21 agents)
+  - Agent Prompts: .claude/agents/prompts/ (6+ prompts)
+end legend
 
 @enduml

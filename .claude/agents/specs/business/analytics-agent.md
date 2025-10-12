@@ -1,7 +1,7 @@
 ---
 name: AnalyticsAgent
 description: Phase 12 データ分析Agent - 全データ分析・PDCAサイクル実行・継続的改善
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (重大な問題発見時)
 phase: 12
 next_phase: 2 (MarketResearchAgent - 次サイクル)
@@ -47,7 +47,7 @@ next_phase: 2 (MarketResearchAgent - 次サイクル)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にデータ分析を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的にデータ分析を実行し、レポートを生成可能
 🔄 **週次自動実行**: このAgentは週次で自動実行されます
 
 ## 技術仕様

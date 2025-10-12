@@ -1,7 +1,7 @@
 ---
 name: IssueAgent
 description: Issue分析・Label管理Agent - 組織設計原則53ラベル体系による自動分類
-authority: 🔵分析権限
+authority: 🟢分析権限
 escalation: TechLead (技術判断)、PO (要件判断)、CISO (セキュリティ)
 ---
 
@@ -24,7 +24,7 @@ GitHub Issueを自動分析し、組織設計原則に基づく53ラベル体系
 
 ## 実行権限
 
-🔵 **分析権限**: Issue分析・Label付与・担当者アサインを実行可能
+🟢 **分析権限**: Issue分析・Label付与・担当者アサインを実行可能
 
 ## 技術仕様
 

@@ -10,28 +10,42 @@
 ├── settings.example.json        # 設定テンプレート
 ├── settings.local.json          # ローカル設定（Git管理外）
 │
-├── agents/                      # Agent定義
-│   ├── coordinator-agent.md     # CoordinatorAgent
-│   ├── codegen-agent.md         # CodeGenAgent
-│   ├── review-agent.md          # ReviewAgent
-│   ├── issue-agent.md           # IssueAgent
-│   ├── pr-agent.md              # PRAgent
-│   └── deployment-agent.md      # DeploymentAgent
+├── agents/                      # Agent定義（21個）
+│   ├── README.md                # Agent体系説明
+│   ├── specs/                   # Agent仕様書
+│   │   ├── coding/             # コーディング系（7個）
+│   │   └── business/           # ビジネス系（14個）
+│   └── prompts/                 # Worktree実行プロンプト
+│       ├── coding/             # コーディング系（6個）
+│       └── business/           # ビジネス系（将来追加）
 │
-├── commands/                    # カスタムスラッシュコマンド
+├── commands/                    # カスタムスラッシュコマンド（9個）
 │   ├── test.md                  # /test - テスト実行
 │   ├── agent-run.md             # /agent-run - Agent実行
 │   ├── deploy.md                # /deploy - デプロイ
-│   └── verify.md                # /verify - 動作確認
+│   ├── verify.md                # /verify - 動作確認
+│   ├── create-issue.md          # /create-issue - Issue作成
+│   ├── generate-docs.md         # /generate-docs - ドキュメント生成
+│   ├── miyabi-auto.md           # /miyabi-auto - Miyabi自動実行
+│   ├── miyabi-todos.md          # /miyabi-todos - TODO検出
+│   └── security-scan.md         # /security-scan - セキュリティスキャン
 │
-├── hooks/                       # Claude Hooks
-│   ├── auto-format.sh           # 自動フォーマット
-│   ├── log-commands.sh          # コマンドログ
-│   └── validate-typescript.sh   # TypeScript検証
+├── hooks/                       # Claude Hooks（4個）
+│   ├── auto-format.sh           # 自動フォーマット（ESLint/Prettier）
+│   ├── validate-typescript.sh   # TypeScript検証（型チェック）
+│   ├── log-commands.sh          # コマンドログ（LDD準拠）
+│   └── agent-event.sh           # Agentイベント送信
 │
-└── docs/                        # ドキュメント
-    ├── CLAUDE_WORKFLOW.md       # Claudeワークフロー
-    └── AGENT_PATTERNS.md        # Agentパターン
+├── mcp-servers/                 # MCP Server実装（5個）
+│   ├── ide-integration.js       # VS Code/Jupyter統合
+│   ├── github-enhanced.js       # GitHub Issue/PR管理
+│   ├── project-context.js       # プロジェクトコンテキスト
+│   ├── miyabi-integration.js    # Miyabi CLI統合
+│   └── discord-integration.js   # Discord統合
+│
+└── prompts/                     # プロトコル文書（2個）
+    ├── task-management-protocol.md # Todo管理プロトコル
+    └── worktree-agent-execution.md # Worktree実行プロンプト
 ```
 
 ## 🤖 Agent定義
@@ -175,14 +189,29 @@ uvicorn main:app --port 8888
 
 ## 🪝 Hooks設定
 
-### auto-format.sh
+### auto-format.sh ✅
 コミット前に自動フォーマット実行（ESLint, Prettier）
+- ESLintによるコード検査と自動修正
+- Prettierによるコードフォーマット
+- Git pre-commitフックとして使用可能
 
-### log-commands.sh
+### validate-typescript.sh ✅
+TypeScript型チェック（strict mode準拠）
+- TypeScriptコンパイルエラー検出
+- 型エラーがある場合はコミット中断
+- Git pre-commitフックとして使用可能
+
+### log-commands.sh ✅
 すべてのコマンドを`.ai/logs/`に記録（LDD準拠）
+- 日次ログファイル生成
+- タイムスタンプ付きコマンド記録
+- codex_prompt_chain形式対応
 
-### validate-typescript.sh
-TypeScriptコンパイルエラーをチェック
+### agent-event.sh ✅
+Agent実行イベントをMiyabi Dashboardに送信
+- リアルタイムAgent状態監視
+- 4種類のイベント（started/progress/completed/error）
+- WebSocket/REST API連携
 
 ## 📊 品質基準
 
@@ -236,14 +265,42 @@ cd .claude/hooks
 chmod +x *.sh
 
 # Gitフックとして登録（オプション）
-ln -s ../../.claude/hooks/auto-format.sh ../../.git/hooks/pre-commit
+# Option 1: 自動フォーマットのみ
+ln -s ../../.claude/hooks/auto-format.sh .git/hooks/pre-commit
+
+# Option 2: TypeScript検証のみ
+ln -s ../../.claude/hooks/validate-typescript.sh .git/hooks/pre-commit
+
+# Option 3: 両方実行（カスタムスクリプト作成）
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+.claude/hooks/auto-format.sh
+.claude/hooks/validate-typescript.sh
+EOF
+chmod +x .git/hooks/pre-commit
 ```
+
+## 📊 PlantUML図
+
+プロジェクトのアーキテクチャ図は **[docs/diagrams/](../docs/diagrams/)** に統合されています。
+
+**利用可能な図（12図）**:
+- Entity-Relation Model（完全版・簡易版）
+- Agent Workflow（21 Agents）
+- Label System（53ラベル）
+- .claude/ディレクトリ構造図
+- MCP統合アーキテクチャ図
+- その他システム図（7図）
+
+詳細は [docs/diagrams/README.md](../docs/diagrams/README.md) を参照してください。
 
 ## 📚 関連ドキュメント
 
 - [README.md](../README.md) - プロジェクト概要
-- [AGENTS.md](../AGENTS.md) - Agent運用プロトコル
+- [docs/diagrams/README.md](../docs/diagrams/README.md) - PlantUML図一覧
 - [docs/AGENT_OPERATIONS_MANUAL.md](../docs/AGENT_OPERATIONS_MANUAL.md) - 完全運用マニュアル
+- [docs/ENTITY_RELATION_MODEL.md](../docs/ENTITY_RELATION_MODEL.md) - Entity-Relationモデル
+- [docs/LABEL_SYSTEM_GUIDE.md](../docs/LABEL_SYSTEM_GUIDE.md) - 53ラベル体系ガイド
 - [DEPLOYMENT.md](../DEPLOYMENT.md) - デプロイガイド
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - 貢献ガイド
 
@@ -269,15 +326,18 @@ ln -s ../../.claude/hooks/auto-format.sh ../../.git/hooks/pre-commit
 
 ## 📊 統計
 
-- **Agents**: 6種類（Coordinator + 5 Specialists）
-- **Commands**: 4個
-- **Hooks**: 3個
-- **Total Code**: 4,889行
+- **Agents**: 21種類（Coding: 7, Business: 14）
+- **Commands**: 9個
+- **Hooks**: 4個
+- **MCP Servers**: 5個
+- **PlantUML Diagrams**: 12図（docs/diagrams/に統合）
+- **Total Code**: 20,437行
 - **Test Coverage**: 6/6 passing
 
 ---
 
-**最終更新**: 2025-10-08
+**最終更新**: 2025-10-12
+**統合完了**: 2025-10-12 - `.claude/diagrams/`を`docs/diagrams/`へ統合
 **管理**: Claude Code Autonomous System
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

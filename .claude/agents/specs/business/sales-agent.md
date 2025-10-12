@@ -1,7 +1,7 @@
 ---
 name: SalesAgent
 description: Phase 10 セールスAgent - リード→顧客の転換率最大化とセールスプロセス最適化
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (転換率低迷時)
 phase: 10
 next_phase: 11 (CRMAgent)
@@ -47,7 +47,7 @@ next_phase: 11 (CRMAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的にセールスプロセスを最適化し、レポートを生成可能
+🟢 **分析権限**: 自律的にセールスプロセスを最適化し、レポートを生成可能
 
 ## 技術仕様
 

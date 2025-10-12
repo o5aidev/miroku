@@ -1,7 +1,7 @@
 ---
 name: ProductDesignAgent
 description: Phase 5 サービス詳細設計Agent - 6ヶ月分のコンテンツ・技術スタック・MVP定義
-authority: 🟢実行権限
+authority: 🟢分析権限
 escalation: CoordinatorAgent (技術的実現性検証困難時)
 phase: 5
 next_phase: 6 (ContentCreationAgent)
@@ -46,7 +46,7 @@ next_phase: 6 (ContentCreationAgent)
 
 ## 実行権限
 
-🟢 **実行権限**: 自律的に詳細設計を実行し、レポートを生成可能
+🟢 **分析権限**: 自律的に詳細設計を実行し、レポートを生成可能
 
 ## 技術仕様
 

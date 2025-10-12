@@ -1,186 +1,707 @@
-@startuml Parallel Work Coordination Flow
+@startuml Miyabi - Complete Parallel Work Coordination (Entity-Relation Integrated)
 !theme cerulean-outline
 skinparam backgroundColor #FEFEFE
+skinparam sequenceMessageAlign center
+skinparam BoxPadding 10
 
-title Parallel Work Coordination - Task Claim to Completion
+title **Miyabi - Complete Parallel Work Coordination Flow**\nEntity-Relation Model (R1-R35) | DAG-based Dependencies | 21 Agents | 53 Labels | Worktree Isolation
 
-actor "Worker\nAlice" as Alice
-actor "Worker\nBob" as Bob
-participant "Worker\nRegistry" as Registry
-participant "Task\nOrchestrator" as Orchestrator
-participant "Lock\nManager" as LockMgr
-participant "Git\nWorktree" as Worktree
-participant "Claude Code\nTask Tool" as TaskTool
-participant "GitHub\nProjects V2" as Projects
+' Participants with Entity Integration
+actor "Developer" as Dev #LightBlue
+participant "GitHub\nIssues" as Issues #FFE0B2
+participant "Issue\nAgent" as IssueAgent #90CAF9
+participant "Coordinator\nAgent" as Coordinator #81C784
+participant "Lock\nManager" as LockMgr #FFCCBC
+participant "DAG\nBuilder" as DAGBuilder #FFF9C4
+participant "CodeGen\nAgent (3x)" as CodeGen #BA68C8
+participant "Review\nAgent" as Review #FFB74D
+participant "PR\nAgent" as PRAgent #4FC3F7
+participant "Projects\nV2" as Projects #FFF9C4
+participant "Discord" as Discord #9FA8DA
+participant "Git\nWorktree" as Worktree #C5E1A5
+participant "MCP\nServers" as MCP #C5E1A5
+participant "Hooks" as Hooks #FFCCBC
 
-== Worker Registration ==
-Alice -> Registry: register(name: "Alice", type: "human")
-activate Registry
-Registry --> Alice: workerId: "worker-001"
-deactivate Registry
+== 📥 Issue Creation & Initial Analysis ==
 
-Bob -> Registry: register(name: "Bob", type: "ai_agent")
-activate Registry
-Registry --> Bob: workerId: "worker-002"
-deactivate Registry
+Dev -> Issues: Create Issue #123\n"Add OAuth 2.0 authentication"
+activate Issues
+note right of Issues
+  **E1: Issue Entity**
+  - number: 123
+  - title: "Add OAuth 2.0 authentication"
+  - state: open
+  - labels: []
+end note
 
-== Task Discovery ==
-Alice -> Orchestrator: getAvailableTasks()
-activate Orchestrator
-Orchestrator -> Projects: fetchTasks()
+Issues -> Discord: **R28**: notifies-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #announcements
+  📢 New Issue Created
+  Issue #123: Add OAuth 2.0 authentication
+end note
+Discord --> Issues: Notified
+deactivate Discord
+
+Issues -> IssueAgent: **R1**: analyzed-by → IssueAgent
+activate IssueAgent
+note right of IssueAgent
+  **E3: Agent Entity**
+  type: 'IssueAgent'
+  authority: '🟢分析権限'
+end note
+
+IssueAgent -> MCP: Get project context
+activate MCP
+note right of MCP
+  **MCP Server**: project-context
+  - Dependency analysis
+  - Tech stack detection
+end note
+MCP --> IssueAgent: Context data
+deactivate MCP
+
+IssueAgent -> Issues: **R3**: tagged-with → Label[]
+note right of Issues
+  **53 Label System Applied**:
+
+  📥 state:pending
+  ✨ type:feature
+  🔥 priority:P1-High
+  ⚠️ severity:Sev.2-High
+  🤖 trigger:agent-execute
+end note
+
+IssueAgent --> Issues: Labels applied
+deactivate IssueAgent
+Issues --> Dev: Issue #123 created & labeled
+deactivate Issues
+
+== 🧠 DAG-based Task Decomposition ==
+
+Issues -> Coordinator: **R16**: triggers → CoordinatorAgent\n(Label: trigger:agent-execute)
+activate Coordinator
+note right of Coordinator
+  **E3: CoordinatorAgent**
+  authority: '🔴統括権限'
+  escalation: TechLead
+end note
+
+Coordinator -> Hooks: log-commands.sh
+activate Hooks
+note right of Hooks
+  **E10: LDDLog**
+  Logged to: .ai/logs/2025-10-12.md
+end note
+Hooks --> Coordinator: Logged
+deactivate Hooks
+
+Coordinator -> DAGBuilder: **R2**: decomposed-into → Task[]
+activate DAGBuilder
+note right of DAGBuilder
+  **E11: DAG Entity**
+
+  **Task Decomposition**:
+  T1: OAuth provider models (User, Token, Session)
+  T2: OAuth service (authorize, token, refresh)
+  T3: OAuth endpoints (GET /oauth/authorize, POST /oauth/token)
+  T4: Integration tests (E2E OAuth flow)
+
+  **Dependencies (R6: depends-on)**:
+  T1 → No dependencies
+  T2 → Depends on T1
+  T3 → Depends on T2
+  T4 → Depends on T2, T3
+end note
+
+DAGBuilder -> DAGBuilder: **R24**: DAG decomposed-from Issue
+note right of DAGBuilder
+  **DAG Levels (Topological Sort)**:
+  Level 0: [T1] - Can start immediately
+  Level 1: [T2] - Waits for T1
+  Level 2: [T3] - Waits for T2
+  Level 3: [T4] - Waits for T2, T3
+
+  **R7**: Tasks part-of DAG
+  **R25**: DAG contains Tasks
+end note
+
+DAGBuilder --> Coordinator: DAG built with 4 tasks
+deactivate DAGBuilder
+
+Coordinator -> Projects: Update status\nstate:pending → state:analyzing
 activate Projects
-Projects --> Orchestrator: [Task-001, Task-002, Task-003]
+note right of Projects
+  **R17**: Label defines-state
+  **R18**: Label categorizes Task
+end note
+Projects --> Coordinator: Updated
 deactivate Projects
-Orchestrator --> Alice: Available: Task-001 (fix/auth)
-deactivate Orchestrator
 
-Bob -> Orchestrator: getAvailableTasks()
-activate Orchestrator
-Orchestrator --> Bob: Available: Task-002 (feat/oauth)
-deactivate Orchestrator
+Coordinator -> Discord: **R29**: posts-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  🤖 **CoordinatorAgent Execution**
+  Issue #123 analyzed
+  Tasks: 4 created
+  DAG: Built (4 levels)
+  Estimated: 30 minutes
+end note
+Discord --> Coordinator: Posted
+deactivate Discord
 
-== Task Claim (Alice) ==
-Alice -> Orchestrator: claimTask(taskId: "task-001")
-activate Orchestrator
+== 🌳 Parallel Worktree Setup ==
 
-Orchestrator -> LockMgr: checkConflicts(task-001)
-activate LockMgr
-LockMgr -> LockMgr: Check file locks
-LockMgr --> Orchestrator: No conflicts
-deactivate LockMgr
-
-Orchestrator -> LockMgr: acquireLock(task-001, worker-001)
-activate LockMgr
-LockMgr -> LockMgr: Create lock file\n.task-locks/task-001.lock
-LockMgr --> Orchestrator: Lock acquired
-deactivate LockMgr
-
-Orchestrator -> Worktree: setupWorktree(task-001)
+Coordinator -> Worktree: **R8**: Task runs-in → Worktree\nCreate isolated worktrees
 activate Worktree
-Worktree -> Worktree: git worktree add\n.worktrees/task-001
-Worktree --> Orchestrator: Worktree ready
+note right of Worktree
+  **E12: Worktree Entity**
+
+  ```bash
+  git worktree add .worktrees/task-1 -b feature/oauth-models
+  git worktree add .worktrees/task-2 -b feature/oauth-service
+  git worktree add .worktrees/task-3 -b feature/oauth-endpoints
+  git worktree add .worktrees/task-4 -b feature/oauth-tests
+  ```
+
+  **Isolation Benefits**:
+  - No merge conflicts
+  - Parallel execution
+  - Independent commit history
+  - Easy rollback per task
+end note
+Worktree --> Coordinator: 4 worktrees ready
 deactivate Worktree
 
-Orchestrator -> Projects: updateStatus(task-001, "claimed")
+Coordinator -> LockMgr: Initialize lock system
+activate LockMgr
+note right of LockMgr
+  **Lock Manager**:
+  - File-based locking (.task-locks/)
+  - Conflict detection
+  - Deadlock prevention
+  - Atomic operations
+end note
+LockMgr --> Coordinator: Lock system ready
+deactivate LockMgr
+
+== 🔄 Parallel Task Execution (Level 0: T1) ==
+
+Coordinator -> LockMgr: Assign Level 0 tasks
+activate LockMgr
+LockMgr -> LockMgr: acquireLock(T1, CodeGen-1)
+note right of LockMgr
+  **Lock Acquired**:
+  Task: T1 (OAuth models)
+  Worker: CodeGen-1
+  Files: src/models/oauth/*
+  Lock file: .task-locks/task-1.lock
+end note
+LockMgr --> Coordinator: T1 locked
+deactivate LockMgr
+
+Coordinator -> CodeGen: **R5**: assigned-to → CodeGenAgent\n**R9**: executes Task-1
+activate CodeGen
+note right of CodeGen
+  **E2: Task Entity**
+  id: "task-1"
+  type: TaskType.CodeGeneration
+  priority: 1
+  assignedAgent: "CodeGenAgent-1"
+  dependencies: []
+  status: "in_progress"
+end note
+
+CodeGen -> Hooks: agent-event.sh started
+activate Hooks
+Hooks --> CodeGen: Event logged
+deactivate Hooks
+
+CodeGen -> MCP: Load prompt (.claude/agents/prompts/coding/codegen-agent-prompt.md)
+activate MCP
+MCP --> CodeGen: Prompt loaded
+deactivate MCP
+
+CodeGen -> CodeGen: **Generate Code**\nsrc/models/oauth/\n- User.ts\n- Token.ts\n- Session.ts
+note right of CodeGen
+  **AI Code Generation**:
+  - TypeScript strict mode
+  - Zod validation schemas
+  - Database models (Prisma)
+  - Unit tests (Vitest)
+end note
+
+CodeGen -> Hooks: auto-format.sh (pre-commit)
+activate Hooks
+note right of Hooks
+  **ESLint + Prettier**:
+  ✓ Auto-fix issues
+  ✓ Code formatting
+end note
+Hooks --> CodeGen: Formatted
+deactivate Hooks
+
+CodeGen -> Hooks: validate-typescript.sh (pre-commit)
+activate Hooks
+note right of Hooks
+  **TypeScript Check**:
+  ✓ tsc --noEmit
+  ✓ Type validation passed
+end note
+Hooks --> CodeGen: Validated
+deactivate Hooks
+
+CodeGen -> CodeGen: **R14**: logs-to → LDDLog\ngit commit
+note right of CodeGen
+  **Commit Message**:
+  feat(oauth): add OAuth 2.0 data models
+
+  - User model with OAuth provider fields
+  - Token model (access/refresh tokens)
+  - Session model with expiry
+
+  🤖 Generated with Claude Code
+  Co-Authored-By: Claude <noreply@anthropic.com>
+end note
+
+CodeGen -> Hooks: agent-event.sh completed
+activate Hooks
+Hooks --> CodeGen: Event logged
+deactivate Hooks
+
+CodeGen -> Projects: updateProgress(T1, 100%)
 activate Projects
-Projects --> Orchestrator: Updated
+Projects --> CodeGen: Updated
 deactivate Projects
 
-Orchestrator --> Alice: Task claimed\nWorktree: .worktrees/task-001
-deactivate Orchestrator
+CodeGen --> Coordinator: **Task-1 Complete**
+deactivate CodeGen
 
-== Task Claim (Bob - Parallel) ==
-Bob -> Orchestrator: claimTask(taskId: "task-002")
-activate Orchestrator
-
-Orchestrator -> LockMgr: checkConflicts(task-002)
+Coordinator -> LockMgr: releaseLock(T1)
 activate LockMgr
-LockMgr --> Orchestrator: No conflicts
+LockMgr --> Coordinator: Lock released
 deactivate LockMgr
 
-Orchestrator -> LockMgr: acquireLock(task-002, worker-002)
+== 🔄 Parallel Task Execution (Level 1: T2) ==
+
+Coordinator -> LockMgr: Assign Level 1 tasks (T2)
 activate LockMgr
-LockMgr --> Orchestrator: Lock acquired
+LockMgr -> LockMgr: checkDependencies(T2)
+note right of LockMgr
+  **Dependency Check**:
+  T2 depends on T1 ✓ (completed)
+  No file conflicts detected
+  Ready to start
+end note
+LockMgr -> LockMgr: acquireLock(T2, CodeGen-2)
+LockMgr --> Coordinator: T2 locked
 deactivate LockMgr
 
-Orchestrator -> Worktree: setupWorktree(task-002)
+Coordinator -> CodeGen: **R9**: executes Task-2 (.worktrees/task-2/)
+activate CodeGen
+note right of CodeGen
+  **E2: Task Entity**
+  id: "task-2"
+  dependencies: ["task-1"]
+  status: "in_progress"
+end note
+
+CodeGen -> CodeGen: **Generate Code**\nsrc/services/oauth/\n- OAuthService.ts\n- TokenManager.ts\n- SessionManager.ts
+note right of CodeGen
+  **OAuth Service Implementation**:
+  - Authorization code flow
+  - Token generation/validation
+  - Session management
+  - Refresh token rotation
+end note
+
+CodeGen -> CodeGen: git commit
+note right of CodeGen
+  feat(oauth): add OAuth 2.0 service layer
+
+  🤖 Generated with Claude Code
+end note
+
+CodeGen --> Coordinator: **Task-2 Complete**
+deactivate CodeGen
+
+Coordinator -> LockMgr: releaseLock(T2)
+activate LockMgr
+LockMgr --> Coordinator: Released
+deactivate LockMgr
+
+== 🔄 Parallel Task Execution (Level 2: T3) ==
+
+Coordinator -> LockMgr: Assign Level 2 tasks (T3)
+activate LockMgr
+LockMgr -> LockMgr: checkDependencies(T3)
+note right of LockMgr
+  T3 depends on T2 ✓ (completed)
+end note
+LockMgr --> Coordinator: T3 locked
+deactivate LockMgr
+
+Coordinator -> CodeGen: **R9**: executes Task-3 (.worktrees/task-3/)
+activate CodeGen
+
+CodeGen -> CodeGen: **Generate Code**\nsrc/routes/oauth/\n- authorize.ts (GET)\n- token.ts (POST)\n- revoke.ts (POST)
+note right of CodeGen
+  **OAuth Endpoints**:
+  - GET /oauth/authorize
+  - POST /oauth/token
+  - POST /oauth/revoke
+  - Error handling (RFC 6749)
+end note
+
+CodeGen -> CodeGen: git commit
+CodeGen --> Coordinator: **Task-3 Complete**
+deactivate CodeGen
+
+Coordinator -> LockMgr: releaseLock(T3)
+activate LockMgr
+LockMgr --> Coordinator: Released
+deactivate LockMgr
+
+== 🔄 Parallel Task Execution (Level 3: T4) ==
+
+Coordinator -> LockMgr: Assign Level 3 tasks (T4)
+activate LockMgr
+LockMgr -> LockMgr: checkDependencies(T4)
+note right of LockMgr
+  T4 depends on T2 ✓ (completed)
+  T4 depends on T3 ✓ (completed)
+end note
+LockMgr --> Coordinator: T4 locked
+deactivate LockMgr
+
+Coordinator -> CodeGen: **R9**: executes Task-4 (.worktrees/task-4/)
+activate CodeGen
+
+CodeGen -> CodeGen: **Generate Tests**\ntests/integration/oauth/\n- oauth-flow.test.ts\n- token-refresh.test.ts\n- error-cases.test.ts
+note right of CodeGen
+  **E2E Integration Tests**:
+  - Full OAuth flow simulation
+  - Token refresh scenarios
+  - Error handling tests
+  - Security validations
+end note
+
+CodeGen -> CodeGen: git commit
+CodeGen --> Coordinator: **Task-4 Complete**
+deactivate CodeGen
+
+Coordinator -> LockMgr: releaseLock(T4)
+activate LockMgr
+LockMgr --> Coordinator: Released
+deactivate LockMgr
+
+== 🔀 Merge All Worktrees ==
+
+Coordinator -> Worktree: Merge all worktrees to main
 activate Worktree
-Worktree --> Orchestrator: Worktree ready
+note right of Worktree
+  **Merge Strategy**:
+  1. Rebase each branch on latest main
+  2. Run tests for each branch
+  3. Merge to main (fast-forward)
+  4. Cleanup worktrees
+
+  ```bash
+  git checkout main
+  git merge feature/oauth-models --ff-only
+  git merge feature/oauth-service --ff-only
+  git merge feature/oauth-endpoints --ff-only
+  git merge feature/oauth-tests --ff-only
+
+  git worktree remove .worktrees/task-1
+  git worktree remove .worktrees/task-2
+  git worktree remove .worktrees/task-3
+  git worktree remove .worktrees/task-4
+  ```
+end note
+Worktree --> Coordinator: All tasks merged
 deactivate Worktree
 
-Orchestrator --> Bob: Task claimed
-deactivate Orchestrator
+Coordinator -> Projects: Update status\nstate:implementing → state:reviewing
+activate Projects
+Projects --> Coordinator: Updated
+deactivate Projects
 
-== Task Execution (Parallel) ==
-par Alice's Task
-  Alice -> TaskTool: executeTask(task-001)
-  activate TaskTool
-  TaskTool -> TaskTool: Fix auth bug\n(src/auth/login.ts)
-  TaskTool -> Projects: updateProgress(70%)
+== ✅ Quality Assurance (ReviewAgent) ==
+
+Coordinator -> Review: **R9**: executes → Quality Review
+activate Review
+note right of Review
+  **E3: ReviewAgent**
+  authority: '🔵実行権限'
+  escalation: CISO (security)
+end note
+
+Review -> MCP: Get diagnostics
+activate MCP
+note right of MCP
+  **MCP Server**: ide-integration
+  - mcp__ide__getDiagnostics
+  - ESLint results
+  - TypeScript errors
+end note
+MCP --> Review: Diagnostics
+deactivate MCP
+
+Review -> Review: **R11**: creates → QualityReport\nAnalyze OAuth implementation
+note right of Review
+  **E6: QualityReport Entity**
+
+  **Analysis**:
+  ✓ TypeScript: 100/100
+  ✓ ESLint: 95/100
+  ⚠️ Security: 70/100 (Token expiry concerns)
+  ✓ Test Coverage: 88%
+
+  **Final Score: 88/100** ✅
+  **Label**: ✅ quality:good (80-89)
+end note
+
+alt **Security Issue Detected (Sev.2)**
+  Review -> Coordinator: **Security concern found**
+  activate Coordinator
+
+  Coordinator -> Coordinator: **R12**: triggers → Escalation
+  note right of Coordinator
+    **E8: Escalation Entity**
+    reason: "OAuth token expiry not properly validated"
+    target: CISO
+    severity: Sev.2-High
+    context: {
+      file: "src/services/oauth/TokenManager.ts",
+      line: 45,
+      issue: "Token expiry validation missing"
+    }
+  end note
+
+  Coordinator -> Discord: **R34**: notifies-to → Discord\n(Escalation)
+  activate Discord
+  note right of Discord
+    **Channel**: #help-general
+    ⚠️ **Escalation - Security Issue**
+    Severity: Sev.2-High
+    Target: @CISO
+    Issue: OAuth token expiry validation
+    File: src/services/oauth/TokenManager.ts:45
+
+    **Action Required**: Human review needed
+  end note
+  Discord --> Coordinator: Alert sent
+  deactivate Discord
+
+  Coordinator -> Projects: Add label: 🔐 security
   activate Projects
-  Projects --> TaskTool: Updated
+  Projects --> Coordinator: Label added
   deactivate Projects
-  TaskTool --> Alice: Task completed
-  deactivate TaskTool
-else Bob's Task
-  Bob -> TaskTool: executeTask(task-002)
-  activate TaskTool
-  TaskTool -> TaskTool: Add OAuth feature\n(src/auth/oauth.ts)
-  TaskTool -> Projects: updateProgress(60%)
-  activate Projects
-  Projects --> TaskTool: Updated
-  deactivate Projects
-  TaskTool --> Bob: Task completed
-  deactivate TaskTool
+
+  Coordinator --> Dev: **Escalation Notification**
+  note right of Dev
+    **Human Intervention Required**:
+    - Review security concern
+    - Approve fix or request changes
+    - Expected resolution: 1-2 hours
+  end note
+
+  Dev -> Coordinator: Approve auto-fix
+
+  Coordinator -> CodeGen: Apply security fix
+  activate CodeGen
+  CodeGen -> CodeGen: Add token expiry validation
+  CodeGen -> CodeGen: git commit -m "fix(oauth): add token expiry validation"
+  CodeGen --> Coordinator: Security fix applied
+  deactivate CodeGen
+
+  Coordinator -> Review: Re-run quality check
+  Review -> Review: **Recalculate Score**
+  note right of Review
+    **Updated QualityReport**:
+    ✓ TypeScript: 100/100
+    ✓ ESLint: 95/100
+    ✓ Security: 95/100 ✅ (Fixed)
+    ✓ Test Coverage: 88%
+
+    **Final Score: 95/100** ⭐
+    **Label**: ⭐ quality:excellent (90-100)
+  end note
+
+  deactivate Coordinator
 end
 
-== Task Completion (Alice) ==
-Alice -> Orchestrator: completeTask(task-001)
-activate Orchestrator
+Review -> Discord: **R30**: announces-in → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-pull-requests
+  📊 **Quality Report - Issue #123**
+  Score: 95/100 (Excellent) ⭐
+  ESLint: ✓ Pass
+  TypeScript: ✓ Pass
+  Security: ✓ Pass (Fixed)
+  Coverage: 88%
+end note
+Discord --> Review: Posted
+deactivate Discord
 
-Orchestrator -> Worktree: runTests()
-activate Worktree
-Worktree --> Orchestrator: Tests passed ✓
-deactivate Worktree
+Review --> Coordinator: **R22**: Approved (Quality >= 80)
+deactivate Review
 
-Orchestrator -> Worktree: createPullRequest()
-activate Worktree
-Worktree --> Orchestrator: PR #1234 created
-deactivate Worktree
+== 🔄 Pull Request Creation ==
 
-Orchestrator -> LockMgr: releaseLock(task-001)
-activate LockMgr
-LockMgr -> LockMgr: Delete lock file
-LockMgr --> Orchestrator: Lock released
-deactivate LockMgr
+Coordinator -> PRAgent: **R10**: generates → PR
+activate PRAgent
+note right of PRAgent
+  **E4: PR Entity**
+  type: PRRequest
+  draft: true
+  baseBranch: "main"
+  headBranch: "feature/oauth-2.0"
+end note
 
-Orchestrator -> Worktree: cleanup()
-activate Worktree
-Worktree -> Worktree: git worktree remove
-Worktree --> Orchestrator: Cleaned up
-deactivate Worktree
+PRAgent -> PRAgent: **Generate PR Content**
+note right of PRAgent
+  **PR Title** (Conventional Commits):
+  feat(oauth): add OAuth 2.0 authentication system
 
-Orchestrator -> Projects: updateStatus(task-001, "completed")
+  **PR Body**:
+  Closes #123
+
+  ## Summary
+  - OAuth 2.0 provider models (User, Token, Session)
+  - OAuth service layer (authorize, token, refresh)
+  - OAuth endpoints (GET /authorize, POST /token, POST /revoke)
+  - E2E integration tests
+
+  ## Quality Report
+  Score: 95/100 ⭐ (Excellent)
+  Security: ✓ Fixed token expiry validation
+  Coverage: 88%
+
+  ## Security Notes
+  - Token expiry validation added (Sev.2 fix)
+  - CISO review approved
+
+  🤖 Generated with Claude Code
+  Co-Authored-By: Claude <noreply@anthropic.com>
+end note
+
+PRAgent -> Issues: **R4**: creates → PR\n**R21**: attached-to → Issue #123
+activate Issues
+note right of Issues
+  **PR #456 Created**:
+  - Title: feat(oauth): add OAuth 2.0 authentication
+  - Labels: ✨ type:feature, ⭐ quality:excellent
+  - Draft: true
+  - Linked to Issue #123
+end note
+Issues --> PRAgent: PR #456 created
+deactivate Issues
+
+PRAgent -> Discord: **R31**: announces-in → Discord
+activate Discord
+note right of Discord
+  **Channel**: #release-notes
+  🎉 **New Pull Request**
+  PR #456: OAuth 2.0 authentication system
+  Status: Draft
+  Quality: 95/100 ⭐
+  Tasks: 4 completed (parallel execution)
+  Time: ~30 minutes
+end note
+Discord --> PRAgent: Announced
+deactivate Discord
+
+PRAgent --> Coordinator: **R10**: PR Created
+deactivate PRAgent
+
+Coordinator -> Projects: Update status\nstate:reviewing → state:done
 activate Projects
-Projects --> Orchestrator: Updated
+note right of Projects
+  **Final Labels**:
+  ✅ state:done
+  ⭐ quality:excellent
+  🔐 security (resolved)
+  ✨ type:feature
+end note
+Projects --> Coordinator: Updated
 deactivate Projects
 
-Orchestrator --> Alice: Task completed\nPR #1234 ready
-deactivate Orchestrator
+Coordinator -> Discord: **R29**: posts-to → Discord
+activate Discord
+note right of Discord
+  **Channel**: #dev-general
+  ✅ **CoordinatorAgent Complete**
+  Issue #123 fully automated
+  PR #456 ready for review
+  Quality: 95/100 ⭐
+  Time: 30 minutes (4 tasks in parallel)
+end note
+Discord --> Coordinator: Posted
+deactivate Discord
 
-== Task Completion (Bob) ==
-Bob -> Orchestrator: completeTask(task-002)
-activate Orchestrator
-Orchestrator -> Worktree: runTests()
-activate Worktree
-Worktree --> Orchestrator: Tests passed ✓
-deactivate Worktree
-Orchestrator -> Worktree: createPullRequest()
-activate Worktree
-Worktree --> Orchestrator: PR #1235 created
-deactivate Worktree
-Orchestrator -> LockMgr: releaseLock(task-002)
-activate LockMgr
-LockMgr --> Orchestrator: Lock released
-deactivate LockMgr
-Orchestrator -> Projects: updateStatus(task-002, "completed")
-activate Projects
-Projects --> Orchestrator: Updated
-deactivate Projects
-Orchestrator --> Bob: Task completed\nPR #1235 ready
-deactivate Orchestrator
+Coordinator --> Dev: **Automation Complete**
+deactivate Coordinator
 
-note over Alice, Projects
-  **Parallel Work Complete**
+== 👤 Human Review & Merge ==
 
-  Alice: Issue #456 fixed → PR #1234
-  Bob: OAuth feature added → PR #1235
+Dev -> Issues: Review PR #456
+activate Issues
+Issues --> Dev: Code displayed
+Dev -> Issues: Approve PR
+Issues --> Dev: Approved
+Dev -> Issues: Merge PR
+Issues --> Dev: Merged
+deactivate Issues
 
-  Total Time: ~10 minutes (parallel)
-  Sequential would be: ~20 minutes
-  Time Saved: 50%
+== 📊 Parallel Execution Summary ==
 
-  No conflicts, no merge issues ✓
+note over Dev, Hooks
+  **🌸 Miyabi Parallel Work Coordination Complete**
+
+  **Issue #123**: OAuth 2.0 authentication system
+  **Tasks**: 4 tasks with DAG dependencies
+  **Execution**: Parallel (Worktree-based isolation)
+  **Quality**: 95/100 ⭐ (Excellent)
+  **Security**: Sev.2 issue detected & auto-fixed
+  **Time**: ~30 minutes (sequential would be ~2 hours)
+  **Time Saved**: 75% (4x speedup)
+
+  **Entity-Relation Integration**:
+  - E1: Issue #123
+  - E2: 4 Tasks (T1-T4)
+  - E3: 5 Agents (IssueAgent, Coordinator, CodeGen×3, Review, PR)
+  - E4: PR #456
+  - E6: QualityReport (95/100)
+  - E8: 1 Escalation (Sev.2 → CISO)
+  - E11: DAG (4 levels)
+  - E12: 4 Worktrees
+  - E13: Discord (4 notifications)
+
+  **Relations Used**: R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R14,
+                      R16, R17, R18, R21, R22, R24, R25, R28, R29, R30, R31, R34
+
+  **Labels Applied**:
+  - STATE: state:pending → state:analyzing → state:implementing → state:reviewing → state:done
+  - TYPE: type:feature
+  - PRIORITY: priority:P1-High
+  - SEVERITY: severity:Sev.2-High
+  - QUALITY: quality:excellent (95/100)
+  - SPECIAL: security (detected & resolved)
+  - AGENT: agent:coordinator
+  - TRIGGER: trigger:agent-execute
+
+  **Parallel Execution Benefits**:
+  ✓ 4 tasks completed in parallel (DAG-based scheduling)
+  ✓ No merge conflicts (Worktree isolation)
+  ✓ Security issue detected & auto-fixed (with escalation)
+  ✓ Quality score 95/100 (Excellent)
+  ✓ 75% time savings vs sequential execution
+  ✓ Full Entity-Relation traceability
 end note
 
 @enduml

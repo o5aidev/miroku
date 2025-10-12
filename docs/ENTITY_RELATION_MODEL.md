@@ -37,7 +37,7 @@ Miyabiプロジェクトの全エンティティとその関係性を統一的�
 
 ## コアエンティティ
 
-### 📋 エンティティ一覧（12種類）
+### 📋 エンティティ一覧（13種類）
 
 | ID | エンティティ | 説明 | 型定義 | 主要属性 |
 |----|------------|------|--------|---------|
@@ -53,6 +53,7 @@ Miyabiプロジェクトの全エンティティとその関係性を統一的�
 | E10 | **LDDLog** | LDDログ | `LDDLog` | sessionId, codexPromptChain, toolInvocations |
 | E11 | **DAG** | タスク依存グラフ | `DAG` | nodes, edges, levels |
 | E12 | **Worktree** | Git Worktree | `string` (path) | path, branch, taskId |
+| E13 | **DiscordCommunity** | Discordコミュニティ | `DiscordCommunity` | serverId, channels, roles, members |
 
 ---
 
@@ -74,6 +75,7 @@ graph TB
     LDD[E10: LDDLog]
     DAG[E11: DAG]
     Worktree[E12: Worktree]
+    Discord[E13: DiscordCommunity]
 
     %% Issue関連
     Issue -->|R1: analyzed-by| Agent
@@ -117,6 +119,16 @@ graph TB
     %% Worktree関連
     Worktree -->|R26: executes| Task
     Worktree -->|R27: creates| PR
+
+    %% Community Integration
+    Issue -->|R28: notifies-to| Discord
+    Agent -->|R29: posts-to| Discord
+    Quality -->|R30: announces-in| Discord
+    PR -->|R31: announces-in| Discord
+    Deployment -->|R32: notifies-to| Discord
+    Label -->|R33: triggers-notification-to| Discord
+    Escalation -->|R34: notifies-to| Discord
+    Command -->|R35: integrated-with| Discord
 ```
 
 ### 📊 関係性統計
@@ -128,7 +140,8 @@ graph TB
 | **Label制御** | 3 | Label → Issue/Agent/Task |
 | **品質管理** | 3 | QualityReport → PR/Agent |
 | **並列実行** | 4 | DAG/Worktree → Task |
-| **合計** | 27関係 | 12エンティティ |
+| **コミュニティ統合** | 8 | All → DiscordCommunity |
+| **合計** | 35関係 | 13エンティティ |
 
 ---
 
@@ -559,6 +572,72 @@ interface WorktreeInfo {
 **ファイル位置**:
 - ドキュメント: `CLAUDE.md` (Git Worktree並列実行アーキテクチャ)
 - 実装: `scripts/parallel-executor.ts`
+
+---
+
+### E13: DiscordCommunity
+
+```typescript
+interface DiscordCommunity {
+  // 識別
+  serverId: string;        // Discord Server ID
+  serverName: string;      // サーバー名（例: "Miyabi Community"）
+
+  // チャンネル
+  channels: DiscordChannel[];  // 15+チャンネル
+
+  // ロール
+  roles: DiscordRole[];    // Progressive Role System
+
+  // メンバー
+  members: number;         // 現在のメンバー数
+
+  // Webhook統合
+  webhooks: WebhookConfig[];  // GitHub/Agent通知用Webhook
+
+  // Bot統合
+  botIntegrations: BotConfig[];  // MEE6, GitHub Bot, Custom Miyabi Bot
+
+  // メタデータ
+  createdAt: string;       // サーバー作成日時
+}
+
+interface DiscordChannel {
+  id: string;              // Channel ID
+  name: string;            // チャンネル名（例: #announcements）
+  type: 'text' | 'voice' | 'forum';
+  category: string;        // カテゴリ（例: "Information & Announcements"）
+  purpose: string;         // 用途説明
+}
+
+interface DiscordRole {
+  id: string;              // Role ID
+  name: string;            // ロール名（例: "🌱 Newcomer"）
+  level: number;           // レベル（1-5）
+  requirements: string;    // 取得条件
+}
+
+interface WebhookConfig {
+  channelId: string;       // 送信先Channel ID
+  webhookUrl: string;      // Webhook URL
+  triggerEvents: string[]; // トリガーイベント（例: ['issue.created', 'pr.merged']）
+}
+```
+
+**関係性**:
+- **R28**: `notified-from` ← Issue
+- **R29**: `posted-from` ← Agent
+- **R30**: `announced-from` ← QualityReport
+- **R31**: `announced-from` ← PR
+- **R32**: `notified-from` ← Deployment
+- **R33**: `notification-triggered-by` ← Label
+- **R34**: `notified-from` ← Escalation
+- **R35**: `integrated-with` ← Command
+
+**ファイル位置**:
+- ドキュメント: `docs/DISCORD_COMMUNITY_PLAN.md`
+- Issue: `#52 - Create Discord server and launch community`
+- 型定義: `agents/types/index.ts` (追加予定)
 
 ---
 
@@ -1271,6 +1350,211 @@ gh pr create --title "feat: Issue #270 - 機能実装" --draft
 
 ---
 
+### R28: Issue --notifies-to-→ DiscordCommunity
+
+**種類**: N:1 (複数IssueがDiscordに通知)
+
+**実装**:
+```typescript
+// Issue作成時、#announcementsチャンネルに通知
+const webhook = discord.webhooks.find(w => w.channelId === 'announcements');
+await sendWebhook(webhook.webhookUrl, {
+  content: `📢 **New Issue Created**\n\nIssue #${issue.number}: ${issue.title}\n${issue.url}`
+});
+```
+
+**通知先チャンネル**: `#announcements`, `#dev-general`
+
+**トリガー**: Issue作成時、ラベル変更時
+
+**ファイル**: `docs/DISCORD_COMMUNITY_PLAN.md`, Issue #52
+
+---
+
+### R29: Agent --posts-to-→ DiscordCommunity
+
+**種類**: N:1 (複数AgentがDiscordに投稿)
+
+**実装**:
+```typescript
+// Agent実行開始時、#dev-generalに投稿
+await discord.post('#dev-general', {
+  embed: {
+    title: `🤖 ${agentType} Started`,
+    description: `Task: ${task.title}`,
+    color: 0x1976D2,
+    timestamp: new Date().toISOString()
+  }
+});
+```
+
+**投稿先チャンネル**: `#dev-general`, `#dev-agents`
+
+**トリガー**: Agent実行開始時、完了時、失敗時
+
+**ファイル**: `agents/base-agent.ts` (Discord通知メソッド追加予定)
+
+---
+
+### R30: QualityReport --announces-in-→ DiscordCommunity
+
+**種類**: N:1
+
+**実装**:
+```typescript
+// QualityReport完成時、#dev-pull-requestsに通知
+await discord.post('#dev-pull-requests', {
+  embed: {
+    title: `📊 Quality Report - PR #${pr.number}`,
+    description: `Score: ${qualityReport.score}/100 ${qualityReport.passed ? '✅' : '❌'}`,
+    fields: [
+      { name: 'ESLint', value: `${qualityReport.breakdown.eslintScore}/100` },
+      { name: 'TypeScript', value: `${qualityReport.breakdown.typeScriptScore}/100` },
+      { name: 'Security', value: `${qualityReport.breakdown.securityScore}/100` }
+    ],
+    color: qualityReport.passed ? 0x4CAF50 : 0xF44336
+  }
+});
+```
+
+**通知先チャンネル**: `#dev-pull-requests`
+
+**ファイル**: `agents/review/review-agent.ts`
+
+---
+
+### R31: PR --announces-in-→ DiscordCommunity
+
+**種類**: N:1
+
+**実装**:
+```typescript
+// PR作成時、#release-notesに通知
+await discord.post('#release-notes', {
+  content: `🎉 **New Pull Request**\n\nPR #${pr.number}: ${pr.title}\n${pr.url}\n\nDraft: ${pr.draft ? 'Yes' : 'No'}`
+});
+```
+
+**通知先チャンネル**: `#release-notes`, `#dev-pull-requests`
+
+**トリガー**: PR作成時、マージ時、クローズ時
+
+**ファイル**: `agents/pr/pr-agent.ts`
+
+---
+
+### R32: Deployment --notifies-to-→ DiscordCommunity
+
+**種類**: N:1
+
+**実装**:
+```typescript
+// デプロイ完了時、#announcementsに通知
+await discord.post('#announcements', {
+  embed: {
+    title: `🚀 Deployment ${deploymentResult.status === 'success' ? 'Successful' : 'Failed'}`,
+    description: `Environment: ${deploymentResult.environment}\nVersion: ${deploymentResult.version}`,
+    fields: [
+      { name: 'URL', value: deploymentResult.deploymentUrl },
+      { name: 'Duration', value: `${deploymentResult.durationMs}ms` }
+    ],
+    color: deploymentResult.status === 'success' ? 0x4CAF50 : 0xF44336
+  }
+});
+```
+
+**通知先チャンネル**: `#announcements`
+
+**トリガー**: デプロイ成功時、失敗時、ロールバック時
+
+**ファイル**: `agents/deployment/deployment-agent.ts`
+
+---
+
+### R33: Label --triggers-notification-to-→ DiscordCommunity
+
+**種類**: N:1 (特定LabelがDiscord通知トリガー)
+
+**実装**:
+```typescript
+// 特定Label付与時、Discordに通知
+const criticalLabels = ['priority:P0-Critical', 'severity:Sev.1-Critical', 'security'];
+if (labels.some(l => criticalLabels.includes(l))) {
+  await discord.post('#help-general', {
+    content: `🚨 **Critical Issue Detected**\n\nIssue #${issue.number} has been marked as critical.\n${issue.url}`,
+    mention: '@TechLead'
+  });
+}
+```
+
+**通知先チャンネル**: `#help-general`, `#announcements`
+
+**トリガー**: 重要度の高いLabel付与時
+
+**ファイル**: `agents/issue/issue-agent.ts`
+
+---
+
+### R34: Escalation --notifies-to-→ DiscordCommunity
+
+**種類**: N:1
+
+**実装**:
+```typescript
+// エスカレーション発生時、#help-generalに通知
+await discord.post('#help-general', {
+  embed: {
+    title: `⚠️ Escalation: ${escalation.target}`,
+    description: escalation.reason,
+    fields: [
+      { name: 'Severity', value: escalation.severity },
+      { name: 'Context', value: JSON.stringify(escalation.context, null, 2) }
+    ],
+    color: 0xFF9800
+  },
+  mention: `@${escalation.target}`
+});
+```
+
+**通知先チャンネル**: `#help-general`
+
+**トリガー**: エスカレーション発生時
+
+**ファイル**: `agents/base-agent.ts` (escalate メソッド)
+
+---
+
+### R35: Command --integrated-with-→ DiscordCommunity
+
+**種類**: N:1 (カスタムMiyabi Bot経由)
+
+**実装**:
+```typescript
+// Discord Bot コマンド `/miyabi status`
+bot.onCommand('miyabi status', async (interaction) => {
+  const status = await getMiyabiStatus();
+  await interaction.reply({
+    embed: {
+      title: '🌸 Miyabi Status',
+      fields: [
+        { name: 'Active Agents', value: status.activeAgents.toString() },
+        { name: 'Pending Issues', value: status.pendingIssues.toString() },
+        { name: 'Open PRs', value: status.openPRs.toString() }
+      ]
+    }
+  });
+});
+```
+
+**Botコマンド**:
+- `/miyabi status` - システムステータス表示
+- `/miyabi docs <query>` - ドキュメント検索
+- `/miyabi agent <name>` - Agent情報表示
+
+**ファイル**: Custom Miyabi Bot (未実装)
+
+---
+
 ## テンプレート統合
 
 ### 📁 テンプレート一覧とEntity関連
@@ -1402,6 +1686,16 @@ gh pr create --title "feat: Issue #270 - 機能実装" --draft
 | ドキュメント | `CLAUDE.md` (Git Worktree並列実行アーキテクチャ) |
 | 実装 | `scripts/parallel-executor.ts` |
 | プロンプト | `.claude/agents/prompts/\*-agent-prompt.md` |
+
+#### E13: DiscordCommunity
+
+| 要素 | ファイル |
+|------|---------|
+| 型定義 | `agents/types/index.ts` (追加予定) |
+| ドキュメント | `docs/DISCORD_COMMUNITY_PLAN.md` |
+| Issue | `#52 - Create Discord server and launch community` |
+| Webhook統合 | (未実装) |
+| Bot統合 | Custom Miyabi Bot (未実装) |
 
 ---
 

@@ -1,136 +1,277 @@
-@startuml Miyabi Label System (53 Labels)
+@startuml Miyabi Complete Label System (53 Labels)
 
+' ============================================================================
+' Color Definitions (10 Categories)
+' ============================================================================
 !define STATE_COLOR #E8F5E9
 !define AGENT_COLOR #FFF3E0
 !define PRIORITY_COLOR #FFEBEE
 !define TYPE_COLOR #E3F2FD
-!define QUALITY_COLOR #F3E5F5
+!define SEVERITY_COLOR #FFCCBC
+!define PHASE_COLOR #F3E5F5
+!define SPECIAL_COLOR #FFF9C4
+!define TRIGGER_COLOR #FFE0B2
+!define QUALITY_COLOR #C8E6C9
+!define COMMUNITY_COLOR #E1BEE7
 
 skinparam backgroundColor #FAFAFA
 skinparam shadowing false
-skinparam class {
+skinparam packageStyle rectangle
+skinparam state {
     BorderColor #424242
+    BackgroundColor #FFFFFF
     ArrowColor #757575
+    ArrowThickness 2
 }
 
-title Miyabi Label System\n10 Categories × 53 Labels
+title **Miyabi Complete Label System**\n10 Categories × 53 Labels | Entity-Relation Integration (R16, R17, R18, R33)
 
-package "STATE Labels (8)" <<STATE_COLOR>> {
-    class "📥 state:pending" as pending
-    class "🔍 state:analyzing" as analyzing
-    class "🏗️ state:implementing" as implementing
-    class "👀 state:reviewing" as reviewing
-    class "✅ state:done" as done
-    class "🔴 state:blocked" as blocked
-    class "🛑 state:failed" as failed
-    class "⏸️ state:paused" as paused
+' ============================================================================
+' STATE Labels (8 labels) - Lifecycle Management
+' ============================================================================
+
+state "STATE Labels (8)" as STATE #STATE_COLOR {
+    state "📥 state:pending" as pending #E8F5E9 : **Initial state**\nNew issue created\nWaiting for analysis
+    state "🔍 state:analyzing" as analyzing #E8F5E9 : **Analysis phase**\nIssueAgent analyzing\nCoordinatorAgent decomposing
+    state "🏗️ state:implementing" as implementing #E8F5E9 : **Implementation phase**\nCodeGenAgent executing\nWorktree active
+    state "👀 state:reviewing" as reviewing #E8F5E9 : **Review phase**\nReviewAgent evaluating\nQuality check in progress
+    state "✅ state:done" as done #E8F5E9 : **Completed**\nMerged & deployed\nIssue closed
+    state "🔴 state:blocked" as blocked #FFCCBC : **Blocked**\nRequires human intervention\nEscalation triggered
+    state "🛑 state:failed" as failed #FFCCBC : **Failed**\nQuality score < 80\nTests failed
+    state "⏸️ state:paused" as paused #FFF9C4 : **Paused**\nTemporarily suspended\nWaiting for dependencies
 }
 
-package "AGENT Labels (6)" <<AGENT_COLOR>> {
-    class "🤖 agent:coordinator" as coordinator
-    class "🤖 agent:codegen" as codegen
-    class "🤖 agent:review" as review
-    class "🤖 agent:issue" as issue
-    class "🤖 agent:pr" as pr
-    class "🤖 agent:deployment" as deployment
+' ============================================================================
+' AGENT Labels (6 labels) - Agent Assignment
+' ============================================================================
+
+state "AGENT Labels (6)" as AGENT #AGENT_COLOR {
+    state "🤖 agent:coordinator" as coordinator #FFF3E0 : **CoordinatorAgent**\nAuthority: 🔴統括\nTask: Decomposition & DAG
+    state "🤖 agent:codegen" as codegen #FFF3E0 : **CodeGenAgent**\nAuthority: 🔵実行\nTask: AI code generation
+    state "🤖 agent:review" as review #FFF3E0 : **ReviewAgent**\nAuthority: 🔵実行\nTask: Quality evaluation
+    state "🤖 agent:issue" as issue #FFF3E0 : **IssueAgent**\nAuthority: 🟢分析\nTask: Label inference
+    state "🤖 agent:pr" as pr #FFF3E0 : **PRAgent**\nAuthority: 🔵実行\nTask: PR creation
+    state "🤖 agent:deployment" as deployment #FFF3E0 : **DeploymentAgent**\nAuthority: 🔵実行\nTask: CI/CD deployment
 }
 
-package "PRIORITY Labels (4)" <<PRIORITY_COLOR>> {
-    class "🔥 priority:P0-Critical" as p0
-    class "⚠️ priority:P1-High" as p1
-    class "📊 priority:P2-Medium" as p2
-    class "📝 priority:P3-Low" as p3
+' ============================================================================
+' PRIORITY Labels (4 labels) - Priority Management
+' ============================================================================
+
+state "PRIORITY Labels (4)" as PRIORITY #PRIORITY_COLOR {
+    state "🔥 priority:P0-Critical" as p0 #FFEBEE : **Critical**\nImmediate action required\nBlocks release
+    state "⚠️ priority:P1-High" as p1 #FFEBEE : **High**\nNext sprint priority\nSignificant impact
+    state "📊 priority:P2-Medium" as p2 #FFEBEE : **Medium**\nNormal priority\nScheduled work
+    state "📝 priority:P3-Low" as p3 #FFEBEE : **Low**\nBacklog item\nNice to have
 }
 
-package "TYPE Labels (7)" <<TYPE_COLOR>> {
-    class "✨ type:feature" as feature
-    class "🐛 type:bug" as bug
-    class "📚 type:docs" as docs
-    class "🔧 type:refactor" as refactor
-    class "🧪 type:test" as test
-    class "🏗️ type:architecture" as architecture
-    class "🚀 type:deployment" as deployment_type
+' ============================================================================
+' TYPE Labels (7 labels) - Issue Classification
+' ============================================================================
+
+state "TYPE Labels (7)" as TYPE #TYPE_COLOR {
+    state "✨ type:feature" as feature #E3F2FD : **Feature**\nNew functionality\nEnhancement
+    state "🐛 type:bug" as bug #E3F2FD : **Bug**\nDefect fix\nError correction
+    state "📚 type:docs" as docs #E3F2FD : **Documentation**\nDoc updates\nREADME improvements
+    state "🔧 type:refactor" as refactor #E3F2FD : **Refactor**\nCode improvement\nNo behavior change
+    state "🧪 type:test" as test #E3F2FD : **Test**\nTest additions\nCoverage improvement
+    state "🏗️ type:architecture" as architecture #E3F2FD : **Architecture**\nSystem design\nInfrastructure change
+    state "🚀 type:deployment" as deployment_type #E3F2FD : **Deployment**\nCI/CD changes\nRelease preparation
 }
 
-package "SEVERITY Labels (4)" <<PRIORITY_COLOR>> {
-    class "🚨 severity:Sev.1-Critical" as sev1
-    class "⚠️ severity:Sev.2-High" as sev2
-    class "📊 severity:Sev.3-Medium" as sev3
-    class "📝 severity:Sev.4-Low" as sev4
+' ============================================================================
+' SEVERITY Labels (4 labels) - Escalation & Impact
+' ============================================================================
+
+state "SEVERITY Labels (4)" as SEVERITY #SEVERITY_COLOR {
+    state "🚨 severity:Sev.1-Critical" as sev1 #FFCCBC : **Sev.1 - Critical**\nProduction down\nEscalate: CISO/CTO
+    state "⚠️ severity:Sev.2-High" as sev2 #FFCCBC : **Sev.2 - High**\nMajor functionality broken\nEscalate: TechLead
+    state "📊 severity:Sev.3-Medium" as sev3 #FFCCBC : **Sev.3 - Medium**\nMinor functionality issue\nAgent can handle
+    state "📝 severity:Sev.4-Low" as sev4 #FFCCBC : **Sev.4 - Low**\nCosmetic issue\nOptional fix
 }
 
-package "PHASE Labels (5)" <<TYPE_COLOR>> {
-    class "🎯 phase:planning" as planning
-    class "🏗️ phase:implementation" as implementation
-    class "🧪 phase:testing" as testing
-    class "🚀 phase:deployment" as deployment_phase
-    class "📊 phase:monitoring" as monitoring
+' ============================================================================
+' PHASE Labels (5 labels) - Project Phase
+' ============================================================================
+
+state "PHASE Labels (5)" as PHASE #PHASE_COLOR {
+    state "🎯 phase:planning" as planning #F3E5F5 : **Planning**\nRequirement gathering\nDesign phase
+    state "🏗️ phase:implementation" as implementation #F3E5F5 : **Implementation**\nActive development\nCode generation
+    state "🧪 phase:testing" as testing #F3E5F5 : **Testing**\nQuality assurance\nTest execution
+    state "🚀 phase:deployment" as deployment_phase #F3E5F5 : **Deployment**\nRelease preparation\nCI/CD pipeline
+    state "📊 phase:monitoring" as monitoring #F3E5F5 : **Monitoring**\nPost-deployment\nPerformance tracking
 }
 
-package "SPECIAL Labels (7)" {
-    class "🔐 security" as security
-    class "💰 cost-watch" as cost
-    class "🔄 dependencies" as dependencies
-    class "🎓 learning" as learning
-    class "🔬 experiment" as experiment
-    class "🚫 wontfix" as wontfix
-    class "🔁 duplicate" as duplicate
+' ============================================================================
+' SPECIAL Labels (7 labels) - Special Operations
+' ============================================================================
+
+state "SPECIAL Labels (7)" as SPECIAL #SPECIAL_COLOR {
+    state "🔐 security" as security #FFF9C4 : **Security**\nSecurity vulnerability\nRequires CISO review
+    state "💰 cost-watch" as cost #FFF9C4 : **Cost Watch**\nExpensive operation\nBudget impact
+    state "🔄 dependencies" as dependencies #FFF9C4 : **Dependencies**\nPackage updates\nDependency changes
+    state "🎓 learning" as learning #FFF9C4 : **Learning**\nExperimental\nResearch task
+    state "🔬 experiment" as experiment #FFF9C4 : **Experiment**\nA/B testing\nPrototype
+    state "🚫 wontfix" as wontfix #FFF9C4 : **Won't Fix**\nIntended behavior\nOut of scope
+    state "🔁 duplicate" as duplicate #FFF9C4 : **Duplicate**\nDuplicate issue\nReference original
 }
 
-package "TRIGGER Labels (4)" <<AGENT_COLOR>> {
-    class "🤖 trigger:agent-execute" as trigger_execute
-    class "📊 trigger:generate-report" as trigger_report
-    class "🚀 trigger:deploy-staging" as trigger_staging
-    class "🚀 trigger:deploy-production" as trigger_production
+' ============================================================================
+' TRIGGER Labels (4 labels) - Automation Triggers
+' ============================================================================
+
+state "TRIGGER Labels (4)" as TRIGGER #TRIGGER_COLOR {
+    state "🤖 trigger:agent-execute" as trigger_execute #FFE0B2 : **Agent Execute**\nTrigger: CoordinatorAgent\nAction: Start autonomous flow
+    state "📊 trigger:generate-report" as trigger_report #FFE0B2 : **Generate Report**\nTrigger: ReportAgent\nAction: Create analysis report
+    state "🚀 trigger:deploy-staging" as trigger_staging #FFE0B2 : **Deploy Staging**\nTrigger: DeploymentAgent\nAction: Deploy to staging
+    state "🚀 trigger:deploy-production" as trigger_production #FFE0B2 : **Deploy Production**\nTrigger: DeploymentAgent\nAction: Deploy to production
 }
 
-package "QUALITY Labels (4)" <<QUALITY_COLOR>> {
-    class "⭐ quality:excellent" as quality_excellent
-    class "✅ quality:good" as quality_good
-    class "⚠️ quality:needs-improvement" as quality_needs
-    class "🔴 quality:poor" as quality_poor
+' ============================================================================
+' QUALITY Labels (4 labels) - Quality Scoring
+' ============================================================================
+
+state "QUALITY Labels (4)" as QUALITY #QUALITY_COLOR {
+    state "⭐ quality:excellent" as quality_excellent #C8E6C9 : **Excellent (90-100)**\nAll checks passed\nHigh quality code
+    state "✅ quality:good" as quality_good #C8E6C9 : **Good (80-89)**\nMinor issues\nAcceptable quality
+    state "⚠️ quality:needs-improvement" as quality_needs #C8E6C9 : **Needs Improvement (60-79)**\nSeveral issues\nRefactoring needed
+    state "🔴 quality:poor" as quality_poor #C8E6C9 : **Poor (0-59)**\nMajor issues\nRequires rework
 }
 
-package "COMMUNITY Labels (4)" {
-    class "👋 good-first-issue" as first_issue
-    class "🙏 help-wanted" as help
-    class "❓ question" as question
-    class "💬 discussion" as discussion
+' ============================================================================
+' COMMUNITY Labels (4 labels) - Community Engagement
+' ============================================================================
+
+state "COMMUNITY Labels (4)" as COMMUNITY #COMMUNITY_COLOR {
+    state "👋 good-first-issue" as first_issue #E1BEE7 : **Good First Issue**\nBeginner friendly\nMentor available
+    state "🙏 help-wanted" as help #E1BEE7 : **Help Wanted**\nCommunity contribution\nExtra hands needed
+    state "❓ question" as question #E1BEE7 : **Question**\nClarification needed\nDiscussion required
+    state "💬 discussion" as discussion #E1BEE7 : **Discussion**\nOpen for debate\nFeedback welcome
 }
 
-' State transitions
-pending --> analyzing : CoordinatorAgent
-analyzing --> implementing : Agent assigned
-implementing --> reviewing : PR created
-reviewing --> done : Merge
-implementing --> blocked : Error
-reviewing --> failed : Quality < 80
+' ============================================================================
+' STATE Transition Flow (Complete Lifecycle)
+' ============================================================================
 
-' Agent triggers
-trigger_execute --> coordinator : Launch
-coordinator --> codegen : Assign
-coordinator --> review : Assign
-coordinator --> deployment : Assign
+[*] --> pending : Issue created
 
-' Quality flow
-reviewing --> quality_excellent : Score 90+
-reviewing --> quality_good : Score 80-89
-reviewing --> quality_needs : Score 60-79
-reviewing --> quality_poor : Score < 60
+' Normal flow
+pending --> analyzing : **R16**: trigger:agent-execute\nIssueAgent launched
+analyzing --> implementing : **R17**: state defined\nCoordinatorAgent assigns
+implementing --> reviewing : PR created\nReviewAgent evaluates
+reviewing --> done : **Merge & Deploy**\nQuality >= 80
 
-' Severity escalation
-sev1 --> security : If security issue
-sev1 --> blocked : Escalate CISO
+' Blocked scenarios
+implementing --> blocked : **Error encountered**\nEscalation triggered
+reviewing --> blocked : **Critical issue found**\nSev.1 escalation
+blocked --> implementing : **Issue resolved**\nRetry
 
-note bottom
-  **Label System Features**:
-  • Auto-assignment by IssueAgent
-  • State-driven automation
-  • Agent triggering
-  • Quality scoring
-  • Escalation routing
+' Failed scenarios
+reviewing --> failed : **Quality score < 80**\nTests failed
+failed --> implementing : **Fixes applied**\nRe-run pipeline
 
-  **Total**: 53 Labels in 10 Categories
+' Paused scenarios
+implementing --> paused : **Waiting for dependencies**\nExternal blocker
+paused --> implementing : **Dependencies resolved**\nResume work
+
+done --> [*]
+
+' ============================================================================
+' Agent Assignment Flow (R16: Label triggers Agent)
+' ============================================================================
+
+note right of trigger_execute
+  **R16: Label --triggers--> Agent**
+
+  When trigger:agent-execute is applied:
+  1. GitHub Actions webhook fires
+  2. CoordinatorAgent launches
+  3. Issue analysis begins
+  4. Tasks decomposed & assigned
 end note
+
+' ============================================================================
+' Priority & Severity Escalation
+' ============================================================================
+
+p0 --> blocked : **Immediate escalation**\nNotify: CTO
+sev1 --> blocked : **Critical escalation**\nNotify: CISO (security)\nNotify: CTO (system)
+sev1 --> security : If security vulnerability
+
+' ============================================================================
+' Quality Score Flow
+' ============================================================================
+
+reviewing --> quality_excellent : Score 90-100\n⭐ Excellent
+reviewing --> quality_good : Score 80-89\n✅ Good (Pass)
+reviewing --> quality_needs : Score 60-79\n⚠️ Needs work
+reviewing --> quality_poor : Score 0-59\n🔴 Poor (Fail)
+
+quality_poor --> failed : Auto-fail\nRefactor required
+
+' ============================================================================
+' Legend & Statistics
+' ============================================================================
+
+legend bottom left
+  **Miyabi Complete Label System**
+
+  **Statistics**:
+  • 53 Labels in 10 Categories
+  • 4 Entity Relations (R16, R17, R18, R33)
+  • 8 State transitions (complete lifecycle)
+  • 6 Agents integrated
+  • 4 Automation triggers
+
+  **Label Categories**:
+  1. STATE (8) - Lifecycle management
+  2. AGENT (6) - Agent assignment
+  3. PRIORITY (4) - Priority levels (P0-P3)
+  4. TYPE (7) - Issue classification
+  5. SEVERITY (4) - Escalation levels (Sev.1-4)
+  6. PHASE (5) - Project phases
+  7. SPECIAL (7) - Special operations
+  8. TRIGGER (4) - Automation triggers
+  9. QUALITY (4) - Quality scores (0-100)
+  10. COMMUNITY (4) - Community engagement
+
+  **Entity Relations**:
+  • **R16**: Label --triggers--> Agent (TRIGGER labels)
+  • **R17**: Label --defines-state--> Issue (STATE labels)
+  • **R18**: Label --categorizes--> Task (TYPE/PRIORITY labels)
+  • **R33**: Label --triggers-notification-to--> Discord (All labels)
+
+  **Key Features**:
+  • Auto-assignment by IssueAgent (AI-powered)
+  • State-driven automation (GitHub Actions)
+  • Agent triggering (Label-based)
+  • Quality scoring (0-100 scale)
+  • Escalation routing (Sev.1-4 → Human)
+  • Discord notifications (All state changes)
+
+  **Automation**:
+  • IssueAgent: Auto-applies TYPE, PRIORITY, SEVERITY
+  • CoordinatorAgent: Auto-applies AGENT, STATE
+  • ReviewAgent: Auto-applies QUALITY
+  • DeploymentAgent: Auto-applies deployment labels
+
+  **Documentation**:
+  • Guide: docs/LABEL_SYSTEM_GUIDE.md
+  • Config: .github/labels.yml
+  • SDK Integration: docs/AGENT_SDK_LABEL_INTEGRATION.md
+  • Entity Model: docs/ENTITY_RELATION_MODEL.md
+
+  **Color Legend**:
+  • Green - STATE (lifecycle)
+  • Orange - AGENT (assignment)
+  • Red - PRIORITY (urgency)
+  • Blue - TYPE (classification)
+  • Light Orange - SEVERITY (escalation)
+  • Purple - PHASE (project phase)
+  • Yellow - SPECIAL (operations)
+  • Peach - TRIGGER (automation)
+  • Light Green - QUALITY (scoring)
+  • Lavender - COMMUNITY (engagement)
+end legend
 
 @enduml
