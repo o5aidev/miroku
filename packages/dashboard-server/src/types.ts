@@ -79,7 +79,13 @@ export type EdgeType =
   | 'state-flow'
   | 'depends-on'    // Issue dependency
   | 'blocks'        // Issue blocks another
-  | 'related-to';   // Related issues
+  | 'related-to'    // Related issues
+  // ReactFlow visual edge types
+  | 'default'
+  | 'straight'
+  | 'step'
+  | 'smoothstep'
+  | 'simplebezier';
 
 export interface GraphEdge extends BaseEdge {
   type: EdgeType;
@@ -87,6 +93,19 @@ export interface GraphEdge extends BaseEdge {
     stroke?: string;
     strokeWidth?: number;
     strokeDasharray?: string;
+  };
+  markerEnd?: {
+    type: 'arrow' | 'arrowclosed';
+    color?: string;
+  };
+  labelBgStyle?: {
+    fill?: string;
+    fillOpacity?: number;
+  };
+  labelStyle?: {
+    fill?: string;
+    fontSize?: number;
+    fontWeight?: number;
   };
 }
 

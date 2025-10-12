@@ -201,6 +201,12 @@ export class GraphBuilder {
    * Build full graph from all open issues
    */
   async buildFullGraph(): Promise<GraphData> {
+    // Check for mock mode (useful for demos without GitHub API access)
+    if (process.env.GRAPH_MOCK_MODE === 'true') {
+      console.log('🎭 Mock mode enabled - generating sample graph data');
+      return this.generateMockGraph();
+    }
+
     const issues = await this.fetchOpenIssues();
 
     const issueNodes: IssueNode[] = issues.map((issue, index) =>
@@ -220,6 +226,293 @@ export class GraphBuilder {
     return {
       nodes: [...issueNodes, ...agentNodes, ...stateNodes],
       edges,
+    };
+  }
+
+  /**
+   * Generate mock graph for demo/testing purposes
+   * This provides a realistic dependency graph without GitHub API access
+   */
+  private generateMockGraph(): GraphData {
+    // Mock issues with various states and dependencies
+    const mockIssues = [
+      {
+        number: 270,
+        title: 'User Authentication System',
+        agent: 'codegen',
+        state: 'implementing',
+        priority: 'priority:P1-High',
+        severity: 'severity:Sev.3-Minor',
+        dependsOn: [],
+      },
+      {
+        number: 271,
+        title: 'Code Quality Review',
+        agent: 'review',
+        state: 'reviewing',
+        priority: 'priority:P1-High',
+        severity: null,
+        dependsOn: [270],
+      },
+      {
+        number: 272,
+        title: 'Deploy to Staging',
+        agent: 'deployment',
+        state: 'pending',
+        priority: 'priority:P0-Critical',
+        severity: null,
+        dependsOn: [271],
+        blocks: [273],
+      },
+      {
+        number: 273,
+        title: 'Production Release',
+        agent: 'deployment',
+        state: 'pending',
+        priority: 'priority:P0-Critical',
+        severity: null,
+        dependsOn: [272],
+      },
+      {
+        number: 274,
+        title: 'Dashboard Dependency Graph',
+        agent: 'coordinator',
+        state: 'analyzing',
+        priority: 'priority:P2-Medium',
+        severity: null,
+        dependsOn: [],
+      },
+      {
+        number: 275,
+        title: 'Task Hierarchy Visualization',
+        agent: 'codegen',
+        state: 'implementing',
+        priority: 'priority:P2-Medium',
+        severity: null,
+        dependsOn: [274],
+        relatedTo: [270],
+      },
+      {
+        number: 276,
+        title: 'Issue Label Auto-Assignment',
+        agent: 'issue',
+        state: 'done',
+        priority: 'priority:P3-Low',
+        severity: null,
+        dependsOn: [],
+      },
+      {
+        number: 277,
+        title: 'PR Auto-Creation',
+        agent: 'pr',
+        state: 'implementing',
+        priority: 'priority:P2-Medium',
+        severity: null,
+        dependsOn: [270, 274],
+      },
+    ];
+
+    // Create Issue nodes
+    const issueNodes: IssueNode[] = mockIssues.map((issue, index) => ({
+      id: `issue-${issue.number}`,
+      type: 'issue',
+      position: { x: 100, y: index * 150 + 100 },
+      data: {
+        number: issue.number,
+        title: issue.title,
+        state: `state:${issue.state}`,
+        labels: [
+          `🤖 agent:${issue.agent}`,
+          `📊 state:${issue.state}`,
+          ...(issue.priority ? [issue.priority] : []),
+          ...(issue.severity ? [issue.severity] : []),
+        ],
+        priority: issue.priority || undefined,
+        severity: issue.severity || undefined,
+        assignedAgents: [issue.agent],
+        url: `https://github.com/mock/repo/issues/${issue.number}`,
+      },
+    }));
+
+    // Create Agent nodes
+    const agentNodes: AgentNode[] = this.createAgentNodes();
+
+    // Create State nodes with counts
+    const stateCounts = new Map<string, number>();
+    mockIssues.forEach((issue) => {
+      stateCounts.set(issue.state, (stateCounts.get(issue.state) || 0) + 1);
+    });
+
+    const stateNodes: StateNode[] = Array.from(stateCounts.entries()).map(
+      ([state, count], index) => this.createStateNode(state, count, index)
+    );
+
+    // Create edges
+    const issueToAgentEdges: GraphEdge[] = mockIssues.map((issue) => ({
+      id: `issue-${issue.number}-to-agent-${issue.agent}`,
+      source: `issue-${issue.number}`,
+      target: `agent-${issue.agent}`,
+      type: 'smoothstep' as const,
+      animated: true,
+      style: {
+        stroke: '#8B5CF6',
+        strokeWidth: 3,
+      },
+      markerEnd: {
+        type: 'arrowclosed' as const,
+        color: '#8B5CF6',
+      },
+      label: '→',
+      labelBgStyle: {
+        fill: '#1F2937',
+        fillOpacity: 0.8,
+      },
+      labelStyle: {
+        fill: '#A78BFA',
+        fontSize: 12,
+        fontWeight: 600,
+      },
+    }));
+
+    const agentToStateEdges: GraphEdge[] = mockIssues.map((issue) => ({
+      id: `agent-${issue.agent}-to-state-${issue.state}`,
+      source: `agent-${issue.agent}`,
+      target: `state-${issue.state}`,
+      type: 'smoothstep' as const,
+      animated: false,
+      style: {
+        stroke: '#10B981',
+        strokeWidth: 2.5,
+      },
+      markerEnd: {
+        type: 'arrowclosed' as const,
+        color: '#10B981',
+      },
+      labelBgStyle: {
+        fill: '#1F2937',
+        fillOpacity: 0.8,
+      },
+      labelStyle: {
+        fill: '#34D399',
+        fontSize: 11,
+        fontWeight: 500,
+      },
+    }));
+
+    // Create dependency edges
+    const dependencyEdges: GraphEdge[] = [];
+    mockIssues.forEach((issue) => {
+      // "depends on" edges
+      if (issue.dependsOn) {
+        issue.dependsOn.forEach((depNumber) => {
+          dependencyEdges.push({
+            id: `dep-${issue.number}-depends-${depNumber}`,
+            source: `issue-${depNumber}`,
+            target: `issue-${issue.number}`,
+            type: 'smoothstep' as const,
+            label: '⚙️ depends on',
+            animated: false,
+            style: {
+              stroke: '#FB923C',
+              strokeWidth: 2.5,
+              strokeDasharray: '5,5',
+            },
+            markerEnd: {
+              type: 'arrowclosed' as const,
+              color: '#FB923C',
+            },
+            labelBgStyle: {
+              fill: '#1F2937',
+              fillOpacity: 0.9,
+            },
+            labelStyle: {
+              fill: '#FDBA74',
+              fontSize: 11,
+              fontWeight: 600,
+            },
+          });
+        });
+      }
+
+      // "blocks" edges
+      if (issue.blocks) {
+        issue.blocks.forEach((blockedNumber) => {
+          dependencyEdges.push({
+            id: `dep-${issue.number}-blocks-${blockedNumber}`,
+            source: `issue-${issue.number}`,
+            target: `issue-${blockedNumber}`,
+            type: 'smoothstep' as const,
+            label: '🚫 blocks',
+            animated: false,
+            style: {
+              stroke: '#EF4444',
+              strokeWidth: 3,
+              strokeDasharray: '10,5',
+            },
+            markerEnd: {
+              type: 'arrowclosed' as const,
+              color: '#EF4444',
+            },
+            labelBgStyle: {
+              fill: '#1F2937',
+              fillOpacity: 0.9,
+            },
+            labelStyle: {
+              fill: '#FCA5A5',
+              fontSize: 11,
+              fontWeight: 700,
+            },
+          });
+        });
+      }
+
+      // "related to" edges
+      if (issue.relatedTo) {
+        issue.relatedTo.forEach((relatedNumber) => {
+          dependencyEdges.push({
+            id: `dep-${issue.number}-related-${relatedNumber}`,
+            source: `issue-${issue.number}`,
+            target: `issue-${relatedNumber}`,
+            type: 'step' as const,
+            label: '🔗 related',
+            animated: false,
+            style: {
+              stroke: '#94A3B8',
+              strokeWidth: 1.5,
+              strokeDasharray: '3,3',
+            },
+            markerEnd: {
+              type: 'arrow' as const,
+              color: '#94A3B8',
+            },
+            labelBgStyle: {
+              fill: '#1F2937',
+              fillOpacity: 0.8,
+            },
+            labelStyle: {
+              fill: '#CBD5E1',
+              fontSize: 10,
+              fontWeight: 500,
+            },
+          });
+        });
+      }
+    });
+
+    const stateFlowEdges = this.createStateFlowEdges();
+
+    console.log(
+      `🎭 Mock graph generated: ${issueNodes.length} issues, ${agentNodes.length} agents, ${stateNodes.length} states`
+    );
+
+    return {
+      nodes: [...issueNodes, ...agentNodes, ...stateNodes],
+      edges: [
+        ...issueToAgentEdges,
+        ...agentToStateEdges,
+        ...stateFlowEdges,
+        ...dependencyEdges,
+      ],
     };
   }
 
