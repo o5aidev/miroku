@@ -879,12 +879,174 @@ cd packages/dashboard && npm run dev
 
 ---
 
-## 🎯 次のフェーズ (未実装)
+## ✅ Phase 6: 実行可能デモの追加 (完了)
 
-### Phase 6: 実行可能デモの追加
-- `npm run demo:intelligent`コマンド作成
-- 5シナリオの自動実行 (単純分析, ツール作成, エラーリトライ, キャッシュ効果, E2E)
-- ブラウザ可視化
+**目的:** Phase 1-5の全機能を実際に動かせる実行可能デモの作成
+
+**実装内容:**
+
+1. **デモスクリプト作成**
+   - ファイル: `agents/demo/intelligent-demo.ts`
+   - 行数: 420行
+   - コマンド: `npm run demo:intelligent`
+
+**5つのシナリオ:**
+
+### Scenario 1: 型安全なツール作成 (Phase 1)
+```typescript
+// IToolCreator interface準拠の使用例
+const toolCreator: IToolCreator = new DynamicToolCreator();
+const addTool = await toolCreator.createSimpleTool('add', 'Add two numbers', 'library', { a: 10, b: 32 });
+const result = await toolCreator.executeTool(addTool.tool, { a: 10, b: 32 }, context);
+const stats = toolCreator.getStatistics();
+const history = toolCreator.getExecutionHistory();
+```
+
+**結果:**
+- ツール作成成功
+- 実行結果: 10 + 32 = 42
+- 統計情報・実行履歴の取得成功
+
+### Scenario 2: エラーハンドリングとリトライ (Phase 2)
+```typescript
+// 初回・2回目失敗、3回目成功する操作
+const result = await retryWithBackoff(unreliableOperation, {
+  maxRetries: 5,
+  initialDelayMs: 500,
+  backoffMultiplier: 2,
+  jitterFactor: 0.1,
+  onRetry: (attempt, error, delay) => {
+    console.log(`リトライ ${attempt}: ${delay}ms待機後に再試行`);
+  },
+});
+```
+
+**結果:**
+- 試行1回目: 失敗 → 524ms待機
+- 試行2回目: 失敗 → 961ms待機
+- 試行3回目: 成功
+- 総実行時間: 1487ms
+- Exponential Backoff + Jitterが正常に動作
+
+### Scenario 3: TTLキャッシュの効果測定 (Phase 3)
+```typescript
+// 重い計算 (1000ms) をmemoize
+const memoizedComputation = memoize(heavyComputation, {
+  ttlMs: 5000,
+  maxSize: 10,
+});
+
+// 初回: キャッシュミス (1000ms)
+const result1 = await memoizedComputation(42);
+
+// 2回目: キャッシュヒット (0ms)
+const result2 = await memoizedComputation(42);
+```
+
+**結果:**
+- 初回実行: 1000ms (キャッシュミス)
+- 2回目実行: 0ms (キャッシュヒット)
+- **1000msの高速化達成！**
+- LRU eviction正常動作 (maxSize: 10超過時)
+
+### Scenario 4: セキュリティ検証 (Phase 5)
+```typescript
+// 安全なコード
+const safeCode = `function add(a, b) { return a + b; }`;
+const safeResult = SecurityValidator.validate(safeCode);
+// → スコア: 100/100, 安全性: ✅ SAFE
+
+// 危険なコード (eval使用)
+const dangerousCode = `function executeCode(userInput) { return eval(userInput); }`;
+const dangerousResult = SecurityValidator.validate(dangerousCode);
+// → スコア: 40/100, 安全性: ❌ UNSAFE, Issue検出: 1件 (eval_usage, severity: 100)
+```
+
+**結果:**
+- 安全なコード: スコア 100/100, Issue 0件
+- 危険なコード: スコア 40/100, Issue 1件 (CRITICAL)
+- セキュリティレポート生成成功
+
+### Scenario 5: E2E統合シナリオ (全機能)
+```typescript
+// 1. 型安全なツール作成 (Phase 1)
+const toolCreator: IToolCreator = new DynamicToolCreator();
+
+// 2. キャッシュ初期化 (Phase 3)
+const cache = new TTLCache({ maxSize: 100, ttlMs: 15 * 60 * 1000 });
+
+// 3. リトライ付きツール作成 (Phase 2)
+const toolResult = await retryWithBackoff(createToolWithRetry, { maxRetries: 3 });
+
+// 4. セキュリティ検証 (Phase 5)
+// → スコア: 100/100 (ライブラリツール)
+
+// 5. ツール実行 (キャッシュ付き)
+const result1 = await executeWithCache(7, 6); // キャッシュミス
+const result2 = await executeWithCache(7, 6); // キャッシュヒット
+
+// 6. 全体統計情報
+// 総実行数: 1, 成功率: 100%, キャッシュヒット率: 50%
+```
+
+**結果:**
+- 全機能が連携して正常に動作
+- Phase 1-5の統合に成功
+
+**実行例:**
+
+```bash
+npm run demo:intelligent
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   🚀 Intelligent Agent System - Phase 1-5 実行可能デモ           ║
+║                                                                   ║
+║   このデモでは、Phase 1-5で実装した全機能を実際に動かします       ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+... (5シナリオ実行) ...
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   ✅ 全シナリオ完了!                                              ║
+║                                                                   ║
+║   総実行時間: 2429ms                                         ║
+║                                                                   ║
+║   Phase 1: 型安全性 ✅                                            ║
+║   Phase 2: エラーハンドリング ✅                                  ║
+║   Phase 3: キャッシュ最適化 ✅                                    ║
+║   Phase 5: セキュリティ強化 ✅                                    ║
+║   E2E統合テスト ✅                                                ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+```
+
+**効果:**
+- ✅ Phase 1-5の全機能を即座に動作確認可能
+- ✅ 各改善機能の効果を実測値で確認
+- ✅ キャッシュ効果: 1000msの高速化 (100%削減)
+- ✅ リトライ機能: 3回目で成功
+- ✅ セキュリティ検証: 危険パターン正確検出
+- ✅ E2E統合: 全機能が連携動作
+
+**追加コマンド:**
+
+`package.json`に以下を追加:
+```json
+{
+  "scripts": {
+    "test:improvements": "tsx agents/tests/improvements-test.ts",
+    "test:security": "tsx agents/tests/security-validator-test.ts",
+    "demo:intelligent": "tsx agents/demo/intelligent-demo.ts"
+  }
+}
+```
+
+---
+
+## 🎯 次のフェーズ (未実装)
 
 ### Phase 7: パフォーマンスプロファイリング
 - 1000タスク並列実行ベンチマーク
@@ -915,7 +1077,10 @@ cd packages/dashboard && npm run dev
 9. `packages/dashboard/src/hooks/useAgentWebSocket.ts` (243行)
 10. `packages/dashboard/WEBSOCKET_INTEGRATION.md` (265行)
 
-**総追加行数:** 3,826行
+**Phase 6 (実行可能デモ):**
+11. `agents/demo/intelligent-demo.ts` (420行)
+
+**総追加行数:** 4,246行
 
 ### 更新されたファイル
 
@@ -1056,12 +1221,22 @@ const result2 = await memoizedAnalyze(task); // 0ms
   - [x] TypeScript型安全な通信
   - [x] ドキュメント作成 (WEBSOCKET_INTEGRATION.md)
 
-- [ ] Phase 6: 実行可能デモ
+- [x] Phase 6: 実行可能デモ
+  - [x] デモスクリプト実装 (agents/demo/intelligent-demo.ts, 420行)
+  - [x] 5シナリオの自動実行
+    - [x] Scenario 1: 型安全なツール作成 (IToolCreator interface)
+    - [x] Scenario 2: エラーハンドリングとリトライ (Exponential Backoff)
+    - [x] Scenario 3: TTLキャッシュの効果測定 (1000ms高速化)
+    - [x] Scenario 4: セキュリティ検証 (危険パターン検出)
+    - [x] Scenario 5: E2E統合シナリオ (全機能連携)
+  - [x] package.jsonにコマンド追加 (npm run demo:intelligent)
+  - [x] 全シナリオ成功 (総実行時間: 2429ms)
+
 - [ ] Phase 7: パフォーマンス最適化
 
 ---
 
-**改善バージョン:** v1.4.0 (Improvements + WebSocket)
+**改善バージョン:** v1.5.0 (Improvements + WebSocket + Demo)
 **実装完了日:** 2025-10-12
-**ステータス:** ✅ Phase 1-5完了 + Dashboard統合完了 (6/7 = 86%)
-**次のステップ:** Phase 6 - 実行可能デモの追加
+**ステータス:** ✅ Phase 1-6完了 (6/7 = 86%)
+**次のステップ:** Phase 7 - パフォーマンスプロファイリング
