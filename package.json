@@ -101,7 +101,11 @@
     "tmux:list": "tsx scripts/tmux/tmux-manager.ts list",
     "webhook:server": "tsx scripts/webhook/webhook-server.ts",
     "feedback-loop:demo": "tsx agents/feedback-loop/feedback-loop-demo.ts",
-    "feedback-loop:docs": "cat docs/FEEDBACK_LOOP_GUIDE.md"
+    "feedback-loop:docs": "cat docs/FEEDBACK_LOOP_GUIDE.md",
+    "integrated:start": "tsx scripts/integrated/integrated-system.ts start",
+    "integrated:demo": "tsx scripts/integrated/integrated-system.ts demo",
+    "integrated:status": "tsx scripts/integrated/integrated-system.ts status",
+    "integrated:docs": "cat docs/INTEGRATION_GUIDE.md"
   },
   "keywords": [
     "ai",
