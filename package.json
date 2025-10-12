@@ -107,7 +107,10 @@
     "integrated:demo:simple": "tsx scripts/integrated/integrated-demo-simple.ts",
     "integrated:status": "tsx scripts/integrated/integrated-system.ts status",
     "integrated:docs": "cat docs/INTEGRATION_GUIDE.md",
-    "integrated:issue:99": "tsx scripts/integrated/issue-99-execution.ts"
+    "integrated:issue:99": "tsx scripts/integrated/issue-99-execution.ts",
+    "integrated:issue:100": "tsx scripts/integrated/issue-100-execution.ts",
+    "integrated:issue:101": "tsx scripts/integrated/issue-101-execution.ts",
+    "integrated:issue:102": "tsx scripts/integrated/issue-102-execution.ts"
   },
   "keywords": [
     "ai",
