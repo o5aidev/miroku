@@ -16,6 +16,7 @@ import { BaseAgent } from '../base-agent.js';
 import {
   AgentType,
   AgentResult,
+  AgentConfig,
   Task,
   Issue,
   DAG,
@@ -24,12 +25,11 @@ import {
   ExecutionReport,
   TaskResult,
   AgentStatus,
-  Severity,
-  ImpactLevel,
 } from '../types/index.js';
+import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 
 export class CoordinatorAgent extends BaseAgent {
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('CoordinatorAgent', config);
   }
 
@@ -180,20 +180,14 @@ export class CoordinatorAgent extends BaseAgent {
       ? dependencyMatch.map((d) => d.replace('#', 'issue-'))
       : [];
 
-    // Determine task type from labels or title
-    const type = this.determineTaskType(issue.labels, title);
-
-    // Determine severity
-    const severity = this.determineSeverity(issue.labels);
-
-    // Determine impact
-    const impact = this.determineImpact(issue.labels);
+    // Use IssueAnalyzer for consistent analysis
+    const type = IssueAnalyzer.determineType(issue.labels, title, issue.body);
+    const severity = IssueAnalyzer.determineSeverity(issue.labels, title, issue.body);
+    const impact = IssueAnalyzer.determineImpact(issue.labels, title, issue.body);
+    const estimatedDuration = IssueAnalyzer.estimateDuration(title, issue.body, type);
 
     // Assign agent based on task type
     const assignedAgent = this.assignAgent(type);
-
-    // Estimate duration (rough heuristic)
-    const estimatedDuration = this.estimateDuration(title, type);
 
     return {
       id: `task-${issue.number}-${index}`,
@@ -215,64 +209,6 @@ export class CoordinatorAgent extends BaseAgent {
   }
 
   /**
-   * Determine task type from labels or title
-   */
-  private determineTaskType(
-    labels: string[],
-    title: string
-  ): Task['type'] {
-    const lowerTitle = title.toLowerCase();
-
-    if (labels.includes('✨feature') || lowerTitle.includes('feature')) {
-      return 'feature';
-    }
-    if (labels.includes('🐛bug') || lowerTitle.includes('bug') || lowerTitle.includes('fix')) {
-      return 'bug';
-    }
-    if (labels.includes('🔧refactor') || lowerTitle.includes('refactor')) {
-      return 'refactor';
-    }
-    if (labels.includes('📚documentation') || lowerTitle.includes('doc')) {
-      return 'docs';
-    }
-    if (labels.includes('🧪test') || lowerTitle.includes('test')) {
-      return 'test';
-    }
-    if (labels.includes('🚀deployment') || lowerTitle.includes('deploy')) {
-      return 'deployment';
-    }
-
-    return 'feature'; // Default
-  }
-
-  /**
-   * Determine severity from labels
-   */
-  private determineSeverity(labels: string[]): Severity {
-    for (const label of labels) {
-      if (label.includes('Sev.1-Critical')) return 'Sev.1-Critical';
-      if (label.includes('Sev.2-High')) return 'Sev.2-High';
-      if (label.includes('Sev.3-Medium')) return 'Sev.3-Medium';
-      if (label.includes('Sev.4-Low')) return 'Sev.4-Low';
-      if (label.includes('Sev.5-Trivial')) return 'Sev.5-Trivial';
-    }
-    return 'Sev.3-Medium'; // Default
-  }
-
-  /**
-   * Determine impact from labels
-   */
-  private determineImpact(labels: string[]): ImpactLevel {
-    for (const label of labels) {
-      if (label.includes('影響度-Critical')) return 'Critical';
-      if (label.includes('影響度-High')) return 'High';
-      if (label.includes('影響度-Medium')) return 'Medium';
-      if (label.includes('影響度-Low')) return 'Low';
-    }
-    return 'Medium'; // Default
-  }
-
-  /**
    * Assign Agent based on task type
    */
   private assignAgent(type: Task['type']): AgentType {
@@ -286,34 +222,6 @@ export class CoordinatorAgent extends BaseAgent {
     };
 
     return agentMap[type];
-  }
-
-  /**
-   * Estimate task duration (minutes)
-   */
-  private estimateDuration(title: string, type: Task['type']): number {
-    // Rough heuristics
-    const baseEstimates: Record<Task['type'], number> = {
-      feature: 60, // 1 hour
-      bug: 30, // 30 min
-      refactor: 45,
-      docs: 20,
-      test: 30,
-      deployment: 15,
-    };
-
-    let estimate = baseEstimates[type];
-
-    // Adjust based on keywords
-    const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes('large') || lowerTitle.includes('major')) {
-      estimate *= 2;
-    }
-    if (lowerTitle.includes('quick') || lowerTitle.includes('minor')) {
-      estimate *= 0.5;
-    }
-
-    return Math.round(estimate);
   }
 
   // ============================================================================
