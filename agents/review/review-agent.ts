@@ -27,6 +27,7 @@ import {
   QualityIssue,
   ReviewComment,
 } from '../types/index.js';
+import { SecurityScannerRegistry } from './security-scanner.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -290,157 +291,32 @@ export class ReviewAgent extends BaseAgent {
   // ============================================================================
 
   /**
-   * Run security vulnerability scan (OPTIMIZED: Parallel sub-scans)
+   * Run security vulnerability scan (OPTIMIZED: Strategy Pattern + Parallel execution)
    *
-   * Performance: Runs all 3 security scans in parallel
+   * Uses Strategy Pattern for extensibility:
+   * - Easy to add new scanners via SecurityScannerRegistry
+   * - Each scanner is independent and testable
+   * - All scanners run in parallel for maximum performance
    */
   private async runSecurityScan(files: string[]): Promise<QualityIssue[]> {
-    this.log('🔒 Running security scan (parallel)');
+    this.log('🔒 Running security scan (Strategy Pattern + parallel)');
 
-    // Run all security scans in parallel
-    const [secretIssues, vulnIssues, auditIssues] = await Promise.all([
-      this.scanForSecrets(files),
-      this.scanForVulnerabilities(files),
-      this.runNpmAudit(),
-    ]);
+    // Get all registered scanners from registry
+    const scanners = SecurityScannerRegistry.getAll();
+    this.log(`   Executing ${scanners.length} security scanners: ${scanners.map(s => s.name).join(', ')}`);
 
-    const issues = [...secretIssues, ...vulnIssues, ...auditIssues];
+    // Run all scanners in parallel
+    const scanResults = await Promise.all(
+      scanners.map(scanner => scanner.scan(files))
+    );
+
+    // Flatten results
+    const issues = scanResults.flat();
 
     this.log(`   Found ${issues.length} security issues (${issues.filter(i => i.severity === 'critical').length} critical)`);
     return issues;
   }
 
-  /**
-   * Scan for hardcoded secrets
-   */
-  private async scanForSecrets(files: string[]): Promise<QualityIssue[]> {
-    const issues: QualityIssue[] = [];
-
-    const secretPatterns = [
-      { pattern: /(?:api[_-]?key|apikey)[\s]*[:=][\s]*['"]([^'"]+)['"]/gi, name: 'API Key' },
-      { pattern: /(?:password|passwd|pwd)[\s]*[:=][\s]*['"]([^'"]+)['"]/gi, name: 'Password' },
-      { pattern: /(?:secret|token)[\s]*[:=][\s]*['"]([^'"]+)['"]/gi, name: 'Secret/Token' },
-      { pattern: /(?:sk-[a-zA-Z0-9]{20,})/g, name: 'Anthropic API Key' },
-      { pattern: /(?:ghp_[a-zA-Z0-9]{36,})/g, name: 'GitHub Token' },
-    ];
-
-    for (const file of files) {
-      try {
-        const content = await fs.promises.readFile(file, 'utf-8');
-        const lines = content.split('\n');
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-
-          for (const { pattern, name } of secretPatterns) {
-            if (pattern.test(line)) {
-              issues.push({
-                type: 'security',
-                severity: 'critical',
-                message: `Possible hardcoded ${name} detected`,
-                file,
-                line: i + 1,
-                scoreImpact: 40,
-              });
-            }
-          }
-        }
-      } catch (error) {
-        // Ignore file read errors
-      }
-    }
-
-    return issues;
-  }
-
-  /**
-   * Scan for common vulnerabilities
-   */
-  private async scanForVulnerabilities(files: string[]): Promise<QualityIssue[]> {
-    const issues: QualityIssue[] = [];
-
-    const vulnPatterns = [
-      { pattern: /eval\s*\(/g, name: 'Use of eval()', severity: 'critical' as const },
-      { pattern: /innerHTML\s*=/g, name: 'XSS risk: innerHTML assignment', severity: 'high' as const },
-      { pattern: /document\.write\s*\(/g, name: 'XSS risk: document.write', severity: 'high' as const },
-      { pattern: /exec\s*\(/g, name: 'Command injection risk', severity: 'high' as const },
-    ];
-
-    for (const file of files) {
-      try {
-        const content = await fs.promises.readFile(file, 'utf-8');
-        const lines = content.split('\n');
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-
-          for (const { pattern, name, severity } of vulnPatterns) {
-            if (pattern.test(line)) {
-              issues.push({
-                type: 'security',
-                severity,
-                message: name,
-                file,
-                line: i + 1,
-                scoreImpact: severity === 'critical' ? 40 : 20,
-              });
-            }
-          }
-        }
-      } catch (error) {
-        // Ignore file read errors
-      }
-    }
-
-    return issues;
-  }
-
-  /**
-   * Run npm audit for dependency vulnerabilities
-   */
-  private async runNpmAudit(): Promise<QualityIssue[]> {
-    const issues: QualityIssue[] = [];
-
-    try {
-      const result = await this.executeCommand(
-        'npm audit --json',
-        { timeout: 30000 }
-      );
-
-      await this.logToolInvocation(
-        'npm_audit',
-        result.code === 0 ? 'passed' : 'failed',
-        'npm audit completed',
-        result.stdout
-      );
-
-      if (result.stdout) {
-        try {
-          const audit = JSON.parse(result.stdout);
-
-          if (audit.vulnerabilities) {
-            for (const [pkgName, vuln] of Object.entries(audit.vulnerabilities)) {
-              const v = vuln as any;
-              if (v.severity === 'critical' || v.severity === 'high') {
-                issues.push({
-                  type: 'security',
-                  severity: v.severity,
-                  message: `Dependency vulnerability in ${pkgName}: ${v.via[0]?.title || 'Unknown issue'}`,
-                  scoreImpact: v.severity === 'critical' ? 40 : 20,
-                });
-              }
-            }
-          }
-        } catch (parseError) {
-          // Ignore parse errors
-        }
-      }
-    } catch (error) {
-      this.log(`⚠️  npm audit failed: ${(error as Error).message}`);
-    }
-
-    return issues;
-  }
 
   // ============================================================================
   // Quality Scoring
