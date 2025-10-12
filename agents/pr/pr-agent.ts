@@ -16,12 +16,14 @@
 import { BaseAgent } from '../base-agent.js';
 import {
   AgentResult,
+  AgentConfig,
   Task,
   PRRequest,
   PRResult,
 } from '../types/index.js';
 import { Octokit } from '@octokit/rest';
 import { withRetry } from '../../utils/retry.js';
+import { GitRepository } from '../utils/git-repository.js';
 import { getGitHubClient } from '../../utils/api-client.js';
 
 export class PRAgent extends BaseAgent {
@@ -29,7 +31,7 @@ export class PRAgent extends BaseAgent {
   private owner: string = '';
   private repo: string = '';
 
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('PRAgent', config);
 
     if (!config.githubToken) {
@@ -39,7 +41,24 @@ export class PRAgent extends BaseAgent {
     // Use singleton GitHub client with connection pooling
     this.octokit = getGitHubClient(config.githubToken);
 
-    this.parseRepository();
+    this.initializeRepository();
+  }
+
+  /**
+   * Initialize repository information
+   */
+  private async initializeRepository(): Promise<void> {
+    try {
+      const repoInfo = await GitRepository.parse();
+      this.owner = repoInfo.owner;
+      this.repo = repoInfo.repo;
+      this.log(`📦 Repository: ${this.owner}/${this.repo}`);
+    } catch (error) {
+      this.log(`⚠️  Failed to parse repository: ${(error as Error).message}`);
+      // Use defaults if parsing fails
+      this.owner = 'user';
+      this.repo = 'repository';
+    }
   }
 
   /**
@@ -49,6 +68,11 @@ export class PRAgent extends BaseAgent {
     this.log('🔀 PRAgent starting PR creation');
 
     try {
+      // Ensure repository is initialized
+      if (!this.owner || !this.repo || this.owner === 'user') {
+        await this.initializeRepository();
+      }
+
       // 1. Get PR details from task
       const prRequest = await this.createPRRequest(task);
 
@@ -144,9 +168,7 @@ export class PRAgent extends BaseAgent {
    */
   private async getCurrentBranch(): Promise<string> {
     try {
-      const result = await this.executeCommand('git rev-parse --abbrev-ref HEAD');
-      const branch = result.stdout.trim();
-
+      const branch = await GitRepository.getCurrentBranch();
       this.log(`   Current branch: ${branch}`);
       return branch;
     } catch (error) {
@@ -461,24 +483,4 @@ export class PRAgent extends BaseAgent {
     }
   }
 
-  // ============================================================================
-  // Helper Methods
-  // ============================================================================
-
-  /**
-   * Parse repository owner and name from git remote
-   */
-  private parseRepository(): void {
-    try {
-      // Try to read from package.json or git config
-      // For now, set defaults
-      this.owner = 'user';
-      this.repo = 'repository';
-
-      // TODO: Implement actual parsing from git remote
-      this.log(`📦 Repository: ${this.owner}/${this.repo}`);
-    } catch (error) {
-      this.log(`⚠️  Failed to parse repository: ${(error as Error).message}`);
-    }
-  }
 }

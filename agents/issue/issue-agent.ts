@@ -16,6 +16,7 @@
 import { BaseAgent } from '../base-agent.js';
 import {
   AgentResult,
+  AgentConfig,
   Task,
   Issue,
   Severity,
@@ -24,6 +25,8 @@ import {
 } from '../types/index.js';
 import { Octokit } from '@octokit/rest';
 import { withRetry } from '../../utils/retry.js';
+import { IssueAnalyzer } from '../utils/issue-analyzer.js';
+import { GitRepository } from '../utils/git-repository.js';
 import { getGitHubClient, withGitHubCache } from '../../utils/api-client.js';
 
 export class IssueAgent extends BaseAgent {
@@ -31,7 +34,7 @@ export class IssueAgent extends BaseAgent {
   private owner: string = '';
   private repo: string = '';
 
-  constructor(config: any) {
+  constructor(config: AgentConfig) {
     super('IssueAgent', config);
 
     if (!config.githubToken) {
@@ -42,7 +45,24 @@ export class IssueAgent extends BaseAgent {
     this.octokit = getGitHubClient(config.githubToken);
 
     // Parse repo from git remote
-    this.parseRepository();
+    this.initializeRepository();
+  }
+
+  /**
+   * Initialize repository information
+   */
+  private async initializeRepository(): Promise<void> {
+    try {
+      const repoInfo = await GitRepository.parse();
+      this.owner = repoInfo.owner;
+      this.repo = repoInfo.repo;
+      this.log(`📦 Repository: ${this.owner}/${this.repo}`);
+    } catch (error) {
+      this.log(`⚠️  Failed to parse repository: ${(error as Error).message}`);
+      // Use defaults if parsing fails
+      this.owner = 'user';
+      this.repo = 'repository';
+    }
   }
 
   /**
@@ -52,6 +72,11 @@ export class IssueAgent extends BaseAgent {
     this.log('🔍 IssueAgent starting issue analysis');
 
     try {
+      // Ensure repository is initialized
+      if (!this.owner || !this.repo || this.owner === 'user') {
+        await this.initializeRepository();
+      }
+
       // 1. Fetch Issue from GitHub
       const issueNumber = task.metadata?.issueNumber as number;
       if (!issueNumber) {
@@ -262,23 +287,24 @@ export class IssueAgent extends BaseAgent {
   private async analyzeIssue(issue: Issue): Promise<IssueAnalysis> {
     this.log('🧠 Analyzing Issue content');
 
+    // Use IssueAnalyzer for consistent analysis
+    const type = IssueAnalyzer.determineIssueType(issue);
+    const severity = IssueAnalyzer.determineSeverityFromIssue(issue);
+    const impact = IssueAnalyzer.determineImpactFromIssue(issue);
+    const dependencies = IssueAnalyzer.extractDependenciesFromIssue(issue);
+    const estimatedDuration = IssueAnalyzer.estimateDurationFromIssue(issue, type);
+
     const analysis: IssueAnalysis = {
-      type: this.determineIssueType(issue),
-      severity: this.determineSeverity(issue),
-      impact: this.determineImpact(issue),
+      type,
+      severity,
+      impact,
       responsibility: this.determineResponsibility(issue),
-      agentType: 'CodeGenAgent', // Default
+      agentType: this.determineAgent(type),
       labels: [],
       assignees: [],
-      dependencies: this.extractDependencies(issue),
-      estimatedDuration: 0,
+      dependencies,
+      estimatedDuration,
     };
-
-    // Determine appropriate Agent
-    analysis.agentType = this.determineAgent(analysis.type);
-
-    // Estimate duration
-    analysis.estimatedDuration = this.estimateDuration(issue, analysis.type);
 
     // Build Organizational label set
     analysis.labels = this.buildLabelSet(analysis);
@@ -287,93 +313,6 @@ export class IssueAgent extends BaseAgent {
     analysis.assignees = await this.determineAssignees(analysis);
 
     return analysis;
-  }
-
-  /**
-   * Determine issue type from title and body
-   */
-  private determineIssueType(issue: Issue): Task['type'] {
-    const text = (issue.title + ' ' + issue.body).toLowerCase();
-
-    // Check existing labels first
-    for (const label of issue.labels) {
-      if (label.includes('feature')) return 'feature';
-      if (label.includes('bug')) return 'bug';
-      if (label.includes('refactor')) return 'refactor';
-      if (label.includes('documentation')) return 'docs';
-      if (label.includes('test')) return 'test';
-      if (label.includes('deployment')) return 'deployment';
-    }
-
-    // Keyword detection
-    if (text.match(/\b(bug|fix|error|issue|problem|broken)\b/)) return 'bug';
-    if (text.match(/\b(feature|add|new|implement|create)\b/)) return 'feature';
-    if (text.match(/\b(refactor|cleanup|improve|optimize)\b/)) return 'refactor';
-    if (text.match(/\b(doc|documentation|readme|guide)\b/)) return 'docs';
-    if (text.match(/\b(test|spec|coverage)\b/)) return 'test';
-    if (text.match(/\b(deploy|release|ci|cd)\b/)) return 'deployment';
-
-    return 'feature'; // Default
-  }
-
-  /**
-   * Determine Severity (Sev.1-5)
-   */
-  private determineSeverity(issue: Issue): Severity {
-    const text = (issue.title + ' ' + issue.body).toLowerCase();
-
-    // Check existing labels
-    for (const label of issue.labels) {
-      if (label.includes('Sev.1-Critical')) return 'Sev.1-Critical';
-      if (label.includes('Sev.2-High')) return 'Sev.2-High';
-      if (label.includes('Sev.3-Medium')) return 'Sev.3-Medium';
-      if (label.includes('Sev.4-Low')) return 'Sev.4-Low';
-      if (label.includes('Sev.5-Trivial')) return 'Sev.5-Trivial';
-    }
-
-    // Keyword-based detection
-    if (text.match(/\b(critical|urgent|emergency|blocking|blocker|production|data loss|security breach)\b/)) {
-      return 'Sev.1-Critical';
-    }
-    if (text.match(/\b(high priority|asap|important|major|broken)\b/)) {
-      return 'Sev.2-High';
-    }
-    if (text.match(/\b(minor|small|trivial|typo|cosmetic)\b/)) {
-      return 'Sev.4-Low';
-    }
-    if (text.match(/\b(nice to have|enhancement|suggestion)\b/)) {
-      return 'Sev.5-Trivial';
-    }
-
-    return 'Sev.3-Medium'; // Default
-  }
-
-  /**
-   * Determine Impact level
-   */
-  private determineImpact(issue: Issue): ImpactLevel {
-    const text = (issue.title + ' ' + issue.body).toLowerCase();
-
-    // Check existing labels
-    for (const label of issue.labels) {
-      if (label.includes('影響度-Critical')) return 'Critical';
-      if (label.includes('影響度-High')) return 'High';
-      if (label.includes('影響度-Medium')) return 'Medium';
-      if (label.includes('影響度-Low')) return 'Low';
-    }
-
-    // Keyword-based detection
-    if (text.match(/\b(all users|entire system|complete failure|data loss)\b/)) {
-      return 'Critical';
-    }
-    if (text.match(/\b(many users|major feature|main functionality)\b/)) {
-      return 'High';
-    }
-    if (text.match(/\b(some users|workaround exists|minor feature)\b/)) {
-      return 'Medium';
-    }
-
-    return 'Low'; // Default
   }
 
   /**
@@ -419,38 +358,6 @@ export class IssueAgent extends BaseAgent {
     };
 
     return agentMap[type];
-  }
-
-  /**
-   * Extract dependency Issue numbers (#123 format)
-   */
-  private extractDependencies(issue: Issue): string[] {
-    const dependencyPattern = /#(\d+)/g;
-    const matches = [...issue.body.matchAll(dependencyPattern)];
-    return matches.map(m => `issue-${m[1]}`);
-  }
-
-  /**
-   * Estimate task duration (minutes)
-   */
-  private estimateDuration(issue: Issue, type: Task['type']): number {
-    const baseEstimates: Record<Task['type'], number> = {
-      feature: 120,
-      bug: 60,
-      refactor: 90,
-      docs: 30,
-      test: 45,
-      deployment: 30,
-    };
-
-    let estimate = baseEstimates[type];
-
-    // Adjust based on complexity indicators
-    const text = (issue.title + ' ' + issue.body).toLowerCase();
-    if (text.match(/\b(large|major|complex|multiple)\b/)) estimate *= 2;
-    if (text.match(/\b(quick|small|minor|simple)\b/)) estimate *= 0.5;
-
-    return Math.round(estimate);
   }
 
   // ============================================================================
@@ -578,26 +485,6 @@ ${analysis.dependencies.map(d => `- #${d.replace('issue-', '')}`).join('\n')}` :
 Co-Authored-By: Claude <noreply@anthropic.com>`;
   }
 
-  // ============================================================================
-  // Repository Parsing
-  // ============================================================================
-
-  /**
-   * Parse repository owner and name from git remote
-   */
-  private parseRepository(): void {
-    try {
-      // Try to read from package.json or git config
-      // For now, set defaults
-      this.owner = 'user';
-      this.repo = 'repository';
-
-      // TODO: Implement actual parsing from git remote
-      this.log(`📦 Repository: ${this.owner}/${this.repo}`);
-    } catch (error) {
-      this.log(`⚠️  Failed to parse repository: ${(error as Error).message}`);
-    }
-  }
 }
 
 // ============================================================================
