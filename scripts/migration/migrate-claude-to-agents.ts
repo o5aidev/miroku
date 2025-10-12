@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { logger } from '../src/ui/index.js';
+import { logger } from '../../agents/ui/index.js';
 
 /**
  * Migration script to move files from .claude/ to agents/

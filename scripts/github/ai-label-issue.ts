@@ -6,8 +6,8 @@
  * Uses rule-based heuristics instead of direct Anthropic API calls
  */
 
-import { withAgentTracking } from './dashboard-events.js';
-import { getGitHubClient } from '../utils/api-client.js';
+import { withAgentTracking } from '../reporting/dashboard-events.js';
+import { getGitHubClient } from '../../utils/api-client.js';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 

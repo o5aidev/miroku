@@ -2,7 +2,7 @@
 
 import { ClaudeToAgentsMigration } from './migrate-claude-to-agents.js';
 import { MigrationValidator } from './post-migration-validator.js';
-import { logger } from '../src/ui/index.js';
+import { logger } from '../../agents/ui/index.js';
 
 /**
  * Main migration script

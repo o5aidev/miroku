@@ -9,7 +9,7 @@
  *   npx tsx scripts/execute-task.ts --issue 4
  */
 
-import { logger, theme } from '../agents/ui/index.js';
+import { logger, theme } from '../../agents/ui/index.js';
 import { execSync } from 'child_process';
 import * as readline from 'readline/promises';
 

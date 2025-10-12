@@ -4,7 +4,7 @@
  * Fetches KPI data from Projects V2 and generates JSON for GitHub Pages dashboard
  */
 
-import { ProjectsV2Client } from '../agents/github/projects-v2.js';
+import { ProjectsV2Client } from '../../agents/github/projects-v2.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

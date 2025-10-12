@@ -11,7 +11,7 @@
  * - Performance metrics
  */
 
-import GitHubProjectAPI from './github-project-api.js';
+import GitHubProjectAPI from '../github/github-project-api.js';
 import chalk from 'chalk';
 import Table from 'cli-table3';
 

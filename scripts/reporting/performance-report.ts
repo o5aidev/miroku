@@ -6,7 +6,7 @@
  * Shows bottlenecks, recommendations, and improvement suggestions
  */
 
-import { PerformanceMonitor } from '../agents/monitoring/performance-monitor.js';
+import { PerformanceMonitor } from '../../agents/monitoring/performance-monitor.js';
 import * as path from 'path';
 
 async function main() {
