@@ -17,6 +17,7 @@ import {
 } from './types/agent-template.js';
 import { AgentAnalysisResult } from './types/agent-analysis.js';
 import { HookManager } from './hooks/hook-manager.js';
+import { TTLCache } from './utils/cache.js';
 import { logger } from './ui/index.js';
 
 export class AgentRegistry {
@@ -25,7 +26,7 @@ export class AgentRegistry {
   private analyzer: AgentAnalyzer;
   private toolFactory: ToolFactory;
   private assignments: Map<string, DynamicAgent> = new Map(); // taskId -> agent
-  private analysisCache: Map<string, AgentAnalysisResult> = new Map(); // taskId -> analysis
+  private analysisCache: TTLCache<AgentAnalysisResult>; // taskId -> analysis with TTL
   private config: AgentConfig;
   private defaultHookManager?: HookManager;
 
@@ -34,6 +35,16 @@ export class AgentRegistry {
     this.analyzer = AgentAnalyzer.getInstance();
     this.toolFactory = ToolFactory.getInstance();
     this.config = config;
+
+    // Initialize TTL cache with 15 minute TTL and max 100 entries
+    this.analysisCache = new TTLCache<AgentAnalysisResult>({
+      maxSize: 100,
+      ttlMs: 15 * 60 * 1000, // 15 minutes
+      autoCleanup: true,
+      onEvict: (taskId, _analysis) => {
+        logger.info(`Analysis cache evicted for task ${taskId}`);
+      },
+    });
   }
 
   /**
@@ -109,11 +120,11 @@ export class AgentRegistry {
 
         // Register hook based on type
         if (hookReq.type === 'pre') {
-          hookManager.registerPreHook(hook);
+          hookManager.registerPreHook(hook as import('./types/hooks.js').PreHook);
         } else if (hookReq.type === 'post') {
-          hookManager.registerPostHook(hook);
+          hookManager.registerPostHook(hook as import('./types/hooks.js').PostHook);
         } else {
-          hookManager.registerErrorHook(hook);
+          hookManager.registerErrorHook(hook as import('./types/hooks.js').ErrorHook);
         }
 
         logger.success(`  ✓ Created hook: ${hook.name} (${hookReq.type})`);
@@ -302,16 +313,23 @@ export class AgentRegistry {
     totalAgents: number;
     cachedAnalyses: number;
     toolsCreated: number;
+    cacheHitRate: number;
+    cacheHits: number;
+    cacheMisses: number;
   } {
     const factoryStats = this.factory.getStatistics();
+    const cacheStats = this.analysisCache.getStats();
 
     return {
       totalAssignments: this.assignments.size,
       activeAgents: factoryStats.runningInstances,
       idleAgents: factoryStats.idleInstances,
       totalAgents: factoryStats.totalInstances,
-      cachedAnalyses: this.analysisCache.size,
+      cachedAnalyses: cacheStats.size,
       toolsCreated: this.toolFactory.getAllTools().length,
+      cacheHitRate: cacheStats.hitRate,
+      cacheHits: cacheStats.hits,
+      cacheMisses: cacheStats.misses,
     };
   }
 
@@ -373,6 +391,17 @@ export class AgentRegistry {
   async clear(): Promise<void> {
     this.assignments.clear();
     await this.factory.clear();
+    this.analysisCache.dispose(); // Dispose cache and stop cleanup timer
     logger.info('Registry cleared');
+
+    // Recreate cache for continued use
+    this.analysisCache = new TTLCache<AgentAnalysisResult>({
+      maxSize: 100,
+      ttlMs: 15 * 60 * 1000,
+      autoCleanup: true,
+      onEvict: (taskId, _analysis) => {
+        logger.info(`Analysis cache evicted for task ${taskId}`);
+      },
+    });
   }
 }

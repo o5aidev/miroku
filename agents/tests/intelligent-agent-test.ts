@@ -16,6 +16,8 @@ import { Task, AgentResult, AgentConfig } from '../types/index.js';
 const config: AgentConfig = {
   deviceIdentifier: 'test-device',
   githubToken: process.env.GITHUB_TOKEN || 'test-token',
+  useTaskTool: false,
+  useWorktree: false,
   reportDirectory: '.ai/reports',
   logDirectory: '.ai/logs',
 };
@@ -75,7 +77,7 @@ const simpleTask: Task = {
   title: 'Fix typo in documentation',
   description: 'Fix spelling mistake in README file',
   type: 'docs',
-  priority: 'P3',
+  priority: 3,
   dependencies: [],
 };
 
@@ -84,7 +86,7 @@ const moderateTask: Task = {
   title: 'Add input validation',
   description: 'Implement form validation with TypeScript',
   type: 'feature',
-  priority: 'P2',
+  priority: 2,
   dependencies: [],
 };
 
@@ -93,7 +95,7 @@ const complexTask: Task = {
   title: 'Implement real-time WebSocket system',
   description: 'Add real-time collaborative editing with WebSocket, implement OT algorithm, TypeScript, comprehensive tests',
   type: 'feature',
-  priority: 'P1',
+  priority: 1,
   dependencies: [],
 };
 

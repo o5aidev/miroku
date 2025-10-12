@@ -40,12 +40,12 @@ export interface Task {
   description: string;
   type: 'feature' | 'bug' | 'refactor' | 'docs' | 'test' | 'deployment';
   priority: number;
-  severity: Severity;
-  impact: ImpactLevel;
-  assignedAgent: AgentType;
+  severity?: Severity;
+  impact?: ImpactLevel;
+  assignedAgent?: AgentType;
   dependencies: string[]; // Task IDs
-  estimatedDuration: number; // minutes
-  status: AgentStatus;
+  estimatedDuration?: number; // minutes
+  status?: AgentStatus;
   startTime?: number;
   endTime?: number;
   metadata?: Record<string, any>;
@@ -77,7 +77,7 @@ export interface AgentResult {
   status: 'success' | 'failed' | 'escalated';
   data?: any;
   error?: string;
-  metrics?: AgentMetrics;
+  metrics?: Partial<AgentMetrics>;
   escalation?: EscalationInfo;
 }
 

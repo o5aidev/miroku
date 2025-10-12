@@ -189,6 +189,8 @@ async function factoryExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -206,7 +208,7 @@ async function factoryExample() {
     title: 'Implement new feature',
     description: 'Add user authentication',
     type: 'feature',
-    priority: 'P1',
+    priority: 1,
     dependencies: [],
   };
 
@@ -231,6 +233,8 @@ async function registryExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -243,7 +247,7 @@ async function registryExample() {
     title: 'Feature 1',
     description: 'First feature',
     type: 'feature',
-    priority: 'P1',
+    priority: 1,
     dependencies: [],
   };
 
@@ -264,7 +268,7 @@ async function registryExample() {
     title: 'Feature 2',
     description: 'Second feature',
     type: 'feature',
-    priority: 'P2',
+    priority: 2,
     dependencies: [],
   };
 
@@ -315,6 +319,8 @@ async function dashboardIntegrationExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -344,7 +350,7 @@ async function dashboardIntegrationExample() {
     title: 'Task with Dashboard Tracking',
     description: 'This task reports to dashboard',
     type: 'feature',
-    priority: 'P1',
+    priority: 1,
     dependencies: [],
     metadata: {
       issueNumber: 123,
@@ -370,6 +376,8 @@ async function parallelAgentsExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -383,7 +391,7 @@ async function parallelAgentsExample() {
       title: 'Feature A',
       description: 'Implement feature A',
       type: 'feature',
-      priority: 'P1',
+      priority: 1,
       dependencies: [],
     },
     {
@@ -391,7 +399,7 @@ async function parallelAgentsExample() {
       title: 'Feature B',
       description: 'Implement feature B',
       type: 'feature',
-      priority: 'P1',
+      priority: 1,
       dependencies: [],
     },
     {
@@ -399,7 +407,7 @@ async function parallelAgentsExample() {
       title: 'Review Feature A',
       description: 'Review feature A code',
       type: 'feature',
-      priority: 'P2',
+      priority: 2,
       dependencies: ['task-1'],
     },
   ];

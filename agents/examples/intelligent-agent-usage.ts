@@ -38,7 +38,7 @@ async function taskAnalysisExample() {
     description:
       'Add real-time collaborative editing using WebSocket, implement OT algorithm, add user presence, handle conflicts',
     type: 'feature',
-    priority: 'P1',
+    priority: 1,
     dependencies: [],
   };
 
@@ -215,6 +215,8 @@ async function intelligentAssignmentExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -228,7 +230,7 @@ async function intelligentAssignmentExample() {
     description:
       'Add OAuth2 authentication flow using TypeScript, integrate with Firebase Auth, add security tests',
     type: 'feature',
-    priority: 'P1',
+    priority: 1,
     dependencies: [],
   };
 
@@ -288,6 +290,8 @@ async function parallelIntelligentAssignmentExample() {
   const config: AgentConfig = {
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   };
@@ -301,7 +305,7 @@ async function parallelIntelligentAssignmentExample() {
       title: 'Fix typo in documentation',
       description: 'Fix spelling mistake in README',
       type: 'docs',
-      priority: 'P3',
+      priority: 3,
       dependencies: [],
     },
     {
@@ -309,7 +313,7 @@ async function parallelIntelligentAssignmentExample() {
       title: 'Add input validation',
       description: 'Add validation for user input forms',
       type: 'feature',
-      priority: 'P2',
+      priority: 2,
       dependencies: [],
     },
     {
@@ -318,7 +322,7 @@ async function parallelIntelligentAssignmentExample() {
       description:
         'Add distributed caching layer using Redis, implement cache invalidation strategy, add monitoring',
       type: 'feature',
-      priority: 'P1',
+      priority: 1,
       dependencies: [],
     },
   ];

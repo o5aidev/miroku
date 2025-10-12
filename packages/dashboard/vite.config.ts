@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Miyabi/',  // GitHub Pages base path
+  base: process.env.NODE_ENV === 'production' ? '/Miyabi/' : '/',  // GitHub Pages base path in production, root in dev
 
   // Enable aggressive caching for faster rebuilds
   cacheDir: '.vite',

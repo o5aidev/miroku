@@ -6,6 +6,7 @@
 
 import { Task, AgentResult, AgentConfig } from './index.js';
 import { HookManager } from '../hooks/hook-manager.js';
+import type { IToolCreator } from './tool-creator-interface.js';
 
 /**
  * Agent execution function signature
@@ -39,7 +40,7 @@ export interface AgentExecutionContext {
   };
 
   /** Dynamic tool creator (allows agents to create tools at runtime) */
-  toolCreator?: any; // DynamicToolCreator - using 'any' to avoid circular dependency
+  toolCreator?: IToolCreator;
 }
 
 /**

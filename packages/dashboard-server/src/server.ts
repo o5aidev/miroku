@@ -982,7 +982,18 @@ app.post('/api/webhook/local', express.json(), (req, res) => {
   }
 });
 
-// GitHub WebHook endpoint
+// GitHub WebHook info endpoint (GET)
+app.get('/api/webhook/github', (req, res) => {
+  res.json({
+    status: 'ready',
+    message: 'GitHub WebHook endpoint is active. Use POST requests only.',
+    repository: REPOSITORY,
+    events: ['issues', 'pull_request', 'issue_comment'],
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// GitHub WebHook endpoint (POST)
 app.use(webhookHandler.getMiddleware());
 
 // ============================================================================

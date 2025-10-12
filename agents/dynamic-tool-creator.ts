@@ -9,7 +9,9 @@ import {
   DynamicToolSpec,
   ToolCreationResult,
 } from './types/agent-analysis.js';
+import type { IToolCreator } from './types/tool-creator-interface.js';
 import { ToolFactory } from './tool-factory.js';
+import { SecurityValidator, SecurityValidationResult } from './utils/security-validator.js';
 import { logger } from './ui/index.js';
 
 /**
@@ -49,7 +51,7 @@ export interface ToolExecutionResult {
   toolId: string;
 }
 
-export class DynamicToolCreator {
+export class DynamicToolCreator implements IToolCreator {
   private toolFactory: ToolFactory;
   private executionCache: Map<string, any> = new Map();
   private toolExecutionHistory: Array<{
@@ -169,6 +171,25 @@ export class DynamicToolCreator {
       throw new Error('Function tool requires string implementation');
     }
 
+    // Security validation before execution
+    logger.info(`[Security] Validating function tool code: ${tool.name}`);
+    const validation = SecurityValidator.validate(tool.implementation);
+
+    if (!validation.safe) {
+      const criticalIssues = validation.issues.filter((issue) => issue.severity >= 90);
+
+      logger.error(`[Security] Code validation failed for ${tool.name}`);
+      logger.error(`  Critical issues: ${criticalIssues.length}`);
+
+      throw new Error(
+        `Security validation failed: ${criticalIssues.length} critical issue(s) detected\n` +
+        criticalIssues.map((issue) => `  - ${issue.message}`).join('\n')
+      );
+    }
+
+    const securityScore = SecurityValidator.getSecurityScore(tool.implementation);
+    logger.success(`[Security] ✓ Code validated (score: ${securityScore}/100)`);
+
     // In a real implementation, this would use vm module or eval
     // For safety, we'll just simulate execution
     logger.info(`Simulating function tool execution: ${tool.name}`);
@@ -177,6 +198,7 @@ export class DynamicToolCreator {
       success: true,
       message: `Function tool ${tool.name} executed`,
       params,
+      securityScore,
     };
   }
 
@@ -191,6 +213,25 @@ export class DynamicToolCreator {
       throw new Error('Class tool requires string implementation');
     }
 
+    // Security validation before execution
+    logger.info(`[Security] Validating class tool code: ${tool.name}`);
+    const validation = SecurityValidator.validate(tool.implementation);
+
+    if (!validation.safe) {
+      const criticalIssues = validation.issues.filter((issue) => issue.severity >= 90);
+
+      logger.error(`[Security] Code validation failed for ${tool.name}`);
+      logger.error(`  Critical issues: ${criticalIssues.length}`);
+
+      throw new Error(
+        `Security validation failed: ${criticalIssues.length} critical issue(s) detected\n` +
+        criticalIssues.map((issue) => `  - ${issue.message}`).join('\n')
+      );
+    }
+
+    const securityScore = SecurityValidator.getSecurityScore(tool.implementation);
+    logger.success(`[Security] ✓ Code validated (score: ${securityScore}/100)`);
+
     // Simulate class instantiation and execution
     logger.info(`Simulating class tool execution: ${tool.name}`);
 
@@ -198,6 +239,7 @@ export class DynamicToolCreator {
       success: true,
       message: `Class tool ${tool.name} executed`,
       params,
+      securityScore,
     };
   }
 
