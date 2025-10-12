@@ -14,6 +14,7 @@ build/
 
 # Configuration files with secrets
 .miyabi.yml
+.webhook-config.json
 
 # Claude Code local settings
 .claude/settings.local.json
@@ -74,6 +75,22 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+
+# Compiled files mixed with source (will be moved to dist/)
+agents/**/*.js
+agents/**/*.d.ts
+agents/**/*.js.map
+agents/**/*.d.ts.map
+scripts/**/*.js
+scripts/**/*.d.ts
+scripts/**/*.js.map
+scripts/**/*.d.ts.map
+utils/**/*.js
+utils/**/*.d.ts
+utils/**/*.js.map
+utils/**/*.d.ts.map
+!**/*.config.js
+!**/vitest.config.js
 
 # Vitest
 .vitest/

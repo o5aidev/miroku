@@ -1,0 +1,106 @@
+name: ✨ Feature Request
+description: Propose a new feature or enhancement
+title: "[Feature] "
+labels: ["✨ type:feature", "📥 state:pending"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ Feature Request
+        Thank you for suggesting a new feature! Please fill out the sections below.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature Description
+      description: What feature would you like to see implemented?
+      placeholder: Describe the feature in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: How would this feature be used? What problem does it solve?
+      placeholder: Explain the use case and benefits...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: How do you envision this feature working?
+      placeholder: Describe your proposed implementation...
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies
+      description: |
+        Does this feature depend on other issues or does it block other work?
+        Use the following format:
+        - `Depends on #XXX` - This issue requires another issue to be completed first
+        - `Blocks #YYY` - This issue blocks another issue from progressing
+        - `Related to #ZZZ` - This issue is related to another issue
+      placeholder: |
+        Depends on #42
+        Blocks #56
+        Related to #53
+      value: |
+        <!-- Dependencies (optional) -->
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - 🔥 P0 - Critical (Blocking)
+        - ⚡ P1 - High (Important)
+        - 📌 P2 - Medium (Normal)
+        - 📝 P3 - Low (Nice to have)
+      default: 2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature is?
+      options:
+        - 🟢 Small (1-2 days)
+        - 🟡 Medium (3-5 days)
+        - 🟠 Large (1-2 weeks)
+        - 🔴 Extra Large (2+ weeks)
+      default: 1
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, screenshots, or examples
+      placeholder: Any additional information...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for similar feature requests
+          required: true
+        - label: I have checked the documentation
+          required: true
+        - label: This feature aligns with the project goals
+          required: true

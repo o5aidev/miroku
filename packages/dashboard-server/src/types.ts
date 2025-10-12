@@ -58,7 +58,7 @@ export interface StateNode extends BaseNode {
   data: StateNodeData;
 }
 
-export type GraphNode = IssueNode | AgentNode | StateNode;
+export type GraphNode = IssueNode | AgentNode | StateNode | DeviceNode;
 
 // ============================================================================
 // Edge Types
@@ -302,6 +302,55 @@ export const AGENT_CONFIGS: Record<AgentType, AgentConfig> = {
     description: 'Automated testing',
   },
 };
+
+// ============================================================================
+// Device Tracking (Multi-Device Development)
+// ============================================================================
+
+export interface DeviceInfo {
+  identifier: string;
+  hostname: string;
+  platform: string;
+  arch: string;
+  nodeVersion: string;
+}
+
+export interface DeviceActivity {
+  event: 'pre-push' | 'post-push' | 'pre-commit' | 'post-commit';
+  timestamp: string;
+  git: {
+    branch: string;
+    commit: {
+      hash: string;
+      short_hash: string;
+      message: string;
+    };
+  };
+}
+
+export interface DeviceState {
+  device: DeviceInfo;
+  status: 'online' | 'offline' | 'idle';
+  lastActivity: string;
+  recentActivities: DeviceActivity[];
+  currentBranch?: string;
+  totalEvents: number;
+}
+
+export interface DeviceNodeData {
+  identifier: string;
+  hostname: string;
+  platform: string;
+  status: 'online' | 'offline' | 'idle';
+  lastActivity: string;
+  currentBranch?: string;
+  totalEvents: number;
+}
+
+export interface DeviceNode extends BaseNode {
+  type: 'device';
+  data: DeviceNodeData;
+}
 
 // ============================================================================
 // Label State Machine

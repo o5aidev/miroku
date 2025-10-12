@@ -1,0 +1,170 @@
+name: 📋 Task
+description: Create a development task or work item
+title: "[Task] "
+labels: ["📋 type:task", "📥 state:pending"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📋 Development Task
+        Create a task for development work, refactoring, documentation, or other activities.
+
+  - type: textarea
+    id: task-description
+    attributes:
+      label: Task Description
+      description: What needs to be done?
+      placeholder: Describe the task in detail...
+    validations:
+      required: true
+
+  - type: textarea
+    id: objectives
+    attributes:
+      label: Objectives
+      description: What are the goals of this task?
+      placeholder: |
+        - Objective 1
+        - Objective 2
+        - Objective 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: How do we know when this task is complete?
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Implementation Notes
+      description: Any technical details or implementation guidance?
+      placeholder: Technical notes, constraints, or considerations...
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: 🔗 Dependencies
+      description: |
+        Does this task depend on other issues or does it block other work?
+        Use the following format:
+        - `Depends on #XXX` - This task requires another issue to be completed first
+        - `Blocks #YYY` - This task blocks another issue from progressing
+        - `Related to #ZZZ` - This task is related to another issue
+      placeholder: |
+        Depends on #42
+        Blocks #56
+        Related to #53
+      value: |
+        <!-- Dependencies (optional) -->
+    validations:
+      required: false
+
+  - type: dropdown
+    id: task-type
+    attributes:
+      label: Task Type
+      description: What type of task is this?
+      options:
+        - 💻 Development (Code implementation)
+        - 🔧 Refactoring (Code improvement)
+        - 📚 Documentation (Docs/Comments)
+        - 🧪 Testing (Test creation)
+        - 🎨 UI/UX (Design/Frontend)
+        - 🔐 Security (Security improvements)
+        - ⚡ Performance (Optimization)
+        - 🗄️ Database (Schema/Migration)
+        - 🔄 CI/CD (Pipeline/Automation)
+        - 🧹 Maintenance (Cleanup/Updates)
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this task?
+      options:
+        - 🔥 P0 - Critical (Urgent)
+        - ⚡ P1 - High (Important)
+        - 📌 P2 - Medium (Normal)
+        - 📝 P3 - Low (When time permits)
+      default: 2
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex is this task?
+      options:
+        - 🟢 Small (1-2 days)
+        - 🟡 Medium (3-5 days)
+        - 🟠 Large (1-2 weeks)
+        - 🔴 Extra Large (2+ weeks)
+      default: 1
+    validations:
+      required: false
+
+  - type: dropdown
+    id: agent-assignment
+    attributes:
+      label: Suggested Agent
+      description: Which agent should handle this task? (Coordinator will auto-assign if not specified)
+      options:
+        - 🤖 Auto-assign (Let Coordinator decide)
+        - 💻 CodeGenAgent (Code generation)
+        - 👀 ReviewAgent (Code review)
+        - 🔀 PRAgent (Pull request)
+        - 🚀 DeploymentAgent (Deployment)
+        - 🔍 IssueAgent (Issue analysis)
+        - 🎯 CoordinatorAgent (Task coordination)
+      default: 0
+    validations:
+      required: false
+
+  - type: textarea
+    id: testing-plan
+    attributes:
+      label: Testing Plan
+      description: How should this task be tested?
+      placeholder: |
+        - [ ] Unit tests
+        - [ ] Integration tests
+        - [ ] Manual testing steps
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, links, or resources
+      placeholder: Any additional information...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have clearly defined the objectives
+          required: true
+        - label: I have specified acceptance criteria
+          required: true
+        - label: I have checked for similar tasks
+          required: true

@@ -9,6 +9,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": ".",
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -21,13 +23,18 @@
   },
   "include": [
     "agents/**/*",
-    "scripts/**/*"
+    "scripts/**/*",
+    "utils/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    "packages",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "**/*.d.ts",
+    "**/*.js",
+    "**/*.js.map"
   ]
 }
