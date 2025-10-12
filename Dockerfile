@@ -61,8 +61,8 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build all packages (exclude dashboard-server due to TypeScript errors)
-RUN pnpm -r --filter='!@miyabi/dashboard-server' run build
+# Build all packages (exclude packages with TypeScript errors)
+RUN pnpm -r --filter='!@miyabi/dashboard-server' --filter='!@agentic-os/github-projects' run build
 
 # Stage 4: Runtime image
 FROM base AS runtime
