@@ -44,19 +44,29 @@ $ node dist/index.js doctor --verbose
 **Expected:** Additional details for each check
 **Result:** ✅ PASS - Shows detailed information for all checks
 
-#### Test 1.3: JSON Mode ⚠️
+#### Test 1.3: JSON Mode ✅ (Fixed)
 ```bash
 $ node dist/index.js doctor --json
 ```
 
 **Expected:** JSON-formatted output
-**Result:** ⚠️  PARTIAL - Flag accepted but output is not JSON formatted
-**Issue:** JSON mode implemented but not producing structured JSON output
-**Severity:** Medium (functionality works, but JSON parsing fails)
+**Result:** ✅ PASS - JSON output working correctly
+**Fix Applied:** Resolved duplicate `--json` option conflict in index.ts
+**Verification:** `jq` successfully parses output
 
-**Recommended Fix:**
-- Update doctor.ts to properly output JSON when --json flag is set
-- Currently falls back to human-readable output
+**Output Example:**
+```json
+{
+  "checks": [...],
+  "summary": {
+    "passed": 6,
+    "warned": 0,
+    "failed": 1,
+    "total": 7
+  },
+  "overallStatus": "critical"
+}
+```
 
 #### Test 1.4: Exit Codes ✅
 ```bash
@@ -214,7 +224,7 @@ $ node dist/index.js --version
 | .miyabi.yml validation | N/A | File doesn't exist (optional) |
 | Claude Code detection | ✅ | Correctly identifies standard terminal |
 | Verbose mode | ✅ | Shows additional details |
-| JSON mode | ⚠️  | Flag accepted, output not JSON |
+| JSON mode | ✅ | Structured JSON output (fixed) |
 | Exit codes | ✅ | Returns 1 for critical issues |
 | Actionable suggestions | ✅ | Provides clear fix instructions |
 
@@ -247,30 +257,24 @@ $ node dist/index.js --version
 
 ## Issues Found
 
-### Issue 1: JSON Mode Not Producing JSON (Medium Priority)
+### ~~Issue 1: JSON Mode Not Producing JSON~~ ✅ FIXED
 
 **Command:** `miyabi doctor --json`
 
-**Expected:** Structured JSON output like:
-```json
-{
-  "checks": [...],
-  "summary": {...},
-  "overallStatus": "critical"
-}
+**Status:** ✅ **RESOLVED** (2025-10-12)
+
+**Root Cause:** Duplicate `--json` option definition (global + command-specific) caused Commander.js to not properly pass the option.
+
+**Fix Applied:**
+- Removed duplicate command-specific `--json` option from doctor command
+- Now accesses global `--json` option via `command.parent?.opts().json`
+- File: `src/index.ts:424-426`
+
+**Verification:**
+```bash
+$ node dist/index.js doctor --json 2>/dev/null | jq '.overallStatus'
+"critical"
 ```
-
-**Actual:** Human-readable output (same as normal mode)
-
-**Root Cause:** JSON mode logic may not be correctly handling output
-
-**Recommendation:**
-- Verify `options.json` is being passed correctly
-- Ensure spinner is disabled in JSON mode
-- Redirect all console.log to JSON serialization
-- Test with: `miyabi doctor --json | jq .`
-
-**Workaround:** Use verbose mode or parse text output
 
 ---
 
@@ -330,9 +334,9 @@ $ node dist/index.js --version
 - ✅ Comprehensive checks (9 total)
 - ✅ Proper exit codes for automation
 - ✅ Fast execution (<3 seconds)
+- ✅ JSON mode working perfectly (fixed)
 
 **Improvements:**
-- ⚠️  JSON mode needs implementation
 - ℹ️  Could add --fix flag for auto-repair
 
 **Overall:** ⭐⭐⭐⭐⭐ (5/5)
@@ -370,10 +374,10 @@ Verified that existing commands still work:
 
 ## Recommendations
 
-### High Priority
-1. **Fix JSON Mode in doctor command**
-   - Implement proper JSON serialization
-   - Test with `jq` for validation
+### ~~High Priority~~
+1. ~~**Fix JSON Mode in doctor command**~~ ✅ **COMPLETED**
+   - ✅ Fixed duplicate `--json` option conflict
+   - ✅ Verified with `jq` validation
 
 ### Medium Priority
 2. **Add E2E test suite**
@@ -400,22 +404,23 @@ Verified that existing commands still work:
 
 ✅ **All critical functionality working as expected**
 
-The Progressive Onboarding System (Phase 1 & 2) has been successfully implemented and tested. Both `miyabi doctor` and `miyabi onboard` commands are production-ready with only minor improvements needed (JSON mode fix).
+The Progressive Onboarding System (Phase 1 & 2) has been successfully implemented, tested, and **all issues resolved**. Both `miyabi doctor` and `miyabi onboard` commands are production-ready.
 
 ### Summary Statistics
 
 - **Tests Run:** 13
-- **Passed:** 12 ✅
-- **Partial:** 1 ⚠️ (JSON mode)
+- **Passed:** 13 ✅
+- **Partial:** 0 ⚠️
 - **Failed:** 0 ❌
-- **Success Rate:** 92% (12/13)
+- **Success Rate:** 100% (13/13) 🎉
 
 ### Next Steps
 
 1. ✅ Commands ready for production use
-2. ⚠️  Address JSON mode issue in doctor command
-3. ✅ Continue with Phase 3 (Enhanced Postinstall)
+2. ✅ **JSON mode issue resolved** (2025-10-12)
+3. ✅ Continue with Phase 3 (Enhanced Postinstall) - **Optional**
 4. ℹ️  Consider adding automated E2E test suite
+5. ℹ️  Consider adding `--fix` flag for auto-repair in doctor command
 
 ---
 

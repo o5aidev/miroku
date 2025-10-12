@@ -420,10 +420,11 @@ program
 program
   .command('doctor')
   .description('システムヘルスチェックと診断')
-  .option('--json', 'JSON形式で出力')
   .option('-v, --verbose', '詳細な診断情報を表示')
-  .action(async (options: { json?: boolean; verbose?: boolean }) => {
-    await doctor(options);
+  .action(async (options: { verbose?: boolean }, command: Command) => {
+    // Get global --json option from parent command
+    const json = command.parent?.opts().json || false;
+    await doctor({ ...options, json });
   });
 
 program
