@@ -22,6 +22,11 @@ COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/miyabi-agent-sdk/package.json ./packages/miyabi-agent-sdk/
 COPY packages/core/package.json ./packages/core/
 COPY packages/cli/package.json ./packages/cli/
+COPY packages/context-engineering/package.json ./packages/context-engineering/
+COPY packages/dashboard/package.json ./packages/dashboard/
+COPY packages/dashboard-server/package.json ./packages/dashboard-server/
+COPY packages/doc-generator/package.json ./packages/doc-generator/
+COPY packages/github-projects/package.json ./packages/github-projects/
 
 # Copy postinstall script (required before pnpm install)
 COPY packages/cli/scripts/postinstall.js ./packages/cli/scripts/
@@ -40,6 +45,11 @@ COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/miyabi-agent-sdk/package.json ./packages/miyabi-agent-sdk/
 COPY packages/core/package.json ./packages/core/
 COPY packages/cli/package.json ./packages/cli/
+COPY packages/context-engineering/package.json ./packages/context-engineering/
+COPY packages/dashboard/package.json ./packages/dashboard/
+COPY packages/dashboard-server/package.json ./packages/dashboard-server/
+COPY packages/doc-generator/package.json ./packages/doc-generator/
+COPY packages/github-projects/package.json ./packages/github-projects/
 
 # Copy postinstall script (required before pnpm install)
 COPY packages/cli/scripts/postinstall.js ./packages/cli/scripts/
@@ -70,6 +80,11 @@ COPY --from=builder --chown=miyabi:miyabi /app/dist ./dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/miyabi-agent-sdk/dist ./packages/miyabi-agent-sdk/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/core/dist ./packages/core/dist
 COPY --from=builder --chown=miyabi:miyabi /app/packages/cli/dist ./packages/cli/dist
+COPY --from=builder --chown=miyabi:miyabi /app/packages/context-engineering/dist ./packages/context-engineering/dist
+COPY --from=builder --chown=miyabi:miyabi /app/packages/dashboard/dist ./packages/dashboard/dist
+COPY --from=builder --chown=miyabi:miyabi /app/packages/dashboard-server/dist ./packages/dashboard-server/dist
+COPY --from=builder --chown=miyabi:miyabi /app/packages/doc-generator/dist ./packages/doc-generator/dist
+COPY --from=builder --chown=miyabi:miyabi /app/packages/github-projects/dist ./packages/github-projects/dist
 
 # Copy runtime configuration
 COPY --chown=miyabi:miyabi package.json ./
