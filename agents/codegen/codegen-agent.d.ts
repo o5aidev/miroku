@@ -11,9 +11,9 @@
  * Uses Claude Code integration via Worktree execution
  */
 import { BaseAgent } from '../base-agent.js';
-import { AgentResult, Task } from '../types/index.js';
+import { AgentResult, AgentConfig, Task } from '../types/index.js';
 export declare class CodeGenAgent extends BaseAgent {
-    constructor(config: any);
+    constructor(config: AgentConfig);
     /**
      * Main execution: Generate code from task specification
      */
@@ -43,16 +43,52 @@ export declare class CodeGenAgent extends BaseAgent {
      */
     private analyzeCodebase;
     /**
-     * Generate code using Claude Code integration
+     * Generate code using template-based generation
      *
-     * NOTE: This method requires Claude Code worktree execution.
-     * Direct Anthropic API calls have been replaced with worktree-based execution.
+     * Generates files based on task type and specifications.
+     * Supports Discord community files, documentation, and configuration.
      */
     private generateCode;
     /**
-     * Build prompt for code generation
+     * Identify files that can be automatically generated from spec
      */
-    private buildCodeGenerationPrompt;
+    private identifyGeneratableFiles;
+    /**
+     * Generate content for a specific file based on its type
+     */
+    private generateFileContent;
+    /**
+     * Generate Discord welcome message
+     */
+    private generateDiscordWelcome;
+    /**
+     * Generate Discord community rules
+     */
+    private generateDiscordRules;
+    /**
+     * Generate Discord FAQ
+     */
+    private generateDiscordFAQ;
+    /**
+     * Generate Discord server configuration JSON
+     */
+    private generateDiscordConfig;
+    /**
+     * Add Discord badge to existing README.md
+     */
+    private addDiscordBadgeToReadme;
+    /**
+     * Generate GitHub Actions workflow
+     */
+    private generateGitHubWorkflow;
+    /**
+     * Generate configuration JSON
+     */
+    private generateConfigJSON;
+    /**
+     * Extract project name from spec or current directory
+     */
+    private extractProjectName;
     /**
      * Generate unit tests (stub - requires Claude Code worktree execution)
      */

@@ -249,75 +249,566 @@ export class CodeGenAgent extends BaseAgent {
   // ============================================================================
 
   /**
-   * Generate code using Claude Code integration
+   * Generate code using template-based generation
    *
-   * NOTE: This method requires Claude Code worktree execution.
-   * Direct Anthropic API calls have been replaced with worktree-based execution.
+   * Generates files based on task type and specifications.
+   * Supports Discord community files, documentation, and configuration.
    */
-  private async generateCode(spec: CodeSpec, context: string): Promise<GeneratedCode> {
-    this.log('🧠 Code generation via Claude Code worktree (stub)');
+  private async generateCode(spec: CodeSpec, _context: string): Promise<GeneratedCode> {
+    this.log('🧠 Code generation starting (template-based)');
 
-    const prompt = this.buildCodeGenerationPrompt(spec, context);
+    // Identify generatable files from spec
+    const generatableFiles = await this.identifyGeneratableFiles(spec);
 
-    // Log the prompt for manual or worktree-based processing
-    await this.logToolInvocation(
-      'claude_code_generation_prompt',
-      'passed',
-      'Generated prompt for Claude Code',
-      this.safeTruncate(prompt, 500)
-    );
+    if (generatableFiles.length === 0) {
+      this.log('⚠️  No generatable files identified for this task');
+      return {
+        files: [],
+        tests: [],
+        documentation: '',
+        summary: `No files could be automatically generated for: ${spec.feature}`,
+      };
+    }
 
-    // Return stub response - actual generation happens in worktree
+    const files: Array<{ path: string; content: string; type: 'new' | 'modified' }> = [];
+
+    // Generate each identified file
+    for (const fileSpec of generatableFiles) {
+      try {
+        const content = await this.generateFileContent(fileSpec, spec);
+        const fileType: 'new' | 'modified' = fileSpec.type === 'readme-discord-badge' ? 'modified' : 'new';
+        files.push({ path: fileSpec.path, content, type: fileType });
+        this.log(`   ✅ Generated: ${fileSpec.path}`);
+      } catch (error) {
+        this.log(`   ⚠️  Failed to generate ${fileSpec.path}: ${(error as Error).message}`);
+      }
+    }
+
     return {
-      files: [],
+      files,
       tests: [],
       documentation: '',
-      summary: `Code generation prepared for: ${spec.feature}. Execute in worktree with Claude Code.`,
+      summary: `Generated ${files.length} files for: ${spec.feature}`,
     };
   }
 
   /**
-   * Build prompt for code generation
+   * Identify files that can be automatically generated from spec
    */
-  private buildCodeGenerationPrompt(spec: CodeSpec, context: string): string {
-    return `You are a senior TypeScript developer. Generate production-ready code based on the following specification.
+  private async identifyGeneratableFiles(spec: CodeSpec): Promise<Array<{ path: string; type: string }>> {
+    const files: Array<{ path: string; type: string }> = [];
+    const featureLower = spec.feature.toLowerCase();
 
-## Task
-${spec.feature}
+    // Discord community files
+    if (featureLower.includes('discord') && featureLower.includes('community')) {
+      files.push(
+        { path: 'docs/discord/welcome.md', type: 'discord-welcome' },
+        { path: 'docs/discord/rules.md', type: 'discord-rules' },
+        { path: 'docs/discord/faq.md', type: 'discord-faq' },
+        { path: 'discord-config.json', type: 'discord-config' }
+      );
 
-## Requirements
-${spec.requirements.map((r, i) => `${i + 1}. ${r}`).join('\n')}
+      // Check if README exists and needs Discord badge
+      if (await this.fileExists('README.md')) {
+        files.push({ path: 'README.md', type: 'readme-discord-badge' });
+      }
+    }
 
-## Existing Codebase Context
-${context}
+    // GitHub Actions workflow files
+    if (featureLower.includes('github') && (featureLower.includes('action') || featureLower.includes('workflow'))) {
+      files.push({ path: '.github/workflows/generated.yml', type: 'github-workflow' });
+    }
 
-## Architecture
-${spec.context.architecture}
+    // Configuration files
+    if (featureLower.includes('config')) {
+      files.push({ path: 'config/generated.json', type: 'config-json' });
+    }
 
-## Constraints
-${spec.constraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
-
-## Instructions
-1. Generate complete, working TypeScript code
-2. Include all necessary imports
-3. Follow the BaseAgent pattern if creating an agent
-4. Use strict TypeScript types
-5. Include JSDoc comments for public methods
-6. Handle errors appropriately
-7. Format code clearly
-
-## Output Format
-For each file, use this format:
-
-\`\`\`typescript
-// FILE: path/to/file.ts
-
-[your code here]
-\`\`\`
-
-Generate the code now:`;
+    return files;
   }
 
+  /**
+   * Generate content for a specific file based on its type
+   */
+  private async generateFileContent(
+    fileSpec: { path: string; type: string },
+    spec: CodeSpec
+  ): Promise<string> {
+    switch (fileSpec.type) {
+      case 'discord-welcome':
+        return this.generateDiscordWelcome(spec);
+
+      case 'discord-rules':
+        return this.generateDiscordRules(spec);
+
+      case 'discord-faq':
+        return this.generateDiscordFAQ(spec);
+
+      case 'discord-config':
+        return this.generateDiscordConfig(spec);
+
+      case 'readme-discord-badge':
+        return await this.addDiscordBadgeToReadme(spec);
+
+      case 'github-workflow':
+        return this.generateGitHubWorkflow(spec);
+
+      case 'config-json':
+        return this.generateConfigJSON(spec);
+
+      default:
+        throw new Error(`Unknown file type: ${fileSpec.type}`);
+    }
+  }
+
+  // ============================================================================
+  // Template Generators - Discord Community
+  // ============================================================================
+
+  /**
+   * Generate Discord welcome message
+   */
+  private generateDiscordWelcome(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    return `# Welcome to ${projectName} Community! 👋
+
+Thank you for joining the ${projectName} Discord community!
+
+## What is ${projectName}?
+
+${spec.feature}
+
+## Getting Started
+
+1. **Read the Rules** - Check out <#rules> to understand community guidelines
+2. **Introduce Yourself** - Head to <#introductions> and tell us about yourself
+3. **Explore Channels** - Browse our channels and find topics that interest you
+4. **Ask Questions** - Don't hesitate to ask in <#general> or <#help>
+
+## Community Channels
+
+- **#announcements** - Important updates and news
+- **#general** - General discussion
+- **#help** - Get help from the community
+- **#showcase** - Share your projects
+- **#feedback** - Provide feedback and suggestions
+
+## Quick Links
+
+- [GitHub Repository](https://github.com/${projectName})
+- [Documentation](https://docs.${projectName}.dev)
+- [Website](https://${projectName}.dev)
+
+## Need Help?
+
+If you have questions or need assistance, please:
+1. Check the <#faq> channel
+2. Ask in <#help>
+3. Mention @Moderator for urgent issues
+
+---
+
+Enjoy your time here! 🎉
+`;
+  }
+
+  /**
+   * Generate Discord community rules
+   */
+  private generateDiscordRules(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    return `# ${projectName} Community Rules 📜
+
+Please read and follow these rules to maintain a positive community environment.
+
+## 1. Be Respectful
+
+- Treat all members with respect and courtesy
+- No harassment, hate speech, or discriminatory language
+- Respect different opinions and perspectives
+
+## 2. Keep Content Appropriate
+
+- No NSFW (Not Safe For Work) content
+- No spam, excessive self-promotion, or advertising
+- No pirated content or illegal activities
+
+## 3. Stay On Topic
+
+- Keep discussions relevant to the channel topic
+- Use appropriate channels for different types of content
+- Move lengthy discussions to threads when appropriate
+
+## 4. No Toxicity
+
+- No trolling, flaming, or intentionally inflammatory behavior
+- Constructive criticism is welcome, but be kind
+- Help maintain a positive and welcoming atmosphere
+
+## 5. Respect Privacy
+
+- Don't share personal information of others without consent
+- Don't DM (Direct Message) without permission
+- Report privacy violations to moderators
+
+## 6. Follow Discord ToS
+
+- All Discord Terms of Service and Community Guidelines apply
+- Age requirement: You must be 13+ to use Discord
+
+## 7. Listen to Moderators
+
+- Follow moderator instructions promptly
+- Questions about moderation decisions should be discussed via DM
+- Moderators have final say on rule interpretations
+
+## Consequences
+
+Violations may result in:
+- Warning
+- Temporary mute
+- Kick from server
+- Permanent ban (for severe or repeated violations)
+
+## Reporting
+
+If you see rule violations:
+1. Use the report feature
+2. Mention @Moderator
+3. DM a moderator
+
+---
+
+**Thank you for helping make ${projectName} a great community!** ❤️
+`;
+  }
+
+  /**
+   * Generate Discord FAQ
+   */
+  private generateDiscordFAQ(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    return `# ${projectName} - Frequently Asked Questions (FAQ) 🤔
+
+## General Questions
+
+### What is ${projectName}?
+
+${spec.feature}
+
+### Is ${projectName} free to use?
+
+Yes! ${projectName} is open source and free to use. Check our GitHub repository for the license details.
+
+### How can I contribute to ${projectName}?
+
+We welcome contributions! Here's how you can help:
+1. Report bugs and issues on GitHub
+2. Submit pull requests
+3. Improve documentation
+4. Help answer questions in the community
+5. Share your use cases and feedback
+
+## Getting Started
+
+### How do I install ${projectName}?
+
+\`\`\`bash
+npm install ${projectName}
+# or
+yarn add ${projectName}
+\`\`\`
+
+Check our [documentation](https://docs.${projectName}.dev) for detailed installation instructions.
+
+### Where can I find documentation?
+
+- [Official Documentation](https://docs.${projectName}.dev)
+- [GitHub Repository](https://github.com/${projectName})
+- [API Reference](https://docs.${projectName}.dev/api)
+
+### I'm getting an error. What should I do?
+
+1. Check the [documentation](https://docs.${projectName}.dev)
+2. Search existing GitHub issues
+3. Ask in <#help> channel
+4. Create a new GitHub issue with details
+
+## Community
+
+### How do I get help?
+
+1. Check this FAQ first
+2. Search the documentation
+3. Ask in <#help> channel
+4. Create a GitHub issue if it's a bug
+
+### Can I share my project built with ${projectName}?
+
+Absolutely! We'd love to see what you're building. Share in <#showcase>!
+
+### How can I stay updated?
+
+- Follow announcements in <#announcements>
+- Watch the GitHub repository
+- Check the [changelog](https://github.com/${projectName}/CHANGELOG.md)
+
+## Technical Questions
+
+### What are the system requirements?
+
+- Node.js 18+
+- TypeScript 5+
+- Modern browser (for web projects)
+
+### Does ${projectName} support [feature]?
+
+Check our [roadmap](https://github.com/${projectName}/issues) or ask in <#general>.
+
+### I found a bug! Where do I report it?
+
+1. Search existing issues first
+2. Create a new issue on [GitHub](https://github.com/${projectName}/issues)
+3. Include: steps to reproduce, expected vs actual behavior, environment details
+
+## Moderation
+
+### How do I report a rule violation?
+
+Use the report feature, mention @Moderator, or DM a moderator.
+
+### How do I become a moderator?
+
+Active and helpful community members may be invited to join the moderation team.
+
+---
+
+**Don't see your question here?** Ask in <#help> or <#general>!
+`;
+  }
+
+  /**
+   * Generate Discord server configuration JSON
+   */
+  private generateDiscordConfig(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    const config = {
+      server_name: `${projectName} Community`,
+      description: spec.feature,
+      channels: [
+        {
+          name: 'announcements',
+          type: 'text',
+          category: 'Information',
+          description: 'Official announcements and updates',
+          permissions: { send_messages: ['@Moderator', '@Admin'] }
+        },
+        {
+          name: 'rules',
+          type: 'text',
+          category: 'Information',
+          description: 'Server rules and guidelines',
+          permissions: { send_messages: ['@Moderator', '@Admin'] }
+        },
+        {
+          name: 'faq',
+          type: 'text',
+          category: 'Information',
+          description: 'Frequently asked questions',
+          permissions: { send_messages: ['@Moderator', '@Admin'] }
+        },
+        {
+          name: 'general',
+          type: 'text',
+          category: 'Community',
+          description: 'General discussion'
+        },
+        {
+          name: 'introductions',
+          type: 'text',
+          category: 'Community',
+          description: 'Introduce yourself to the community'
+        },
+        {
+          name: 'help',
+          type: 'text',
+          category: 'Support',
+          description: 'Get help from the community'
+        },
+        {
+          name: 'showcase',
+          type: 'text',
+          category: 'Community',
+          description: 'Share your projects and creations'
+        },
+        {
+          name: 'feedback',
+          type: 'text',
+          category: 'Development',
+          description: 'Provide feedback and suggestions'
+        },
+        {
+          name: 'bug-reports',
+          type: 'text',
+          category: 'Development',
+          description: 'Report bugs and issues'
+        }
+      ],
+      roles: [
+        { name: 'Admin', color: '#FF0000', permissions: ['administrator'] },
+        { name: 'Moderator', color: '#00FF00', permissions: ['manage_messages', 'kick_members', 'ban_members'] },
+        { name: 'Contributor', color: '#0000FF', permissions: [] },
+        { name: 'Member', color: '#CCCCCC', permissions: [] }
+      ],
+      welcome_channel: 'introductions',
+      rules_channel: 'rules',
+      moderation: {
+        auto_mod_enabled: true,
+        spam_protection: true,
+        word_filter_enabled: true,
+        raid_protection: true
+      }
+    };
+
+    return JSON.stringify(config, null, 2);
+  }
+
+  /**
+   * Add Discord badge to existing README.md
+   */
+  private async addDiscordBadgeToReadme(spec: CodeSpec): Promise<string> {
+    const projectName = this.extractProjectName(spec);
+    const readmePath = path.join(process.cwd(), 'README.md');
+
+    let readme = '';
+    try {
+      readme = await fs.promises.readFile(readmePath, 'utf-8');
+    } catch {
+      // README doesn't exist, create basic one
+      readme = `# ${projectName}\n\n${spec.feature}\n`;
+    }
+
+    // Check if Discord badge already exists
+    if (readme.includes('discord.com') || readme.includes('Discord')) {
+      this.log('   ℹ️  Discord badge may already exist in README');
+    }
+
+    // Add badge after title
+    const discordBadge = `[![Discord](https://img.shields.io/discord/YOUR_SERVER_ID?label=Discord&logo=discord&logoColor=white&color=7289DA)](https://discord.gg/${projectName.toLowerCase()})`;
+
+    const lines = readme.split('\n');
+    // Find first heading
+    const titleIndex = lines.findIndex(line => line.startsWith('#'));
+
+    if (titleIndex >= 0) {
+      // Insert badge after title
+      lines.splice(titleIndex + 1, 0, '', discordBadge, '');
+      return lines.join('\n');
+    }
+
+    // No title found, prepend badge
+    return `${discordBadge}\n\n${readme}`;
+  }
+
+  // ============================================================================
+  // Template Generators - Other
+  // ============================================================================
+
+  /**
+   * Generate GitHub Actions workflow
+   */
+  private generateGitHubWorkflow(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    return `name: ${projectName} CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js \${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: \${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build
+      run: npm run build
+
+    - name: Test
+      run: npm test
+
+    - name: Lint
+      run: npm run lint
+`;
+  }
+
+  /**
+   * Generate configuration JSON
+   */
+  private generateConfigJSON(spec: CodeSpec): string {
+    const projectName = this.extractProjectName(spec);
+
+    const config = {
+      name: projectName,
+      version: '1.0.0',
+      description: spec.feature,
+      settings: {
+        environment: 'production',
+        logging: {
+          level: 'info',
+          format: 'json'
+        },
+        features: {
+          enabled: []
+        }
+      },
+      generated: new Date().toISOString()
+    };
+
+    return JSON.stringify(config, null, 2);
+  }
+
+  // ============================================================================
+  // Helper Methods
+  // ============================================================================
+
+  /**
+   * Extract project name from spec or current directory
+   */
+  private extractProjectName(_spec: CodeSpec): string {
+    // Try to get from package.json
+    try {
+      const pkgPath = path.join(process.cwd(), 'package.json');
+      const pkg = JSON.parse(require('fs').readFileSync(pkgPath, 'utf-8'));
+      if (pkg.name) return pkg.name;
+    } catch {
+      // Ignore
+    }
+
+    // Use current directory name
+    return path.basename(process.cwd());
+  }
 
   // ============================================================================
   // Test Generation
