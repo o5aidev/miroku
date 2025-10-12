@@ -1,0 +1,45 @@
+# Workflow Automation Configuration
+# ==================================
+
+# SERP Configuration
+serp:
+  provider: serpapi  # serpapi, scraperapi, google
+  results_limit: 5
+  location: United States
+  language: en
+
+# Content Generator Configuration
+content_generator:
+  model: gpt-4  # gpt-4, gpt-4-turbo, gpt-3.5-turbo
+  temperature: 0.7
+  max_tokens: 2000
+  stream: true
+
+# Web Scraper Configuration
+scraper:
+  timeout: 10  # seconds
+  max_retries: 2
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+
+# Workflow Configuration
+workflow:
+  concurrency: 5  # Maximum parallel tasks
+  timeout: 300  # seconds
+  retry_on_failure: true
+  max_retries: 2
+
+# SEO Blog Generator Specific
+seo_blog:
+  default_word_count: 2000
+  min_word_count: 500
+  max_word_count: 5000
+  num_competitors: 5
+  include_meta_description: true
+  include_faq: true
+
+# Performance Optimization
+performance:
+  enable_caching: true
+  cache_ttl: 3600  # seconds
+  enable_compression: true
+  chunk_size: 1024  # bytes for streaming

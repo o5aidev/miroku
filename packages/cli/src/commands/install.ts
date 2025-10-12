@@ -127,9 +127,18 @@ export async function install(options: InstallOptions = {}) {
     spinner.succeed(
       chalk.green(`Labels setup complete (${result.created} created, ${result.updated} updated)`)
     );
+    console.log(chalk.gray(`  ✓ Total: ${result.created + result.updated} labels configured`));
   } catch (error) {
     spinner.fail(chalk.red('ラベルのセットアップに失敗しました'));
     if (error instanceof Error) {
+      console.log(chalk.yellow('\n💡 解決策:\n'));
+      console.log(chalk.white('  1. GitHubトークンの権限を確認してください:'));
+      console.log(chalk.gray('     - repo (Full control of private repositories)'));
+      console.log(chalk.gray('     - admin:org (Full control of orgs and teams)\n'));
+      console.log(chalk.white('  2. 手動でラベルを作成:'));
+      console.log(chalk.gray('     gh label create "🐛 type:bug" --color "d73a4a"\n'));
+      console.log(chalk.white('  3. または、Claude Codeに依頼:'));
+      console.log(chalk.gray('     「識学理論準拠の65ラベルを作成してください」\n'));
       throw new Error(`Label setup failed: ${error.message}`);
     }
     throw new Error('Label setup failed: Unknown error');

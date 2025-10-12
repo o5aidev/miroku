@@ -339,7 +339,6 @@ export interface ProgressStatus {
 export interface AgentConfig {
   deviceIdentifier: string;
   githubToken: string;
-  anthropicApiKey: string;
   useTaskTool: boolean;
   useWorktree: boolean;
   worktreeBasePath?: string;

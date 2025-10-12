@@ -1,0 +1,133 @@
+{
+  "timestamp": "2025-10-11T10:45:22.980Z",
+  "agentMetrics": [
+    {
+      "agentType": "Agent0",
+      "taskId": "task-0",
+      "startTime": 1760179522979,
+      "endTime": 1760179522979,
+      "totalDurationMs": 0,
+      "toolInvocations": [
+        {
+          "toolName": "tool1",
+          "agentType": "Agent0",
+          "startTime": 1760179522879,
+          "endTime": 1760179522979,
+          "durationMs": 100,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.8040924072265625
+    },
+    {
+      "agentType": "Agent1",
+      "taskId": "task-1",
+      "startTime": 1760179522979,
+      "endTime": 1760179522979,
+      "totalDurationMs": 0,
+      "toolInvocations": [
+        {
+          "toolName": "tool1",
+          "agentType": "Agent1",
+          "startTime": 1760179522879,
+          "endTime": 1760179522979,
+          "durationMs": 100,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.8076171875
+    },
+    {
+      "agentType": "Agent2",
+      "taskId": "task-2",
+      "startTime": 1760179522979,
+      "endTime": 1760179522979,
+      "totalDurationMs": 0,
+      "toolInvocations": [
+        {
+          "toolName": "tool1",
+          "agentType": "Agent2",
+          "startTime": 1760179522879,
+          "endTime": 1760179522979,
+          "durationMs": 100,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.811210632324219
+    },
+    {
+      "agentType": "Agent3",
+      "taskId": "task-3",
+      "startTime": 1760179522979,
+      "endTime": 1760179522979,
+      "totalDurationMs": 0,
+      "toolInvocations": [
+        {
+          "toolName": "tool1",
+          "agentType": "Agent3",
+          "startTime": 1760179522879,
+          "endTime": 1760179522979,
+          "durationMs": 100,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.8161163330078125
+    },
+    {
+      "agentType": "Agent4",
+      "taskId": "task-4",
+      "startTime": 1760179522979,
+      "endTime": 1760179522979,
+      "totalDurationMs": 0,
+      "toolInvocations": [
+        {
+          "toolName": "tool1",
+          "agentType": "Agent4",
+          "startTime": 1760179522879,
+          "endTime": 1760179522979,
+          "durationMs": 100,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.82012939453125
+    },
+    {
+      "agentType": "TestAgent",
+      "taskId": "benchmark-1",
+      "startTime": 1760179522967,
+      "endTime": 1760179522978,
+      "totalDurationMs": 11,
+      "toolInvocations": [
+        {
+          "toolName": "test_tool",
+          "agentType": "TestAgent",
+          "startTime": 1760179522973,
+          "endTime": 1760179522978,
+          "durationMs": 5,
+          "success": true
+        }
+      ],
+      "bottlenecks": [],
+      "memoryUsageMb": 7.7728271484375
+    }
+  ],
+  "summary": {
+    "totalAgents": 6,
+    "totalDurationMs": 11,
+    "averageDurationMs": 1.8333333333333333,
+    "slowestAgent": {
+      "type": "TestAgent",
+      "durationMs": 11
+    },
+    "totalBottlenecks": 0,
+    "criticalBottlenecks": 0
+  },
+  "recommendations": [
+    "✅ No critical performance issues detected. System running optimally."
+  ]
+}

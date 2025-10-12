@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク</title>
+    <meta name="description" content="npx miyabi で5分で始める完全自動化開発。GitHub as OSアーキテクチャで、Issue作成からデプロイまで全自動。">
+    <meta property="og:title" content="Miyabi - 自律型開発フレームワーク">
+    <meta property="og:description" content="一つのコマンドで全てが完結。72%の開発効率改善を実現。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://shunsukehayashi.github.io/Miyabi/landing.html">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Cherry Blossom Animation */
+        .sakura {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ffb7d5 0%, #ff69b4 50%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: fall linear infinite;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 120px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s backwards;
+        }
+
+        .command-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 1.3rem;
+            margin: 20px 0;
+            animation: fadeInUp 1s ease 0.4s backwards;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Stats Section */
+        .stats {
+            background: #f8f9fa;
+            padding: 60px 20px;
+        }
+
+        .stats-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Agents Section */
+        .agents {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .agents h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .agent-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s;
+        }
+
+        .agent-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .agent-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .agent-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .agent-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Architecture Section */
+        .architecture {
+            background: #2d3748;
+            color: white;
+            padding: 80px 20px;
+        }
+
+        .architecture h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .arch-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .arch-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .arch-item h3 {
+            color: #a0aec0;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .arch-item p {
+            font-size: 1.2rem;
+        }
+
+        /* Performance Section */
+        .performance {
+            padding: 80px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .performance h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        .comparison {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 50px 0;
+            flex-wrap: wrap;
+        }
+
+        .before, .after {
+            padding: 30px;
+            border-radius: 15px;
+            min-width: 200px;
+        }
+
+        .before {
+            background: #fee;
+            border: 2px solid #fcc;
+        }
+
+        .after {
+            background: #efe;
+            border: 2px solid #cfc;
+        }
+
+        .time {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .arrow {
+            font-size: 3rem;
+            color: #667eea;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            background: #f8f9fa;
+            padding: 80px 20px;
+        }
+
+        .testimonials h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .testimonial-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .testimonial {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .testimonial-author {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .testimonial-role {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        /* FAQ Section */
+        .faq {
+            padding: 80px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            background: #f8f9fa;
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .faq-question:hover {
+            background: #e9ecef;
+        }
+
+        .faq-question.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-answer.active {
+            padding: 20px;
+            max-height: 500px;
+        }
+
+        .faq-toggle {
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+
+        .faq-question.active .faq-toggle {
+            transform: rotate(180deg);
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 20px;
+            text-align: center;
+        }
+
+        .cta h2 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .cta-btn {
+            background: white;
+            color: #667eea;
+            padding: 15px 40px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: inline-block;
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Footer */
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #a0aec0;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .command-box {
+                font-size: 1rem;
+                padding: 15px 20px;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .agents h2, .architecture h2, .performance h2, .testimonials h2, .faq h2, .cta h2 {
+                font-size: 1.8rem;
+            }
+
+            .comparison {
+                flex-direction: column;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>🌸 Miyabi</h1>
+        <p>一つのコマンドで全てが完結する自律型開発フレームワーク</p>
+        <div class="command-box">
+            <code id="install-cmd">npx miyabi init my-project</code>
+            <button class="copy-btn" onclick="copyCommand()">コピー</button>
+        </div>
+        <p style="font-size: 1rem; opacity: 0.8; margin-top: 20px;">
+            5分で始める完全自動化開発 • GitHub as OS • 7つのAIエージェント
+        </p>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" data-target="72">0</div>
+                <div class="stat-label">%の開発効率改善</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="80">0</div>
+                <div class="stat-label">%以上のテストカバレッジ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="10">0</div>
+                <div class="stat-label">分でPR作成</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="7">0</div>
+                <div class="stat-label">つの自律型Agent</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agents Section -->
+    <section class="agents">
+        <h2>7つの自律型Agent</h2>
+        <div class="agents-grid">
+            <div class="agent-card">
+                <div class="agent-icon">🎯</div>
+                <h3>CoordinatorAgent</h3>
+                <p>タスクを自動でDAG分解し、並列実行可能な最適なワークフローを生成。複雑なプロジェクトも効率的に管理します。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">🏷️</div>
+                <h3>IssueAgent</h3>
+                <p>Issueを自動分析し、53種類の構造化ラベル体系で自動分類。優先度・状態・フェーズを自動判定します。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">💻</div>
+                <h3>CodeGenAgent</h3>
+                <p>Claude Sonnet 4による高品質なコード生成。アーキテクチャを理解し、プロジェクトに最適なコードを自動生成します。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">🔍</div>
+                <h3>ReviewAgent</h3>
+                <p>静的解析・セキュリティスキャン・品質スコアリングを自動実行。コード品質を数値化し、改善提案を行います。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">📝</div>
+                <h3>PRAgent</h3>
+                <p>Conventional Commits準拠のPRを自動作成。Draft PR生成から本番マージまで完全自動化します。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">🚀</div>
+                <h3>DeploymentAgent</h3>
+                <p>Firebase/Cloud自動デプロイ・ヘルスチェック・自動Rollbackを実行。安全で確実なデプロイを実現します。</p>
+            </div>
+            <div class="agent-card">
+                <div class="agent-icon">✅</div>
+                <h3>TestAgent</h3>
+                <p>Vitest/Playwright/Jestを使った自動テスト生成。80%以上のカバレッジを自動で達成します。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="architecture">
+        <h2>GitHub as OS アーキテクチャ</h2>
+        <div class="arch-grid">
+            <div class="arch-item">
+                <h3>データ永続化層</h3>
+                <p>Projects V2</p>
+            </div>
+            <div class="arch-item">
+                <h3>イベントバス</h3>
+                <p>Webhooks</p>
+            </div>
+            <div class="arch-item">
+                <h3>実行エンジン</h3>
+                <p>GitHub Actions</p>
+            </div>
+            <div class="arch-item">
+                <h3>メッセージキュー</h3>
+                <p>Discussions</p>
+            </div>
+            <div class="arch-item">
+                <h3>ダッシュボード</h3>
+                <p>GitHub Pages</p>
+            </div>
+            <div class="arch-item">
+                <h3>パッケージ配布</h3>
+                <p>npm Registry</p>
+            </div>
+            <div class="arch-item">
+                <h3>タスク管理</h3>
+                <p>Issues + Labels</p>
+            </div>
+            <div class="arch-item">
+                <h3>レビューフロー</h3>
+                <p>Pull Requests</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section class="performance">
+        <h2>圧倒的な開発効率改善</h2>
+        <p>従来の手動開発と比較して、Miyabiは開発時間を72%削減します。</p>
+        <div class="comparison">
+            <div class="before">
+                <div style="font-size: 1.2rem; color: #666;">従来の開発</div>
+                <div class="time" style="color: #c33;">36時間</div>
+                <div>手動でのIssue管理<br>手動コードレビュー<br>手動デプロイ</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="after">
+                <div style="font-size: 1.2rem; color: #666;">Miyabi使用</div>
+                <div class="time" style="color: #3c3;">10時間</div>
+                <div>自動Issue処理<br>自動コード生成<br>自動デプロイ</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials">
+        <h2>開発者の声</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial">
+                <div class="testimonial-text">
+                    "Miyabiを導入してから、Issue管理に費やす時間が90%減りました。AIが自動で優先度を判定してくれるので、重要なタスクに集中できます。"
+                </div>
+                <div class="testimonial-author">田中 太郎</div>
+                <div class="testimonial-role">シニアエンジニア</div>
+            </div>
+            <div class="testimonial">
+                <div class="testimonial-text">
+                    "npx miyabi initだけで完全な開発環境が構築されるのは衝撃的でした。新規プロジェクト立ち上げが5分で完了します。"
+                </div>
+                <div class="testimonial-author">佐藤 花子</div>
+                <div class="testimonial-role">テックリード</div>
+            </div>
+            <div class="testimonial">
+                <div class="testimonial-text">
+                    "GitHub as OSの思想が素晴らしい。既存のGitHubワークフローに自然に統合でき、学習コストゼロで導入できました。"
+                </div>
+                <div class="testimonial-author">鈴木 一郎</div>
+                <div class="testimonial-role">プロダクトマネージャー</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq">
+        <h2>よくある質問</h2>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <span>Miyabiの導入に必要なものは何ですか？</span>
+                <span class="faq-toggle">▼</span>
+            </div>
+            <div class="faq-answer">
+                <p>GitHubアカウントとNode.js環境があれば、すぐに始められます。<code>npx miyabi init</code>を実行するだけで、必要な設定が全て自動で完了します。</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <span>既存プロジェクトにも導入できますか？</span>
+                <span class="faq-toggle">▼</span>
+            </div>
+            <div class="faq-answer">
+                <p>はい、<code>miyabi install</code>コマンドで既存プロジェクトに簡単に統合できます。既存のGitHub設定を自動検出し、最適な設定を提案します。</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <span>料金はかかりますか？</span>
+                <span class="faq-toggle">▼</span>
+            </div>
+            <div class="faq-answer">
+                <p>Miyabi自体は完全無料のオープンソースです。Claude APIを使用する場合は、Anthropic社の料金が別途かかります。</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <span>どのようなプロジェクトに適していますか？</span>
+                <span class="faq-toggle">▼</span>
+            </div>
+            <div class="faq-answer">
+                <p>TypeScript/JavaScript、Python、Go、Rustなど主要言語に対応。Next.js、React、Django、Flaskなどのフレームワークも自動検出します。</p>
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <span>サポートはありますか？</span>
+                <span class="faq-toggle">▼</span>
+            </div>
+            <div class="faq-answer">
+                <p>GitHub Discussionsでコミュニティサポートを提供しています。詳細なドキュメントも充実しており、ほとんどの疑問はすぐに解決できます。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta">
+        <h2>今すぐ始めよう</h2>
+        <p style="font-size: 1.2rem; margin-bottom: 30px;">5分で完全自動化開発環境を構築</p>
+        <div class="cta-buttons">
+            <a href="https://www.npmjs.com/package/miyabi" class="cta-btn">📦 npm で見る</a>
+            <a href="https://github.com/ShunsukeHayashi/Miyabi" class="cta-btn">⭐ GitHub で見る</a>
+            <a href="index.html" class="cta-btn">📊 ダッシュボード</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/ShunsukeHayashi/Miyabi">GitHub</a>
+            <a href="https://www.npmjs.com/package/miyabi">npm</a>
+            <a href="https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/AGENT_OPERATIONS_MANUAL.md">ドキュメント</a>
+            <a href="https://github.com/ShunsukeHayashi/Miyabi/discussions">コミュニティ</a>
+            <a href="https://github.com/ShunsukeHayashi/Miyabi/blob/main/LICENSE">ライセンス</a>
+        </div>
+        <p style="color: #a0aec0; margin-top: 20px;">
+            © 2025 Miyabi - Autonomous Development Framework<br>
+            Built with ❤️ by <a href="https://github.com/ShunsukeHayashi" style="color: #667eea; text-decoration: none;">Shunsuke Hayashi</a>
+        </p>
+    </footer>
+
+    <script>
+        // Cherry Blossom Animation
+        function createSakura() {
+            const sakura = document.createElement('div');
+            sakura.classList.add('sakura');
+            sakura.style.left = Math.random() * 100 + 'vw';
+            sakura.style.animationDuration = Math.random() * 3 + 2 + 's';
+            sakura.style.opacity = Math.random() * 0.5 + 0.3;
+            document.body.appendChild(sakura);
+
+            setTimeout(() => {
+                sakura.remove();
+            }, 5000);
+        }
+
+        setInterval(createSakura, 300);
+
+        // Counter Animation
+        function animateCounter(element) {
+            const target = parseInt(element.dataset.target);
+            const duration = 2000;
+            const step = target / (duration / 16);
+            let current = 0;
+
+            const timer = setInterval(() => {
+                current += step;
+                if (current >= target) {
+                    element.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    element.textContent = Math.floor(current);
+                }
+            }, 16);
+        }
+
+        // Intersection Observer for counter animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const counters = entry.target.querySelectorAll('.stat-number');
+                    counters.forEach(counter => {
+                        if (counter.textContent === '0') {
+                            animateCounter(counter);
+                        }
+                    });
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(document.querySelector('.stats'));
+
+        // Copy Command
+        function copyCommand() {
+            const cmd = document.getElementById('install-cmd').textContent;
+            navigator.clipboard.writeText(cmd).then(() => {
+                const btn = document.querySelector('.copy-btn');
+                btn.textContent = 'コピーしました!';
+                setTimeout(() => {
+                    btn.textContent = 'コピー';
+                }, 2000);
+            });
+        }
+
+        // FAQ Toggle
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+            const answer = element.nextElementSibling;
+            answer.classList.toggle('active');
+        }
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

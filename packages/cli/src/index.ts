@@ -19,6 +19,7 @@ import { docs } from './commands/docs.js';
 import { registerAgentCommand } from './commands/agent.js';
 import { registerAutoModeCommand } from './commands/auto.js';
 import { registerTodosCommand } from './commands/todos.js';
+import { registerAuthCommand } from './commands/auth.js';
 import { loadConfig, applyConfigToEnvironment } from './config/loader.js';
 import {
   reportIssueToMiyabi,
@@ -27,6 +28,7 @@ import {
   inferUserIntent,
   type FeedbackContext,
 } from './feedback/issue-reporter.js';
+import { isJsonMode, outputError } from './utils/agent-output.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,7 +66,11 @@ const program = new Command();
 program
   .name('miyabi')
   .description('✨ Miyabi - 一つのコマンドで全てが完結する自律型開発フレームワーク')
-  .version(packageJson.version);
+  .version(packageJson.version)
+  .option('--json', 'Output in JSON format (for AI agents)')
+  .option('-y, --yes', 'Auto-confirm all prompts (non-interactive mode)')
+  .option('-v, --verbose', 'Verbose output with detailed logs')
+  .option('--debug', 'Debug mode with extra detailed logs');
 
 // ============================================================================
 // Single Command Interface
@@ -94,6 +100,16 @@ program
 
     // 対話モード（通常のターミナル環境）
     if (!isInteractiveTerminal()) {
+      // AI agent向けJSON出力
+      if (isJsonMode()) {
+        outputError(
+          'INVALID_COMMAND_OR_NON_INTERACTIVE',
+          'Interactive mode not available in non-interactive terminal',
+          true,
+          'Specify a command directly: miyabi status --json'
+        );
+      }
+
       console.log(chalk.yellow('⚠️  対話モードは対話型ターミナルでのみ利用可能です'));
       console.log(chalk.white('\nコマンドを直接指定してください: miyabi --help\n'));
       process.exit(1);
@@ -284,7 +300,9 @@ program
   .description('新しいプロジェクトを作成')
   .option('-p, --private', 'プライベートリポジトリとして作成')
   .option('--skip-install', 'npm installをスキップ')
-  .action(async (projectName: string, options: { private?: boolean; skipInstall?: boolean }) => {
+  .option('--json', 'JSON形式で出力')
+  .option('-y, --yes', 'すべてのプロンプトを自動承認')
+  .action(async (projectName: string, options: { private?: boolean; skipInstall?: boolean; json?: boolean; yes?: boolean }) => {
     await init(projectName, options);
   });
 
@@ -294,7 +312,8 @@ program
   .option('--dry-run', 'ドライラン（実際には変更しない）')
   .option('--non-interactive', '非対話モード（プロンプトをスキップ）')
   .option('-y, --yes', 'すべてのプロンプトを自動承認')
-  .action(async (options: { dryRun?: boolean; nonInteractive?: boolean; yes?: boolean }) => {
+  .option('--json', 'JSON形式で出力')
+  .action(async (options: { dryRun?: boolean; nonInteractive?: boolean; yes?: boolean; json?: boolean }) => {
     await install(options);
   });
 
@@ -302,7 +321,8 @@ program
   .command('status')
   .description('プロジェクトの状態を確認')
   .option('-w, --watch', 'ウォッチモード（自動更新）')
-  .action(async (options: { watch?: boolean }) => {
+  .option('--json', 'JSON形式で出力')
+  .action(async (options: { watch?: boolean; json?: boolean }) => {
     await status(options);
   });
 
@@ -313,15 +333,17 @@ program
   .option('-o, --output <file>', '出力ファイル', './docs/API.md')
   .option('-w, --watch', 'ウォッチモード')
   .option('-t, --training', 'トレーニング資料も生成')
-  .action(async (options: { input?: string; output?: string; watch?: boolean; training?: boolean }) => {
+  .option('--json', 'JSON形式で出力')
+  .action(async (options: { input?: string; output?: string; watch?: boolean; training?: boolean; json?: boolean }) => {
     await docs(options);
   });
 
 program
   .command('config')
   .description('設定を管理')
-  .action(async () => {
-    await config({});
+  .option('--json', 'JSON形式で出力')
+  .action(async (options: { json?: boolean }) => {
+    await config(options);
   });
 
 program
@@ -331,12 +353,16 @@ program
   .option('-y, --yes', 'すべてのプロンプトを自動承認')
   .option('--skip-token', 'トークンセットアップをスキップ')
   .option('--skip-config', '設定をスキップ')
-  .action(async (options: { nonInteractive?: boolean; yes?: boolean; skipToken?: boolean; skipConfig?: boolean }) => {
+  .option('--json', 'JSON形式で出力')
+  .action(async (options: { nonInteractive?: boolean; yes?: boolean; skipToken?: boolean; skipConfig?: boolean; json?: boolean }) => {
     await setup(options);
   });
 
 // Register agent command
 registerAgentCommand(program);
+
+// Register auth command
+registerAuthCommand(program);
 
 // Register auto mode command
 registerAutoModeCommand(program);

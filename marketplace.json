@@ -1,0 +1,90 @@
+{
+  "name": "Miyabi Operations Marketplace",
+  "description": "Official marketplace for Miyabi autonomous development operations plugins",
+  "version": "1.0.0",
+  "author": {
+    "name": "Shunsuke Hayashi",
+    "email": "supernovasyun@gmail.com",
+    "url": "https://github.com/ShunsukeHayashi"
+  },
+  "plugins": [
+    {
+      "name": "miyabi-operations",
+      "source": "ShunsukeHayashi/Miyabi",
+      "version": "1.0.0",
+      "description": "Complete autonomous development operations - Issue to Deploy automation powered by GitHub as OS",
+      "author": "Shunsuke Hayashi",
+      "license": "MIT",
+      "homepage": "https://shunsukehayashi.github.io/Miyabi/",
+      "tags": [
+        "autonomous",
+        "github",
+        "ci-cd",
+        "agents",
+        "devops",
+        "automation",
+        "label-system",
+        "claude-code"
+      ],
+      "features": [
+        "8 slash commands for complete workflow automation",
+        "6 autonomous agents (Coordinator, CodeGen, Review, Issue, PR, Deployment)",
+        "53-label organizational design system",
+        "GitHub as OS architecture integration",
+        "DAG-based task decomposition",
+        "Parallel agent execution with concurrency control",
+        "Automatic quality scoring (100-point scale)",
+        "Event-driven hooks (label updates, session logging)",
+        "Projects V2 data persistence",
+        "Real-time dashboard integration"
+      ],
+      "requirements": {
+        "node": ">=20.0.0",
+        "pnpm": ">=8.0.0",
+        "git": ">=2.40.0"
+      },
+      "environment": {
+        "GITHUB_TOKEN": "required",
+        "ANTHROPIC_API_KEY": "required",
+        "DEVICE_IDENTIFIER": "optional"
+      },
+      "commands": [
+        "/verify - System verification (environment, build, tests)",
+        "/agent-run - Execute autonomous agents on GitHub Issues",
+        "/deploy - Deploy to Firebase/Cloud with health checks",
+        "/miyabi-auto - Full autonomous pipeline execution",
+        "/miyabi-status - Check system and agent status",
+        "/miyabi-todos - TODO comment extraction and Issue creation",
+        "/security-scan - Security vulnerability scanning",
+        "/generate-docs - Documentation generation from code"
+      ],
+      "agents": [
+        "CoordinatorAgent - Task orchestration and DAG decomposition",
+        "CodeGenAgent - AI-driven code generation (Claude Sonnet 4)",
+        "ReviewAgent - Code quality assessment (80-point threshold)",
+        "IssueAgent - Issue analysis and label management",
+        "PRAgent - Pull Request automation (Conventional Commits)",
+        "DeploymentAgent - CI/CD automation with rollback"
+      ],
+      "categories": [
+        "Automation",
+        "CI/CD",
+        "Development",
+        "GitHub",
+        "AI"
+      ],
+      "screenshots": [
+        "https://shunsukehayashi.github.io/Miyabi/screenshots/dashboard.png",
+        "https://shunsukehayashi.github.io/Miyabi/screenshots/agents.png",
+        "https://shunsukehayashi.github.io/Miyabi/screenshots/labels.png"
+      ],
+      "documentation": "https://github.com/ShunsukeHayashi/Miyabi/blob/main/README-PLUGIN.md",
+      "changelog": "https://github.com/ShunsukeHayashi/Miyabi/blob/main/CHANGELOG.md",
+      "issues": "https://github.com/ShunsukeHayashi/Miyabi/issues",
+      "stars": 0,
+      "downloads": 0,
+      "verified": true,
+      "featured": true
+    }
+  ]
+}

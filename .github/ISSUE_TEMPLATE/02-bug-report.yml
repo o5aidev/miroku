@@ -1,0 +1,168 @@
+name: 🐛 Bug Report (バグ報告)
+description: バグや不具合を報告
+title: "[Bug] "
+labels: ["📥 state:pending", "🐛 type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🐛 バグ報告
+
+        バグを報告していただきありがとうございます！
+        以下のフォームに記入することで、**IssueAgentが自動的に優先度・深刻度を推定**し、
+        **ReviewAgent**が同様のバグを検索します。
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 🔍 バグの説明
+      description: どのような問題が発生していますか？
+      placeholder: |
+        例: ログインボタンをクリックしても何も起こらない。
+        コンソールに "Cannot read property 'user' of undefined" エラーが表示される。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 🔄 再現手順
+      description: このバグを再現するための手順を教えてください
+      placeholder: |
+        1. https://example.com にアクセス
+        2. メールアドレス test@example.com を入力
+        3. パスワード password123 を入力
+        4. 「ログイン」ボタンをクリック
+        5. エラーが表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ 期待される動作
+      description: 本来はどのように動作すべきですか？
+      placeholder: |
+        例: ログインボタンをクリックすると、ダッシュボードに遷移する。
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ 実際の動作
+      description: 実際にはどのように動作しましたか？
+      placeholder: |
+        例: ボタンをクリックしても何も起こらず、コンソールにエラーが表示される。
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 スクリーンショット・ログ
+      description: エラーメッセージやスクリーンショットがあれば貼り付けてください
+      placeholder: |
+        ```
+        Error: Cannot read property 'user' of undefined
+          at login (/src/auth.ts:42:10)
+        ```
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⚠️ 優先度（推定）
+      description: |
+        **IssueAgentが自動推定しますが、あなたの感覚での優先度を教えてください**
+        - P0-Critical: 本番環境で全ユーザーに影響
+        - P1-High: 主要機能が使えない
+        - P2-Medium: 一部機能に影響
+        - P3-Low: 軽微な不具合
+      options:
+        - "📝 P3-Low (軽微な不具合)"
+        - "📊 P2-Medium (一部機能に影響)"
+        - "⚠️ P1-High (主要機能が使えない)"
+        - "🔥 P0-Critical (本番環境で全ユーザーに影響)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 深刻度（推定）
+      description: |
+        **どの程度の影響がありますか？**
+        - Sev.1-Critical: データ損失、セキュリティ侵害、全システム停止
+        - Sev.2-High: 主要機能停止、パフォーマンス劣化
+        - Sev.3-Medium: 一部機能の不具合
+        - Sev.4-Low: 軽微なUI不具合
+      options:
+        - "📝 Sev.4-Low (軽微なUI不具合)"
+        - "📊 Sev.3-Medium (一部機能の不具合)"
+        - "⚠️ Sev.2-High (主要機能停止)"
+        - "🚨 Sev.1-Critical (データ損失・セキュリティ侵害)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: 🌍 環境
+      description: どの環境で発生しましたか？
+      options:
+        - "本番環境 (Production)"
+        - "ステージング環境 (Staging)"
+        - "開発環境 (Development)"
+        - "ローカル環境 (Local)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: system-info
+    attributes:
+      label: 💻 システム情報
+      description: OS、ブラウザ、バージョンなどを教えてください
+      placeholder: |
+        - OS: macOS 14.0
+        - ブラウザ: Chrome 120.0
+        - Node.js: v20.10.0
+        - パッケージバージョン: miyabi@0.8.2
+
+  - type: checkboxes
+    id: special
+    attributes:
+      label: 🔖 特殊なラベル
+      description: 該当するものがあればチェックしてください
+      options:
+        - label: "🔐 security: セキュリティ脆弱性の可能性がある"
+        - label: "💰 cost-watch: 修正にClaude API使用量が多くなる可能性がある"
+        - label: "🔄 dependencies: 他のバグ修正に依存している"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ## 🤖 次のステップ
+
+        1. **Issueを送信**すると、`📥 state:pending` ラベルが自動付与されます
+        2. **IssueAgent**が以下を自動実行します：
+           - 同様のバグ報告を検索
+           - 優先度・深刻度の自動推定
+           - 関連するPR/Issueのリンク
+        3. **P0-Critical** または **Sev.1-Critical** の場合：
+           - 即座にGuardian/CISOに通知
+           - 24時間以内に対応開始
+        4. **ReviewAgent**が根本原因を分析します
+        5. **CodeGenAgent**が修正コードを生成し、PRを作成します
+
+        ### 🚨 緊急の場合
+
+        Issue作成後、以下のラベルを手動で追加してください：
+        - `🤖 trigger:agent-execute` - 1分以内にAgentが起動します
+        - `🚨 severity:Sev.1-Critical` - Guardian即座に介入
+
+        ### 📚 詳細情報
+
+        - [Label System完全ガイド](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/LABEL_SYSTEM_GUIDE.md)
+        - [Agent SDK統合ガイド](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/AGENT_SDK_LABEL_INTEGRATION.md)

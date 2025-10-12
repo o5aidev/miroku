@@ -326,6 +326,9 @@ async function main() {
   }
 }
 
-if (require.main === module) {
+// ESM module check
+import { fileURLToPath } from 'node:url';
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   main();
 }

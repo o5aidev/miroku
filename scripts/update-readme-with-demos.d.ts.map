@@ -1,0 +1,1 @@
+{"version":3,"file":"update-readme-with-demos.d.ts","sourceRoot":"","sources":["update-readme-with-demos.ts"],"names":[],"mappings":"AAIA;;GAEG;AACH,qBAAa,aAAa;IACxB,OAAO,CAAC,QAAQ,CAAC,UAAU,CAAyC;IACpE,OAAO,CAAC,QAAQ,CAAC,UAAU,CAAY;IAEvC;;OAEG;IACI,YAAY,IAAI,IAAI;IAgB3B;;OAEG;IACH,OAAO,CAAC,iBAAiB;IAkHzB;;OAEG;IACI,kBAAkB,IAAI,MAAM;IAQnC;;OAEG;IACI,oBAAoB,IAAI,IAAI;CAsDpC"}

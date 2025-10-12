@@ -236,6 +236,8 @@ export const agentColors = {
   IssueAgent: theme.colors.success,
   PRAgent: theme.colors.primaryDim,
   DeploymentAgent: theme.colors.warning,
+  SCRIPT: theme.colors.info,
+  REGISTRATION: theme.colors.primaryDim,
   Unknown: theme.colors.muted,
 } as const;
 

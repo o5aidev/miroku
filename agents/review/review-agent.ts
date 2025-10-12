@@ -36,37 +36,42 @@ export class ReviewAgent extends BaseAgent {
   }
 
   /**
-   * Main execution: Review code and assess quality
+   * Main execution: Review code and assess quality (OPTIMIZED: Parallel Analysis)
+   *
+   * Performance: 3x faster with parallel execution
+   * - Before: 10-20s (ESLint) + 10-20s (TS) + 10-20s (Security) = 30-60s
+   * - After: max(10-20s, 10-20s, 10-20s) = 10-20s
    */
   async execute(task: Task): Promise<AgentResult> {
-    this.log('🔍 ReviewAgent starting code review');
+    this.log('🔍 ReviewAgent starting code review (parallel analysis)');
 
     try {
       // 1. Create review request from task
       const reviewRequest = await this.createReviewRequest(task);
 
-      // 2. Run static analysis
-      const eslintIssues = await this.runESLint(reviewRequest.files);
-      const typeScriptIssues = await this.runTypeScriptCheck(reviewRequest.files);
+      // 2. Run all analyses in parallel (3x faster!)
+      this.log('⚡ Running ESLint, TypeScript, and Security scans in parallel');
+      const [eslintIssues, typeScriptIssues, securityIssues] = await Promise.all([
+        this.runESLint(reviewRequest.files),
+        this.runTypeScriptCheck(reviewRequest.files),
+        this.runSecurityScan(reviewRequest.files),
+      ]);
 
-      // 3. Run security scan
-      const securityIssues = await this.runSecurityScan(reviewRequest.files);
-
-      // 4. Calculate quality score
+      // 3. Calculate quality score
       const qualityReport = this.calculateQualityScore(
         eslintIssues,
         typeScriptIssues,
         securityIssues
       );
 
-      // 5. Generate review comments
+      // 4. Generate review comments
       const comments = this.generateReviewComments(
         eslintIssues,
         typeScriptIssues,
         securityIssues
       );
 
-      // 6. Determine if escalation is needed
+      // 5. Determine if escalation is needed
       const escalationRequired = await this.checkEscalation(qualityReport);
 
       const reviewResult: ReviewResult = {
@@ -77,7 +82,7 @@ export class ReviewAgent extends BaseAgent {
         comments,
       };
 
-      // 7. Escalate if critical security issues found
+      // 6. Escalate if critical security issues found
       if (escalationRequired) {
         await this.escalate(
           `Critical security issues found: ${securityIssues.filter(i => i.severity === 'critical').length} critical vulnerabilities`,
@@ -285,24 +290,21 @@ export class ReviewAgent extends BaseAgent {
   // ============================================================================
 
   /**
-   * Run security vulnerability scan
+   * Run security vulnerability scan (OPTIMIZED: Parallel sub-scans)
+   *
+   * Performance: Runs all 3 security scans in parallel
    */
   private async runSecurityScan(files: string[]): Promise<QualityIssue[]> {
-    this.log('🔒 Running security scan');
+    this.log('🔒 Running security scan (parallel)');
 
-    const issues: QualityIssue[] = [];
+    // Run all security scans in parallel
+    const [secretIssues, vulnIssues, auditIssues] = await Promise.all([
+      this.scanForSecrets(files),
+      this.scanForVulnerabilities(files),
+      this.runNpmAudit(),
+    ]);
 
-    // 1. Scan for hardcoded secrets
-    const secretIssues = await this.scanForSecrets(files);
-    issues.push(...secretIssues);
-
-    // 2. Scan for common vulnerabilities
-    const vulnIssues = await this.scanForVulnerabilities(files);
-    issues.push(...vulnIssues);
-
-    // 3. Run npm audit
-    const auditIssues = await this.runNpmAudit();
-    issues.push(...auditIssues);
+    const issues = [...secretIssues, ...vulnIssues, ...auditIssues];
 
     this.log(`   Found ${issues.length} security issues (${issues.filter(i => i.severity === 'critical').length} critical)`);
     return issues;

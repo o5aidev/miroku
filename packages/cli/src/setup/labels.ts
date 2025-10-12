@@ -63,6 +63,7 @@ export async function setupLabels(
           description: label.description,
         });
         updated++;
+        console.log(`  ✓ ${label.name} (updated)`);
       } else {
         // Create new label
         await octokit.issues.createLabel({
@@ -73,10 +74,31 @@ export async function setupLabels(
           description: label.description,
         });
         created++;
+        console.log(`  ✓ ${label.name}`);
       }
-    } catch (error) {
-      // Label might already exist, skip
-      continue;
+    } catch (error: any) {
+      // Handle specific errors
+      if (error.status === 422) {
+        // Label already exists (race condition)
+        console.log(`  - ${label.name} (already exists)`);
+      } else if (error.status === 403) {
+        // Permission denied
+        console.error(`  ✗ ${label.name} (permission denied)`);
+        throw new Error(
+          `Failed to create label "${label.name}": Permission denied. ` +
+          'Please ensure your GitHub token has "repo" and "admin:org" scopes.'
+        );
+      } else if (error.status === 404) {
+        // Repository not found
+        throw new Error(
+          `Repository "${owner}/${repo}" not found. ` +
+          'Please check the repository name and ensure your token has access.'
+        );
+      } else {
+        // Unknown error
+        console.error(`  ✗ ${label.name} (${error.message})`);
+        throw error;
+      }
     }
   }
 

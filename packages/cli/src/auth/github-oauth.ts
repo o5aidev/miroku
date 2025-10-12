@@ -96,10 +96,9 @@ export async function githubOAuth(): Promise<string> {
   // Verify token has required scopes
   await verifyRequiredScopes(token);
 
-  // Save to .env
-  await saveTokenToEnv(token);
-
-  console.log(chalk.green.bold('\n✅ 認証に成功しました！\n'));
+  // Note: Token is NOT saved here anymore
+  // The caller (auth.ts) will save it to ~/.miyabi/credentials.json
+  // For backward compatibility, .env saving is still supported via saveTokenToEnv() if needed
 
   return token;
 }
@@ -272,8 +271,11 @@ function loadTokenFromEnv(): string | null {
 /**
  * Save token to .env file
  * Uses atomic write operation to avoid TOCTOU race condition
+ *
+ * @deprecated Use credentials.ts instead for OAuth-based authentication
+ * This function is kept for backward compatibility with existing code
  */
-async function saveTokenToEnv(token: string): Promise<void> {
+export async function saveTokenToEnv(token: string): Promise<void> {
   // Validate token format before writing (防御的プログラミング)
   if (!token || typeof token !== 'string' || !token.startsWith('gho_') && !token.startsWith('ghp_')) {
     throw new Error('Invalid GitHub token format');

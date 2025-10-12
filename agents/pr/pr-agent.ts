@@ -24,6 +24,7 @@ import {
 import { Octokit } from '@octokit/rest';
 import { withRetry } from '../../utils/retry.js';
 import { GitRepository } from '../utils/git-repository.js';
+import { getGitHubClient } from '../../utils/api-client.js';
 
 export class PRAgent extends BaseAgent {
   private octokit: Octokit;
@@ -37,9 +38,8 @@ export class PRAgent extends BaseAgent {
       throw new Error('GITHUB_TOKEN is required for PRAgent');
     }
 
-    this.octokit = new Octokit({
-      auth: config.githubToken,
-    });
+    // Use singleton GitHub client with connection pooling
+    this.octokit = getGitHubClient(config.githubToken);
 
     this.initializeRepository();
   }
@@ -390,7 +390,7 @@ export class PRAgent extends BaseAgent {
         'github_api_create_pr',
         'passed',
         `Created PR #${response.data.number}`,
-        JSON.stringify(response.data).substring(0, 500)
+        this.safeTruncate(JSON.stringify(response.data), 500)
       );
 
       return {

@@ -1,0 +1,19 @@
+{
+  "agentType": "Agent3",
+  "taskId": "task-3",
+  "startTime": 1760181610222,
+  "endTime": 1760181610222,
+  "totalDurationMs": 0,
+  "toolInvocations": [
+    {
+      "toolName": "tool1",
+      "agentType": "Agent3",
+      "startTime": 1760181610122,
+      "endTime": 1760181610222,
+      "durationMs": 100,
+      "success": true
+    }
+  ],
+  "bottlenecks": [],
+  "memoryUsageMb": 7.940711975097656
+}

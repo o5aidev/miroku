@@ -403,7 +403,8 @@ export function registerAutoModeCommand(program: Command): void {
     .option('--scan-todos', 'TODOコメント監視を有効化')
     .option('--dry-run', '実行シミュレーション')
     .option('-v, --verbose', '詳細ログ出力')
-    .action(async (options: AutoModeOptions) => {
+    .option('--json', 'JSON形式で出力')
+    .action(async (options: AutoModeOptions & { json?: boolean }) => {
       await runAutoMode({
         interval: parseInt(options.interval as unknown as string),
         maxDuration: parseInt(options.maxDuration as unknown as string),

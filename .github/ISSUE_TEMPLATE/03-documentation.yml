@@ -1,0 +1,104 @@
+name: 📚 Documentation (ドキュメント改善)
+description: ドキュメントの追加・修正・改善
+title: "[Docs] "
+labels: ["📥 state:pending", "📚 type:docs", "📝 priority:P3-Low"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📚 ドキュメント改善
+
+        ドキュメントの改善提案ありがとうございます！
+        Miyabiでは、**DocGeneratorAgent**が自動的にドキュメントを生成・更新します。
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: 📝 ドキュメントの種類
+      description: どの種類のドキュメントですか？
+      options:
+        - "README - プロジェクト概要"
+        - "API仕様書 - API reference"
+        - "使い方ガイド - How-to guide"
+        - "チュートリアル - Tutorial"
+        - "アーキテクチャ設計書 - Architecture docs"
+        - "コメント - Code comments"
+        - "その他"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: 📄 現在のドキュメント
+      description: 改善したいドキュメントの場所や内容を教えてください
+      placeholder: |
+        例: README.mdの「インストール」セクション
+        現在: npm install miyabi としか書かれていない
+
+  - type: textarea
+    id: improvement
+    attributes:
+      label: ✨ 改善提案
+      description: どのように改善すべきですか？
+      placeholder: |
+        例: インストール方法をより詳しく記載してほしい
+        - npm, yarn, pnpm それぞれの方法
+        - グローバルインストールとローカルインストールの違い
+        - トラブルシューティング
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: 💡 具体例
+      description: 具体的なドキュメント例があれば記載してください
+      placeholder: |
+        ## インストール
+
+        ### パッケージマネージャーで
+        ```bash
+        # npm
+        npm install -g miyabi
+
+        # yarn
+        yarn global add miyabi
+
+        # pnpm
+        pnpm add -g miyabi
+        ```
+
+  - type: checkboxes
+    id: special
+    attributes:
+      label: 🔖 特殊なラベル
+      description: 該当するものがあればチェックしてください
+      options:
+        - label: "👋 good-first-issue: 初心者向けタスク（誤字修正など）"
+        - label: "🎓 learning: 新しい技術の調査が必要"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ## 🤖 次のステップ
+
+        1. **Issueを送信**すると、`📥 state:pending` + `📚 type:docs` ラベルが自動付与されます
+        2. **IssueAgent**がドキュメントの場所を特定します
+        3. **DocGeneratorAgent**が以下を自動実行します：
+           - 既存ドキュメントの分析
+           - 改善案の生成
+           - PRの作成
+        4. **ReviewAgent**が読みやすさ・正確性をチェックします
+
+        ### 🚀 即座に実行したい場合
+
+        Issue作成後、以下のラベルを手動で追加してください：
+        - `🤖 trigger:agent-execute` - DocGeneratorAgentが即座に起動します
+
+        ### 📚 詳細情報
+
+        - [Label System完全ガイド](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/LABEL_SYSTEM_GUIDE.md)
+        - [Agent Operations Manual](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/AGENT_OPERATIONS_MANUAL.md)

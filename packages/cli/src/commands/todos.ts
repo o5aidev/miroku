@@ -307,7 +307,8 @@ export function registerTodosCommand(program: Command): void {
     .option('--auto-execute', 'Agent自動実行')
     .option('--dry-run', '実行シミュレーション')
     .option('-v, --verbose', '詳細ログ出力')
-    .action(async (options: TodosAutoOptions) => {
+    .option('--json', 'JSON形式で出力')
+    .action(async (options: TodosAutoOptions & { json?: boolean }) => {
       await runTodosAutoMode(options);
     });
 }

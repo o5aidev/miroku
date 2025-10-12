@@ -1,0 +1,69 @@
+{
+  "$schema": "https://claude.ai/schemas/plugin/project/v1",
+  "name": "Miyabi",
+  "version": "1.0.0",
+  "description": "Beauty in Autonomous Development - 一つのコマンドで全てが完結する自律型開発フレームワーク",
+  "type": "typescript-node",
+  "framework": "custom",
+  "language": "typescript",
+  "packageManager": "npm",
+  "rootPath": ".",
+  "srcPath": "src",
+  "testPath": "tests",
+  "buildPath": "dist",
+  "configFiles": [
+    "package.json",
+    "tsconfig.json",
+    "eslint.config.js",
+    ".gitignore"
+  ],
+  "entryPoints": [
+    "src/index.ts",
+    "src/cli.ts"
+  ],
+  "mainDependencies": [
+    "@anthropic-ai/sdk",
+    "commander",
+    "chalk",
+    "fs-extra",
+    "glob",
+    "inquirer"
+  ],
+  "devDependencies": [
+    "typescript",
+    "@types/node",
+    "eslint",
+    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint/parser",
+    "prettier"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "architecture": {
+    "pattern": "agent-based",
+    "baseClass": "BaseAgent",
+    "core": {
+      "agents": "src/agents/",
+      "types": "src/types/",
+      "ui": "src/ui/",
+      "utils": "src/utils/"
+    }
+  },
+  "features": [
+    "autonomous-development",
+    "ai-agents",
+    "code-generation",
+    "project-scaffolding",
+    "type-safety"
+  ],
+  "conventions": {
+    "naming": "camelCase",
+    "fileExtension": ".ts",
+    "strictMode": true,
+    "imports": "esm"
+  }
+}

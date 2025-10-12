@@ -1,0 +1,204 @@
+{
+  "name": "Miyabi Plugin Marketplace",
+  "version": "1.0.0",
+  "description": "Official Claude Code plugin marketplace for autonomous development operations",
+  "businessModel": {
+    "type": "freemium-with-premium-plugins",
+    "revenue": {
+      "marketplace_commission": 20,
+      "description": "20% commission on all paid plugin sales"
+    }
+  },
+  "plugins": [
+    {
+      "name": "miyabi-operations-free",
+      "displayName": "Miyabi Operations - Free",
+      "source": "ShunsukeHayashi/Miyabi",
+      "version": "1.0.0",
+      "tier": "free",
+      "price": 0,
+      "description": "Free tier with basic autonomous operations (100 Issues/month)",
+      "author": {
+        "name": "Shunsuke Hayashi",
+        "email": "supernovasyun@gmail.com",
+        "verified": true
+      },
+      "license": "MIT",
+      "features": [
+        "3 slash commands (/verify, /agent-run, /deploy)",
+        "3 autonomous agents (Coordinator, CodeGen, Review)",
+        "Monthly limit: 100 Issues",
+        "Parallel execution: 1 concurrent task",
+        "Community support (GitHub Discussions)"
+      ],
+      "limitations": {
+        "monthly_issues": 100,
+        "concurrency": 1,
+        "claude_api_tokens": 10000,
+        "support": "community"
+      },
+      "categories": ["Free", "Automation", "GitHub"],
+      "downloads": 0,
+      "rating": 0,
+      "verified": true,
+      "featured": true
+    },
+    {
+      "name": "miyabi-operations-pro",
+      "displayName": "Miyabi Operations - Pro",
+      "source": "ShunsukeHayashi/Miyabi",
+      "version": "1.0.0",
+      "tier": "pro",
+      "price": 29,
+      "currency": "USD",
+      "billingPeriod": "monthly",
+      "description": "Professional tier with unlimited Issues and priority support",
+      "author": {
+        "name": "Shunsuke Hayashi",
+        "email": "supernovasyun@gmail.com",
+        "verified": true
+      },
+      "license": "Proprietary",
+      "features": [
+        "8 slash commands (all features)",
+        "6 autonomous agents (full suite)",
+        "Unlimited Issues per month",
+        "Parallel execution: 3 concurrent tasks",
+        "Priority support (Email, 24h response)",
+        "Private repository support",
+        "Custom workflows (5 max)",
+        "Advanced analytics dashboard"
+      ],
+      "limitations": {
+        "monthly_issues": -1,
+        "concurrency": 3,
+        "claude_api_tokens": 100000,
+        "support": "priority"
+      },
+      "categories": ["Premium", "Automation", "GitHub", "Enterprise"],
+      "downloads": 0,
+      "rating": 0,
+      "verified": true,
+      "featured": true,
+      "trialPeriod": 14
+    },
+    {
+      "name": "miyabi-operations-enterprise",
+      "displayName": "Miyabi Operations - Enterprise",
+      "source": "ShunsukeHayashi/Miyabi",
+      "version": "1.0.0",
+      "tier": "enterprise",
+      "price": 5000,
+      "currency": "USD",
+      "billingPeriod": "monthly",
+      "description": "Enterprise tier with on-premise deployment and dedicated support",
+      "author": {
+        "name": "Shunsuke Hayashi",
+        "email": "supernovasyun@gmail.com",
+        "verified": true
+      },
+      "license": "Proprietary",
+      "features": [
+        "All Pro features",
+        "Unlimited users",
+        "Unlimited concurrent execution",
+        "On-premise / Private Cloud deployment",
+        "Custom agent development",
+        "Dedicated support team (1h response)",
+        "SLA: 99.9% uptime",
+        "SSO/SAML authentication",
+        "Audit logs (unlimited retention)",
+        "Training & workshops (4x/year)"
+      ],
+      "limitations": {
+        "monthly_issues": -1,
+        "concurrency": -1,
+        "claude_api_tokens": -1,
+        "support": "dedicated"
+      },
+      "categories": ["Enterprise", "Automation", "GitHub", "On-Premise"],
+      "downloads": 0,
+      "rating": 0,
+      "verified": true,
+      "featured": true,
+      "contactForPricing": true
+    },
+    {
+      "name": "miyabi-security-scanner",
+      "displayName": "Miyabi Security Scanner",
+      "source": "ShunsukeHayashi/miyabi-security",
+      "version": "1.0.0",
+      "tier": "addon",
+      "price": 49,
+      "currency": "USD",
+      "billingPeriod": "monthly",
+      "description": "Advanced security vulnerability scanning with SAST/DAST",
+      "author": {
+        "name": "Shunsuke Hayashi",
+        "email": "supernovasyun@gmail.com",
+        "verified": true
+      },
+      "license": "Proprietary",
+      "features": [
+        "SAST (Static Application Security Testing)",
+        "DAST (Dynamic Application Security Testing)",
+        "Dependency vulnerability scanning",
+        "Secret detection",
+        "Compliance reports (SOC2, GDPR)",
+        "Security score dashboard",
+        "Automatic CVE monitoring"
+      ],
+      "categories": ["Security", "Add-on", "Premium"],
+      "requiresPlugin": "miyabi-operations-pro",
+      "downloads": 0,
+      "rating": 0,
+      "verified": true
+    },
+    {
+      "name": "miyabi-workflow-templates",
+      "displayName": "Miyabi Workflow Templates Pack",
+      "source": "ShunsukeHayashi/miyabi-workflows",
+      "version": "1.0.0",
+      "tier": "addon",
+      "price": 19,
+      "currency": "USD",
+      "billingPeriod": "one-time",
+      "description": "Pre-built workflow templates for common use cases (SaaS, E-commerce, Fintech)",
+      "author": {
+        "name": "Shunsuke Hayashi",
+        "email": "supernovasyun@gmail.com",
+        "verified": true
+      },
+      "license": "Proprietary",
+      "features": [
+        "50+ pre-built workflow templates",
+        "Industry-specific templates (SaaS, E-commerce, Fintech)",
+        "Best practices embedded",
+        "Customizable templates",
+        "Regular updates"
+      ],
+      "categories": ["Templates", "Add-on", "Premium"],
+      "requiresPlugin": "miyabi-operations-pro",
+      "downloads": 0,
+      "rating": 0,
+      "verified": true
+    }
+  ],
+  "thirdPartyPlugins": {
+    "enabled": true,
+    "commission": 20,
+    "requirements": {
+      "minimumQualityScore": 80,
+      "documentation": "required",
+      "tests": "required",
+      "license": ["MIT", "Apache-2.0", "Proprietary"],
+      "verificationProcess": "manual-review"
+    }
+  },
+  "marketplace": {
+    "url": "https://marketplace.miyabi.dev",
+    "api": "https://api.miyabi.dev/v1/marketplace",
+    "documentation": "https://docs.miyabi.dev/marketplace",
+    "submitPlugin": "https://marketplace.miyabi.dev/submit"
+  }
+}

@@ -471,7 +471,9 @@ export class CoordinatorAgent extends BaseAgent {
   }
 
   /**
-   * Execute all tasks in a level in parallel
+   * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution)
+   *
+   * Performance: Now calls actual specialist agents instead of simulation
    */
   private async executeLevelParallel(
     taskIds: string[],
@@ -482,31 +484,78 @@ export class CoordinatorAgent extends BaseAgent {
       .map((id) => allTasks.find((t) => t.id === id))
       .filter((t): t is Task => t !== undefined);
 
-    // For now, simulate execution (TODO: integrate with actual agents)
+    // Execute real agents in parallel
     const results = await Promise.all(
       tasks.map(async (task) => {
         const startTime = Date.now();
         this.log(`   🏃 Executing: ${task.id} (${task.assignedAgent})`);
 
-        // Simulate execution
-        await this.sleep(Math.random() * 1000 + 500);
+        try {
+          // Instantiate and execute the appropriate specialist agent
+          const agent = await this.createSpecialistAgent(task.assignedAgent);
+          const result = await agent.execute(task);
+          const durationMs = Date.now() - startTime;
 
-        const durationMs = Date.now() - startTime;
+          return {
+            taskId: task.id,
+            status: result.status === 'success' ? ('completed' as AgentStatus) : ('failed' as AgentStatus),
+            agentType: task.assignedAgent,
+            durationMs,
+            result,
+          };
+        } catch (error) {
+          const durationMs = Date.now() - startTime;
+          this.log(`   ❌ Task ${task.id} failed: ${(error as Error).message}`);
 
-        return {
-          taskId: task.id,
-          status: 'completed' as AgentStatus,
-          agentType: task.assignedAgent,
-          durationMs,
-          result: {
-            status: 'success' as const,
-            data: { simulated: true },
-          },
-        };
+          return {
+            taskId: task.id,
+            status: 'failed' as AgentStatus,
+            agentType: task.assignedAgent,
+            durationMs,
+            result: {
+              status: 'failed' as const,
+              error: (error as Error).message,
+            },
+          };
+        }
       })
     );
 
     return results;
+  }
+
+  /**
+   * Create a specialist agent instance based on agent type
+   */
+  private async createSpecialistAgent(agentType: AgentType): Promise<BaseAgent> {
+    // Dynamically import agents to avoid circular dependencies
+    switch (agentType) {
+      case 'CodeGenAgent': {
+        const { CodeGenAgent } = await import('../codegen/codegen-agent.js');
+        return new CodeGenAgent(this.config);
+      }
+      case 'DeploymentAgent': {
+        const { DeploymentAgent } = await import('../deployment/deployment-agent.js');
+        return new DeploymentAgent(this.config);
+      }
+      case 'ReviewAgent': {
+        const { ReviewAgent } = await import('../review/review-agent.js');
+        return new ReviewAgent(this.config);
+      }
+      case 'IssueAgent': {
+        const { IssueAgent } = await import('../issue/issue-agent.js');
+        return new IssueAgent(this.config);
+      }
+      case 'PRAgent': {
+        const { PRAgent } = await import('../pr/pr-agent.js');
+        return new PRAgent(this.config);
+      }
+      default: {
+        // Default to CodeGenAgent for unknown types
+        const { CodeGenAgent } = await import('../codegen/codegen-agent.js');
+        return new CodeGenAgent(this.config);
+      }
+    }
   }
 
   /**

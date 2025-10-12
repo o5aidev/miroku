@@ -1,0 +1,27 @@
+{
+  "agentType": "SlowAgent",
+  "taskId": "slow-task",
+  "startTime": 1760181389781,
+  "endTime": 1760181390882,
+  "totalDurationMs": 1101,
+  "toolInvocations": [
+    {
+      "toolName": "slow_api_call",
+      "agentType": "SlowAgent",
+      "startTime": 1760181389781,
+      "endTime": 1760181390881,
+      "durationMs": 1100,
+      "success": true
+    }
+  ],
+  "bottlenecks": [
+    {
+      "type": "api_call",
+      "description": "Slow tool invocation: slow_api_call took 1100ms",
+      "durationMs": 1100,
+      "impact": "low",
+      "suggestion": "Investigate tool execution time and consider optimization"
+    }
+  ],
+  "memoryUsageMb": 8.11859130859375
+}

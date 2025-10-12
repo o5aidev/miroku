@@ -1,7 +1,7 @@
 {
   "name": "miyabi",
-  "version": "0.8.1",
-  "description": "Miyabi - Beauty in Autonomous Development. Complete autonomous AI development platform with GitHub OS integration.",
+  "version": "0.13.0",
+  "description": "Miyabi - Beauty in Autonomous Development. Complete autonomous AI development platform with GitHub OS integration. Optimized for AI coding agents (Claude Code).",
   "type": "module",
   "bin": {
     "miyabi": "./dist/index.js"
@@ -11,18 +11,19 @@
   "files": [
     "dist",
     "templates",
-    "scripts",
+    "scripts/postinstall.js",
     ".claude",
     "CLAUDE.md",
+    "AI_AGENT_USAGE.md",
     "README.md",
     "SETUP_GUIDE.md",
     "FOR_NON_PROGRAMMERS.md",
     "INSTALL_TO_EXISTING_PROJECT.md"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/index.js",
     "dev": "tsx src/index.ts",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -58,7 +59,8 @@
     "ora": "^8.0.1",
     "open": "^10.0.3",
     "dotenv": "^16.3.1",
-    "yaml": "^2.3.4"
+    "yaml": "^2.3.4",
+    "miyabi-agent-sdk": "^0.1.0-alpha.2"
   },
   "devDependencies": {
     "@types/inquirer": "^9.0.7",

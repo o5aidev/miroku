@@ -1,0 +1,19 @@
+{
+  "agentType": "TestAgent",
+  "taskId": "benchmark-1",
+  "startTime": 1760181610210,
+  "endTime": 1760181610221,
+  "totalDurationMs": 11,
+  "toolInvocations": [
+    {
+      "toolName": "test_tool",
+      "agentType": "TestAgent",
+      "startTime": 1760181610216,
+      "endTime": 1760181610221,
+      "durationMs": 5,
+      "success": true
+    }
+  ],
+  "bottlenecks": [],
+  "memoryUsageMb": 7.8983612060546875
+}

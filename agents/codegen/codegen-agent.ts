@@ -8,7 +8,7 @@
  * - Ensure TypeScript type safety
  * - Follow existing code patterns
  *
- * Uses Anthropic Claude API for code generation
+ * Uses Claude Code integration via Worktree execution
  */
 
 import { BaseAgent } from '../base-agent.js';
@@ -20,23 +20,12 @@ import {
   GeneratedCode,
   AgentMetrics,
 } from '../types/index.js';
-import Anthropic from '@anthropic-ai/sdk';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export class CodeGenAgent extends BaseAgent {
-  private anthropic: Anthropic;
-
   constructor(config: AgentConfig) {
     super('CodeGenAgent', config);
-
-    if (!config.anthropicApiKey) {
-      throw new Error('ANTHROPIC_API_KEY is required for CodeGenAgent');
-    }
-
-    this.anthropic = new Anthropic({
-      apiKey: config.anthropicApiKey,
-    });
   }
 
   /**
@@ -239,7 +228,7 @@ export class CodeGenAgent extends BaseAgent {
     // Get README content
     try {
       const readme = await fs.promises.readFile('README.md', 'utf-8');
-      context.push('# Project Overview\n' + readme.substring(0, 2000));
+      context.push('# Project Overview\n' + this.safeTruncate(readme, 2000));
     } catch (error) {
       // No README
     }
@@ -247,7 +236,7 @@ export class CodeGenAgent extends BaseAgent {
     // Get sample code from agents/
     try {
       const baseAgent = await fs.promises.readFile('agents/base-agent.ts', 'utf-8');
-      context.push('# BaseAgent Pattern\n```typescript\n' + baseAgent.substring(0, 1000) + '\n```');
+      context.push('# BaseAgent Pattern\n```typescript\n' + this.safeTruncate(baseAgent, 1000) + '\n```');
     } catch (error) {
       // No base agent
     }
@@ -260,55 +249,31 @@ export class CodeGenAgent extends BaseAgent {
   // ============================================================================
 
   /**
-   * Generate code using Claude API
+   * Generate code using Claude Code integration
+   *
+   * NOTE: This method requires Claude Code worktree execution.
+   * Direct Anthropic API calls have been replaced with worktree-based execution.
    */
   private async generateCode(spec: CodeSpec, context: string): Promise<GeneratedCode> {
-    this.log('🧠 Generating code with Claude AI');
+    this.log('🧠 Code generation via Claude Code worktree (stub)');
 
     const prompt = this.buildCodeGenerationPrompt(spec, context);
 
-    try {
-      const response = await this.retry(async () => {
-        return await this.anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 8000,
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-        });
-      }, 3, 2000);
+    // Log the prompt for manual or worktree-based processing
+    await this.logToolInvocation(
+      'claude_code_generation_prompt',
+      'passed',
+      'Generated prompt for Claude Code',
+      this.safeTruncate(prompt, 500)
+    );
 
-      const generatedText = response.content[0].type === 'text' ? response.content[0].text : '';
-
-      // Parse generated code
-      const files = this.parseGeneratedCode(generatedText);
-
-      await this.logToolInvocation(
-        'claude_code_generation',
-        'passed',
-        `Generated ${files.length} files`,
-        generatedText.substring(0, 500)
-      );
-
-      return {
-        files,
-        tests: [],
-        documentation: '',
-        summary: `Generated ${files.length} files for: ${spec.feature}`,
-      };
-    } catch (error) {
-      await this.logToolInvocation(
-        'claude_code_generation',
-        'failed',
-        'Code generation failed',
-        undefined,
-        (error as Error).message
-      );
-      throw error;
-    }
+    // Return stub response - actual generation happens in worktree
+    return {
+      files: [],
+      tests: [],
+      documentation: '',
+      summary: `Code generation prepared for: ${spec.feature}. Execute in worktree with Claude Code.`,
+    };
   }
 
   /**
@@ -353,98 +318,25 @@ For each file, use this format:
 Generate the code now:`;
   }
 
-  /**
-   * Parse generated code into file structures
-   */
-  private parseGeneratedCode(text: string): Array<{ path: string; content: string; type: 'new' | 'modified' }> {
-    const files: Array<{ path: string; content: string; type: 'new' | 'modified' }> = [];
-
-    // Match code blocks with FILE: comments
-    const filePattern = /```(?:typescript|ts)\s*\n\/\/\s*FILE:\s*([^\n]+)\n([\s\S]*?)```/g;
-    let match;
-
-    while ((match = filePattern.exec(text)) !== null) {
-      const filePath = match[1].trim();
-      const content = match[2].trim();
-
-      files.push({
-        path: filePath,
-        content: content,
-        type: 'new',
-      });
-    }
-
-    // If no files found with FILE: pattern, try to extract any code blocks
-    if (files.length === 0) {
-      const codeBlockPattern = /```(?:typescript|ts)\s*\n([\s\S]*?)```/g;
-      let blockMatch;
-      let index = 0;
-
-      while ((blockMatch = codeBlockPattern.exec(text)) !== null) {
-        files.push({
-          path: `generated/code-${index}.ts`,
-          content: blockMatch[1].trim(),
-          type: 'new',
-        });
-        index++;
-      }
-    }
-
-    return files;
-  }
 
   // ============================================================================
   // Test Generation
   // ============================================================================
 
   /**
-   * Generate unit tests for generated code
+   * Generate unit tests (stub - requires Claude Code worktree execution)
    */
   private async generateTests(generatedCode: GeneratedCode, _spec: CodeSpec): Promise<Array<{ path: string; content: string }>> {
-    this.log('🧪 Generating unit tests');
+    this.log('🧪 Test generation prepared for worktree execution');
 
-    const tests: Array<{ path: string; content: string }> = [];
+    // Log that tests need to be generated in worktree
+    await this.logToolInvocation(
+      'test_generation_stub',
+      'passed',
+      `Prepared test generation for ${generatedCode.files.length} files`
+    );
 
-    for (const file of generatedCode.files) {
-      const testPrompt = `Generate comprehensive unit tests for the following TypeScript code:
-
-\`\`\`typescript
-${file.content}
-\`\`\`
-
-Requirements:
-1. Use Vitest as the testing framework
-2. Test all public methods
-3. Include edge cases
-4. Mock external dependencies
-5. Aim for >80% coverage
-
-Generate the test file:`;
-
-      try {
-        const response = await this.anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 4000,
-          messages: [{ role: 'user', content: testPrompt }],
-        });
-
-        const testContent = response.content[0].type === 'text' ? response.content[0].text : '';
-        const testPath = file.path.replace(/\.ts$/, '.test.ts');
-
-        // Extract code from response
-        const codeMatch = testContent.match(/```(?:typescript|ts)\s*\n([\s\S]*?)```/);
-        if (codeMatch) {
-          tests.push({
-            path: testPath,
-            content: codeMatch[1].trim(),
-          });
-        }
-      } catch (error) {
-        this.log(`⚠️  Failed to generate tests for ${file.path}: ${(error as Error).message}`);
-      }
-    }
-
-    return tests;
+    return [];
   }
 
   // ============================================================================
@@ -452,43 +344,19 @@ Generate the test file:`;
   // ============================================================================
 
   /**
-   * Generate documentation for generated code
+   * Generate documentation (stub - requires Claude Code worktree execution)
    */
-  private async generateDocumentation(generatedCode: GeneratedCode, spec: CodeSpec): Promise<string> {
-    this.log('📚 Generating documentation');
+  private async generateDocumentation(_generatedCode: GeneratedCode, spec: CodeSpec): Promise<string> {
+    this.log('📚 Documentation generation prepared for worktree execution');
 
-    const docPrompt = `Generate comprehensive documentation for the following code:
+    // Log that documentation needs to be generated in worktree
+    await this.logToolInvocation(
+      'doc_generation_stub',
+      'passed',
+      `Prepared documentation generation for: ${spec.feature}`
+    );
 
-## Feature
-${spec.feature}
-
-## Generated Files
-${generatedCode.files.map(f => `- ${f.path}`).join('\n')}
-
-## Code Summary
-${generatedCode.summary}
-
-Create a README-style documentation with:
-1. Overview
-2. Usage examples
-3. API reference
-4. Configuration
-5. Testing instructions
-
-Generate the documentation:`;
-
-    try {
-      const response = await this.anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: docPrompt }],
-      });
-
-      return response.content[0].type === 'text' ? response.content[0].text : '';
-    } catch (error) {
-      this.log(`⚠️  Failed to generate documentation: ${(error as Error).message}`);
-      return '# Documentation\n\n(Documentation generation failed)';
-    }
+    return `# ${spec.feature}\n\n(Documentation will be generated in Claude Code worktree)`;
   }
 
   // ============================================================================

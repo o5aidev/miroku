@@ -10,6 +10,7 @@ export interface ConfigOptions {
   init?: boolean;
   show?: boolean;
   reset?: boolean;
+  json?: boolean;
 }
 
 export async function config(options: ConfigOptions = {}) {

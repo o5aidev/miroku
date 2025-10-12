@@ -14,6 +14,7 @@ import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getGitHubTokenSync } from './github-token-helper.js';
+import { getGitHubClient, withGitHubCache } from '../utils/api-client.js';
 
 // ============================================================================
 // CLI Arguments
@@ -85,12 +86,15 @@ Examples:
 
 Environment Variables:
   GITHUB_TOKEN              GitHub personal access token (required)
-  ANTHROPIC_API_KEY         Anthropic API key for code generation (required)
   DEVICE_IDENTIFIER         Device name for logs (default: hostname)
   REPOSITORY                GitHub repository (owner/repo)
 
 GitHub Actions:
   ISSUE_NUMBER              Issue number to process (set by workflow)
+
+Execution Mode:
+  This executor uses Git Worktree for parallel execution.
+  Each issue is processed in a separate worktree with Claude Code integration.
   `);
 }
 
@@ -121,21 +125,12 @@ function loadConfig(): AgentConfig {
     process.exit(1);
   }
 
-  const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-
-  if (!anthropicApiKey) {
-    console.error('❌ Error: Missing required environment variable');
-    console.error('   ANTHROPIC_API_KEY: ❌');
-    console.error('\nPlease set ANTHROPIC_API_KEY environment variable or create a .env file.');
-    process.exit(1);
-  }
-
   return {
     deviceIdentifier: process.env.DEVICE_IDENTIFIER || require('os').hostname(),
     githubToken,
-    anthropicApiKey,
     useTaskTool: false,
-    useWorktree: false,
+    useWorktree: true, // Enable Worktree-based parallel execution
+    worktreeBasePath: '.worktrees',
     logDirectory: '.ai/logs',
     reportDirectory: '.ai/parallel-reports',
     techLeadGithubUsername: process.env.TECH_LEAD_GITHUB,
@@ -150,10 +145,15 @@ function loadConfig(): AgentConfig {
 
 async function fetchIssue(octokit: Octokit, owner: string, repo: string, issueNumber: number): Promise<Issue | null> {
   try {
-    const { data } = await octokit.issues.get({
-      owner,
-      repo,
-      issue_number: issueNumber,
+    // Use LRU cache to avoid repeated API calls
+    const cacheKey = `issue:${owner}/${repo}/${issueNumber}`;
+
+    const { data } = await withGitHubCache(cacheKey, async () => {
+      return await octokit.issues.get({
+        owner,
+        repo,
+        issue_number: issueNumber,
+      });
     });
 
     return {
@@ -203,14 +203,23 @@ function parseRepository(): { owner: string; repo: string } {
 // Main Execution
 // ============================================================================
 
+interface ExecutionResult {
+  issueNumber: number;
+  status: 'success' | 'failed';
+  duration?: number;
+  error?: string;
+}
+
 async function executeIssue(
   agent: CoordinatorAgent,
   issue: Issue,
   dryRun: boolean
-): Promise<void> {
+): Promise<ExecutionResult> {
   console.log(`\n${'='.repeat(80)}`);
   console.log(`🚀 Executing Issue #${issue.number}: ${issue.title}`);
   console.log(`${'='.repeat(80)}\n`);
+
+  const startTime = Date.now();
 
   // Create a task for the CoordinatorAgent
   const task: Task = {
@@ -234,17 +243,82 @@ async function executeIssue(
 
   try {
     const result = await agent.execute(task);
+    const duration = Date.now() - startTime;
 
     if (result.status === 'success') {
       console.log(`\n✅ Issue #${issue.number} completed successfully`);
-      console.log(`   Duration: ${result.metrics?.durationMs}ms`);
+      console.log(`   Duration: ${duration}ms`);
+      return { issueNumber: issue.number, status: 'success', duration };
     } else {
       console.error(`\n❌ Issue #${issue.number} failed:`, result.error);
+      return { issueNumber: issue.number, status: 'failed', error: result.error };
     }
   } catch (error) {
-    console.error(`\n❌ Issue #${issue.number} execution error:`, (error as Error).message);
-    throw error;
+    const duration = Date.now() - startTime;
+    const errorMsg = (error as Error).message;
+    console.error(`\n❌ Issue #${issue.number} execution error:`, errorMsg);
+    return { issueNumber: issue.number, status: 'failed', duration, error: errorMsg };
   }
+}
+
+/**
+ * Execute issues incrementally - yields results as they complete
+ * Allows for immediate processing of completed tasks
+ */
+async function* executeIssuesIncrementally(
+  agent: CoordinatorAgent,
+  issues: Issue[],
+  concurrency: number,
+  dryRun: boolean
+): AsyncGenerator<ExecutionResult, void, unknown> {
+  const executing = new Map<Promise<ExecutionResult>, Issue>();
+
+  for (const issue of issues) {
+    const promise = executeIssue(agent, issue, dryRun);
+    executing.set(promise, issue);
+
+    // Wait if we've reached concurrency limit
+    if (executing.size >= concurrency) {
+      // Wait for the first promise to complete
+      const result = await Promise.race(executing.keys());
+      executing.delete(Promise.resolve(result));
+      yield result; // Yield completed result immediately
+    }
+  }
+
+  // Yield all remaining results as they complete
+  while (executing.size > 0) {
+    const result = await Promise.race(executing.keys());
+    executing.delete(Promise.resolve(result));
+    yield result;
+  }
+}
+
+/**
+ * Execute issues in parallel with concurrency control (backwards compatible)
+ * Uses incremental processing under the hood
+ */
+async function executeIssuesInParallel(
+  agent: CoordinatorAgent,
+  issues: Issue[],
+  concurrency: number,
+  dryRun: boolean
+): Promise<ExecutionResult[]> {
+  const results: ExecutionResult[] = [];
+
+  // Use incremental processing and collect all results
+  for await (const result of executeIssuesIncrementally(agent, issues, concurrency, dryRun)) {
+    results.push(result);
+
+    // Log completion in real-time
+    if (result.status === 'success') {
+      console.log(`✅ Completed #${result.issueNumber} (${(result.duration! / 1000).toFixed(2)}s)`);
+    } else {
+      console.log(`❌ Failed #${result.issueNumber}: ${result.error}`);
+    }
+  }
+
+  return results;
 }
 
 async function main() {
@@ -270,8 +344,8 @@ async function main() {
   const { owner, repo } = parseRepository();
   console.log(`✅ Repository: ${owner}/${repo}\n`);
 
-  // Create Octokit client
-  const octokit = new Octokit({ auth: config.githubToken });
+  // Get singleton Octokit client with connection pooling
+  const octokit = getGitHubClient(config.githubToken);
 
   // Get issue numbers
   let issueNumbers = args.issues;
@@ -290,14 +364,17 @@ async function main() {
 
   console.log(`📋 Processing ${issueNumbers.length} issue(s): ${issueNumbers.join(', ')}\n`);
 
-  // Fetch all issues
-  const issues: Issue[] = [];
-  for (const issueNumber of issueNumbers) {
-    const issue = await fetchIssue(octokit, owner, repo, issueNumber);
-    if (issue) {
-      issues.push(issue);
-      console.log(`✅ Fetched Issue #${issueNumber}: ${issue.title}`);
-    }
+  // Fetch all issues in parallel (5-10x faster)
+  console.log('📥 Fetching issues in parallel...');
+  const issuePromises = issueNumbers.map(issueNumber =>
+    fetchIssue(octokit, owner, repo, issueNumber)
+  );
+
+  const fetchedIssues = await Promise.all(issuePromises);
+  const issues: Issue[] = fetchedIssues.filter((issue): issue is Issue => issue !== null);
+
+  for (const issue of issues) {
+    console.log(`✅ Fetched Issue #${issue.number}: ${issue.title}`);
   }
 
   if (issues.length === 0) {
@@ -310,27 +387,40 @@ async function main() {
   // Create CoordinatorAgent
   const agent = new CoordinatorAgent(config);
 
-  // Execute issues sequentially (or in parallel if needed)
-  for (const issue of issues) {
-    try {
-      await executeIssue(agent, issue, args.dryRun);
-    } catch (error) {
-      console.error(`Failed to execute issue #${issue.number}:`, (error as Error).message);
-      // Continue with next issue
-    }
-  }
+  // Execute issues in parallel with concurrency control
+  console.log(`🚀 Executing ${issues.length} issues with concurrency=${args.concurrency}...\n`);
+
+  const results = await executeIssuesInParallel(agent, issues, args.concurrency, args.dryRun);
 
   console.log(`\n${'='.repeat(80)}`);
   console.log('🎉 All issues processed');
   console.log(`${'='.repeat(80)}\n`);
 
+  // Calculate statistics
+  const successCount = results.filter(r => r.status === 'success').length;
+  const failedCount = results.filter(r => r.status === 'failed').length;
+  const totalDuration = results.reduce((sum, r) => sum + (r.duration || 0), 0);
+  const avgDuration = results.length > 0 ? totalDuration / results.length : 0;
+
   console.log('📊 Execution Summary:');
   console.log(`   Total Issues: ${issues.length}`);
-  console.log(`   Completed: ${issues.length}`); // TODO: Track actual completion
-  console.log(`   Failed: 0`); // TODO: Track actual failures
+  console.log(`   Completed: ${successCount} ✅`);
+  console.log(`   Failed: ${failedCount} ❌`);
+  console.log(`   Total Duration: ${(totalDuration / 1000).toFixed(2)}s`);
+  console.log(`   Average Duration: ${(avgDuration / 1000).toFixed(2)}s per issue`);
+  console.log(`   Concurrency: ${args.concurrency}`);
   console.log('');
 
-  process.exit(0);
+  // List failed issues if any
+  if (failedCount > 0) {
+    console.log('❌ Failed Issues:');
+    results.filter(r => r.status === 'failed').forEach(result => {
+      console.log(`   #${result.issueNumber}: ${result.error}`);
+    });
+    console.log('');
+  }
+
+  process.exit(failedCount > 0 ? 1 : 0);
 }
 
 // Run main

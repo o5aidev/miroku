@@ -81,11 +81,21 @@ export async function init(projectName: string, options: InitOptions = {}) {
   spinner.start('Creating labels (53 labels across 10 categories)...');
 
   try {
-    await setupLabels(repo.owner.login, repo.name, token);
-    spinner.succeed(chalk.green('Labels created successfully'));
+    const result = await setupLabels(repo.owner.login, repo.name, token);
+    spinner.succeed(chalk.green(`Labels created: ${result.created} new, ${result.updated} updated`));
+    console.log(chalk.gray(`  ✓ Total: ${result.created + result.updated} labels configured`));
   } catch (error) {
     spinner.fail(chalk.red('ラベルの作成に失敗しました'));
     if (error instanceof Error) {
+      console.log(chalk.yellow('\n💡 解決策:\n'));
+      console.log(chalk.white('  1. GitHubトークンの権限を確認してください:'));
+      console.log(chalk.gray('     - repo (Full control of private repositories)'));
+      console.log(chalk.gray('     - admin:org (Full control of orgs and teams)\n'));
+      console.log(chalk.white('  2. 手動でラベルを作成:'));
+      console.log(chalk.gray(`     cd ${projectName}`));
+      console.log(chalk.gray('     gh label create "🐛 type:bug" --color "d73a4a"\n'));
+      console.log(chalk.white('  3. または、Claude Codeに依頼:'));
+      console.log(chalk.gray('     「識学理論準拠の65ラベルを作成してください」\n'));
       throw new Error(`Label setup failed: ${error.message}`);
     }
     throw new Error('Label setup failed: Unknown error');
@@ -141,6 +151,8 @@ export async function init(projectName: string, options: InitOptions = {}) {
   try {
     await cloneAndSetup(repo.clone_url, projectName, {
       skipInstall: options.skipInstall || false,
+      owner: repo.owner.login,
+      repo: repo.name,
     });
     projectPath = `./${projectName}`;
     spinner.succeed(chalk.green('Local setup complete'));
@@ -189,6 +201,28 @@ export async function init(projectName: string, options: InitOptions = {}) {
     console.log(chalk.gray('  You can create Issues manually\n'));
   }
 
+  // Step 8: Final verification
+  if (projectPath) {
+    spinner.start('Verifying project setup...');
+
+    try {
+      const verification = verifyProjectSetup(projectPath);
+
+      if (verification.allComplete) {
+        spinner.succeed(chalk.green('Project setup verified'));
+        console.log(chalk.gray(`  ✓ ${verification.filesCreated} files created`));
+        console.log(chalk.gray(`  ✓ ${verification.directoriesCreated} directories created`));
+      } else {
+        spinner.warn(chalk.yellow('Setup verification incomplete'));
+        if (verification.missing.length > 0) {
+          console.log(chalk.yellow(`  Missing: ${verification.missing.join(', ')}`));
+        }
+      }
+    } catch (error) {
+      spinner.warn(chalk.yellow('Verification skipped'));
+    }
+  }
+
   // Success!
   console.log(chalk.green.bold('\n✅ Setup complete!\n'));
   console.log(chalk.cyan('Next steps:'));
@@ -196,4 +230,62 @@ export async function init(projectName: string, options: InitOptions = {}) {
   console.log(chalk.white('  gh issue create --title "Your task" --body "Description"\n'));
   console.log(chalk.gray('💡 Tip: The AI agents will automatically start working on your Issue.'));
   console.log(chalk.gray('    You\'ll see a PR appear within minutes!\n'));
+}
+
+/**
+ * Verify project setup completeness
+ */
+function verifyProjectSetup(projectPath: string): {
+  allComplete: boolean;
+  filesCreated: number;
+  directoriesCreated: number;
+  missing: string[];
+} {
+  const fs = require('fs');
+  const path = require('path');
+
+  const requiredFiles = [
+    'package.json',
+    'tsconfig.json',
+    '.gitignore',
+    '.env.example',
+    '.eslintrc.json',
+    'README.md',
+    'CLAUDE.md',
+    'src/index.ts',
+    'tests/example.test.ts',
+  ];
+
+  const requiredDirs = ['.claude', 'src', 'tests'];
+
+  const missing: string[] = [];
+  let filesCreated = 0;
+  let directoriesCreated = 0;
+
+  // Check files
+  for (const file of requiredFiles) {
+    const filePath = path.join(projectPath, file);
+    if (fs.existsSync(filePath)) {
+      filesCreated++;
+    } else {
+      missing.push(file);
+    }
+  }
+
+  // Check directories
+  for (const dir of requiredDirs) {
+    const dirPath = path.join(projectPath, dir);
+    if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
+      directoriesCreated++;
+    } else {
+      missing.push(`${dir}/`);
+    }
+  }
+
+  return {
+    allComplete: missing.length === 0,
+    filesCreated,
+    directoriesCreated,
+    missing,
+  };
 }

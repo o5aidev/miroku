@@ -20,7 +20,6 @@
  * - General: General discussions
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { Octokit } from '@octokit/rest';
 import chalk from 'chalk';
 import ora from 'ora';
@@ -63,7 +62,6 @@ interface BotConfig {
 // ============================================================================
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const REPOSITORY = process.env.GITHUB_REPOSITORY || 'ShunsukeHayashi/Autonomous-Operations';
 const [owner, repo] = REPOSITORY.split('/');
 
@@ -72,13 +70,7 @@ if (!GITHUB_TOKEN) {
   process.exit(1);
 }
 
-if (!ANTHROPIC_API_KEY) {
-  console.error(chalk.red('❌ ANTHROPIC_API_KEY environment variable is required'));
-  process.exit(1);
-}
-
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
-const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 // FAQ Database
 const FAQ_DATABASE = [
@@ -138,8 +130,8 @@ class DiscussionBot {
     console.log(chalk.gray(`  Category: ${discussion.category}`));
     console.log(chalk.gray(`  URL: ${discussion.url}\n`));
 
-    // Analyze discussion with AI
-    const spinner = ora('Analyzing discussion with Claude AI...').start();
+    // Analyze discussion with heuristics
+    const spinner = ora('Analyzing discussion...').start();
     const analysis = await this.analyzeDiscussion(discussion);
     spinner.succeed('Analysis complete');
 
@@ -175,75 +167,55 @@ class DiscussionBot {
   }
 
   /**
-   * Analyze discussion with Claude AI
+   * Analyze discussion with rule-based heuristics
    */
   private async analyzeDiscussion(discussion: Discussion): Promise<DiscussionAnalysis> {
-    const prompt = `You are a GitHub Discussions moderator. Analyze this discussion and provide insights.
+    const titleLower = discussion.title.toLowerCase();
+    const bodyLower = discussion.body.toLowerCase();
+    const combined = `${titleLower} ${bodyLower}`;
 
-**Title:** ${discussion.title}
+    // Category detection
+    let category: DiscussionCategory = 'General';
+    const isQuestion = combined.match(/\b(how|what|why|when|where|who|can|should|could|would|is there)\b/) !== null ||
+                       combined.includes('?');
 
-**Body:**
-${discussion.body}
-
-**Current Category:** ${discussion.category}
-
-Analyze and respond in JSON format:
-{
-  "category": "Q&A" | "Ideas" | "Show & Tell" | "Announcements" | "General",
-  "shouldConvertToIssue": boolean,
-  "isQuestion": boolean,
-  "suggestedFAQ": "FAQ answer if applicable" | null,
-  "sentiment": "positive" | "neutral" | "negative",
-  "reasoning": "Brief explanation"
-}
-
-Guidelines:
-- Q&A: Questions requiring answers
-- Ideas: Feature proposals that might become Issues
-- Show & Tell: Showcasing work or achievements
-- Announcements: Official project updates
-- General: General discussions
-
-Set shouldConvertToIssue to true if:
-- It's a concrete feature proposal with clear requirements
-- It's actionable and can be implemented
-- It fits the project scope
-
-Set isQuestion to true if:
-- The discussion is asking for help or information
-- It contains question marks or help-seeking language
-
-For suggestedFAQ, check if the question matches any of these FAQ topics:
-- Setup and installation
-- Running agents
-- Available agents
-- Creating new agents
-- Logs and debugging`;
-
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
-
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
+    if (isQuestion) {
+      category = 'Q&A';
+    } else if (combined.match(/\b(feature|idea|proposal|suggest|add|implement|would be nice)\b/)) {
+      category = 'Ideas';
+    } else if (combined.match(/\b(show|showcase|built|created|made|achievement)\b/)) {
+      category = 'Show & Tell';
+    } else if (combined.match(/\b(announce|announcement|release|update|news)\b/)) {
+      category = 'Announcements';
     }
 
-    // Extract JSON from response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Could not parse JSON from Claude response');
+    // Determine if should convert to issue
+    const shouldConvertToIssue =
+      category === 'Ideas' &&
+      combined.match(/\b(implement|add|create|build)\b/) !== null &&
+      combined.length > 100; // Substantial proposal
+
+    // Search FAQ
+    const suggestedFAQ = isQuestion ? this.searchFAQ(combined) : null;
+
+    // Sentiment detection
+    let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
+    if (combined.match(/\b(great|awesome|love|thanks|excellent|perfect)\b/)) {
+      sentiment = 'positive';
+    } else if (combined.match(/\b(issue|problem|bug|broken|fail|error|bad)\b/)) {
+      sentiment = 'negative';
     }
 
-    const analysis: DiscussionAnalysis = JSON.parse(jsonMatch[0]);
-    return analysis;
+    const reasoning = `Rule-based analysis: Detected as ${category}, ${isQuestion ? 'is a question' : 'not a question'}, sentiment: ${sentiment}`;
+
+    return {
+      category,
+      shouldConvertToIssue,
+      isQuestion,
+      suggestedFAQ: suggestedFAQ || undefined,
+      sentiment,
+      reasoning,
+    };
   }
 
   /**
@@ -528,4 +500,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export { DiscussionBot, Discussion, DiscussionAnalysis, BotConfig, FAQ_DATABASE };
+export { DiscussionBot, FAQ_DATABASE };
+export type { Discussion, DiscussionAnalysis, BotConfig };

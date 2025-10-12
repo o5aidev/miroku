@@ -376,8 +376,10 @@ export class TrainingMaterialGenerator {
   }
 }
 
-// CLI interface
-if (require.main === module) {
+// ESM module check
+import { fileURLToPath } from 'node:url';
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
 
   if (args.length < 2) {

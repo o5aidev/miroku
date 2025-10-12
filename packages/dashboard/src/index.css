@@ -1,0 +1,400 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   GLOBAL STYLES - Beautiful & Professional
+   ============================================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 100%);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ============================================================================
+   REACT FLOW CUSTOMIZATIONS - Stunning Visual Effects
+   ============================================================================ */
+
+.react-flow {
+  background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(252, 165, 165, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 40% 90%, rgba(147, 197, 253, 0.1) 0%, transparent 50%),
+              linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  animation: backgroundPulse 8s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+.react-flow__node {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.react-flow__node:hover {
+  transform: translateY(-4px) scale(1.02);
+  filter: brightness(1.1);
+}
+
+.react-flow__edge-path {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px currentColor);
+  transition: all 0.3s ease;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 4;
+  filter: drop-shadow(0 0 12px currentColor);
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 8 4;
+  animation: dashdraw 1s linear infinite, edgeGlow 2s ease-in-out infinite;
+}
+
+@keyframes dashdraw {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+@keyframes edgeGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor);
+  }
+}
+
+/* ============================================================================
+   GLASSMORPHISM EFFECT - Modern & Elegant
+   ============================================================================ */
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.glass-effect-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================================
+   GRADIENT TEXT - Eye-catching Headlines
+   ============================================================================ */
+
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 3s ease infinite;
+}
+
+.gradient-text-success {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 50%, #6ee7b7 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 2s ease infinite;
+}
+
+.gradient-text-error {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 50%, #fca5a5 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 2s ease infinite;
+}
+
+/* ============================================================================
+   BUTTON EFFECTS - Interactive & Delightful
+   ============================================================================ */
+
+.btn-primary {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: all 0.3s ease;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+}
+
+/* ============================================================================
+   GLOW EFFECTS - Futuristic Look
+   ============================================================================ */
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.6),
+              0 0 40px rgba(139, 92, 246, 0.4),
+              0 0 60px rgba(139, 92, 246, 0.2);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.6),
+              0 0 40px rgba(16, 185, 129, 0.4),
+              0 0 60px rgba(16, 185, 129, 0.2);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6),
+              0 0 40px rgba(59, 130, 246, 0.4),
+              0 0 60px rgba(59, 130, 246, 0.2);
+}
+
+.glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.6),
+              0 0 40px rgba(239, 68, 68, 0.4),
+              0 0 60px rgba(239, 68, 68, 0.2);
+}
+
+/* ============================================================================
+   PULSE ANIMATIONS - Attention-grabbing
+   ============================================================================ */
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 20px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 40px currentColor, 0 0 60px currentColor;
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   SHIMMER EFFECT - Premium Look
+   ============================================================================ */
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 3s infinite;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING - Beautiful & Consistent
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* ============================================================================
+   FLOATING ANIMATION - Subtle Movement
+   ============================================================================ */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ============================================================================
+   SCALE PULSE - Breathing Effect
+   ============================================================================ */
+
+@keyframes scalePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.scale-pulse {
+  animation: scalePulse 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   FADE IN ANIMATION - Smooth Entry
+   ============================================================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* ============================================================================
+   CUSTOM SCROLLBAR - Beautiful Scrolling
+   ============================================================================ */
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* ============================================================================
+   ACCESSIBILITY PREFERENCES
+   ============================================================================ */
+
+:root[data-motion='reduced'] body,
+:root[data-motion='reduced'] .gradient-text,
+:root[data-motion='reduced'] .gradient-text-success,
+:root[data-motion='reduced'] .gradient-text-error {
+  animation: none !important;
+}
+
+:root[data-motion='reduced'] .react-flow {
+  animation: none !important;
+}
+
+:root[data-motion='reduced'] .shimmer::after,
+:root[data-motion='reduced'] .pulse-glow,
+:root[data-motion='reduced'] .scale-pulse,
+:root[data-motion='reduced'] .float,
+:root[data-motion='reduced'] .react-flow__edge.animated path,
+:root[data-motion='reduced'] .btn-primary::before,
+:root[data-motion='reduced'] body {
+  animation: none !important;
+}
+
+:root[data-motion='reduced'] .react-flow__edge.animated path {
+  stroke-dasharray: none;
+}
+
+:root[data-contrast='high'] body {
+  background: #0f172a;
+  animation: none;
+}
+
+:root[data-contrast='high'] .glass-effect,
+:root[data-contrast='high'] .glass-effect-dark {
+  background: rgba(15, 23, 42, 0.92);
+  border-color: rgba(226, 232, 240, 0.35);
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.4);
+}
+
+:root[data-contrast='high'] .gradient-text,
+:root[data-contrast='high'] .gradient-text-success,
+:root[data-contrast='high'] .gradient-text-error {
+  animation: none;
+  background: none;
+  color: #f8fafc;
+  -webkit-text-fill-color: #f8fafc;
+}
+
+:root[data-contrast='high'] .react-flow__edge-path {
+  filter: drop-shadow(0 0 6px rgba(248, 250, 252, 0.5));
+}

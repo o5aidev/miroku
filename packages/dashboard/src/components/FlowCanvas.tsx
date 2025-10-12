@@ -1,0 +1,1223 @@
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  type Connection,
+  type NodeTypes,
+  BackgroundVariant,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+import dagre from 'dagre';
+
+import { IssueNode } from './nodes/IssueNode';
+import { AgentNode } from './nodes/AgentNode';
+import { StateNode } from './nodes/StateNode';
+import { StatsPanel } from './StatsPanel';
+import { Sidebar } from './Sidebar';
+import { ActivityLog, type ActivityLogEntry } from './ActivityLog';
+import { FilterPanel, type FilterOptions } from './FilterPanel';
+import { WorkflowStageIndicator } from './WorkflowStageIndicator';
+import { ExplanationPanel, type ExplanationEntry } from './ExplanationPanel';
+import { LegendPanel } from './LegendPanel';
+import { AgentThinkingBubbles } from './AgentThinkingBubble';
+import { SystemMetricsDashboard } from './SystemMetricsDashboard';
+import { ParticleFlow, useParticleFlow } from './ParticleFlow';
+import { CelebrationEffect, useCelebration } from './CelebrationEffect';
+import { NodeDetailsModal } from './NodeDetailsModal';
+import { WelcomeTour, type TourStep } from './WelcomeTour';
+import { ProgressiveLoader } from './SkeletonLoader';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import type { GraphNode, GraphEdge } from '../types';
+import { PerformanceStats } from './PerformanceStats';
+import { useAccessibilityPreferences } from '../hooks/useAccessibilityPreferences';
+
+// Dagre layout configuration
+const getLayoutedElements = (nodes: GraphNode[], edges: GraphEdge[]) => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+  // Configure layout: horizontal flow (LR = Left to Right)
+  dagreGraph.setGraph({
+    rankdir: 'LR',
+    nodesep: 80,   // Reduced horizontal spacing
+    ranksep: 150,  // Reduced vertical spacing
+    marginx: 30,
+    marginy: 30,
+  });
+
+  // Add nodes to dagre with compact dimensions
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, {
+      width: node.type === 'issue' ? 280 : 180,
+      height: node.type === 'issue' ? 160 : 100,
+    });
+  });
+
+  // Add edges to dagre
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  // Calculate layout
+  dagre.layout(dagreGraph);
+
+  // Apply positions with centering offset
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    const width = node.type === 'issue' ? 280 : 180;
+    const height = node.type === 'issue' ? 160 : 100;
+
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - width / 2,
+        y: nodeWithPosition.y - height / 2,
+      },
+    };
+  });
+
+  return layoutedNodes;
+};
+
+export function FlowCanvas() {
+  const [nodes, setNodes, onNodesChange] = useNodesState<GraphNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<GraphEdge>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingStage, setLoadingStage] = useState(0);
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    states: [],
+    agents: [],
+    priorities: [],
+    showOnlyActive: false,
+  });
+  const reactFlowInstance = useRef<any>(null);
+  const { prefersReducedMotion, prefersHighContrast } = useAccessibilityPreferences();
+  const { isMobile, isTablet } = useResponsiveLayout();
+  const [visualMode, setVisualMode] = useState<'rich' | 'light'>(prefersReducedMotion ? 'light' : 'rich');
+  const [showPerformanceStats, setShowPerformanceStats] = useState(false);
+
+  // NEW: Panel visibility states with responsive defaults
+  const [showStats, setShowStats] = useState(!isMobile);
+  const [showMetrics, setShowMetrics] = useState(!isMobile && !isTablet);
+  const [showWorkflow, setShowWorkflow] = useState(!isMobile);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
+
+  // Auto-hide panels on mobile/tablet
+  useEffect(() => {
+    if (isMobile) {
+      setShowStats(false);
+      setShowMetrics(false);
+      setShowWorkflow(false);
+    } else if (isTablet) {
+      setShowMetrics(false);
+    }
+  }, [isMobile, isTablet]);
+
+  // Workflow stage tracking
+  const [currentStage, setCurrentStage] = useState<string | null>(null);
+  const [completedStages, setCompletedStages] = useState<string[]>([]);
+
+  // Explanation entries
+  const [explanations, setExplanations] = useState<ExplanationEntry[]>([]);
+
+  // NEW: System start time for metrics
+  const [systemStartTime] = useState(new Date());
+
+  // NEW: Agent thinking state
+  const [agentThinking, setAgentThinking] = useState<
+    Record<string, { thinking: string; position: { x: number; y: number }; status: string }>
+  >({});
+
+  // NEW: Node details modal
+  const [detailsNode, setDetailsNode] = useState<GraphNode | null>(null);
+
+  // NEW: Celebration and particle flow hooks
+  const { celebrationTrigger, celebrate } = useCelebration();
+  const { activeEdgeIds, activateEdgesForNode } = useParticleFlow();
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVisualMode('light');
+    }
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleKeyToggle = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'p' && event.shiftKey) {
+        setShowPerformanceStats((prev) => !prev);
+      }
+      if (event.key.toLowerCase() === 'l' && event.shiftKey) {
+        setVisualMode((prev) => (prev === 'rich' ? 'light' : 'rich'));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyToggle);
+    return () => {
+      window.removeEventListener('keydown', handleKeyToggle);
+    };
+  }, []);
+
+  // Helper to add activity log entry
+  const addActivity = useCallback((entry: Omit<ActivityLogEntry, 'id'>) => {
+    setActivities((prev) => [
+      {
+        ...entry,
+        id: `${Date.now()}-${Math.random()}`,
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  // Helper to add explanation entry
+  const addExplanation = useCallback((entry: Omit<ExplanationEntry, 'id'>) => {
+    setExplanations((prev) => [
+      {
+        ...entry,
+        id: `${Date.now()}-${Math.random()}`,
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  // Auto-focus on a specific node with smooth animation
+  const focusOnNode = useCallback((nodeId: string) => {
+    if (!reactFlowInstance.current) return;
+
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    reactFlowInstance.current.setCenter(
+      node.position.x + 150,
+      node.position.y + 100,
+      { zoom: 1.2, duration: 800 }
+    );
+  }, [nodes]);
+
+  // WebSocket connection
+  const { connected } = useWebSocket(
+    // onGraphUpdate
+    (event) => {
+      console.log('📊 Graph updated:', event);
+      setNodes(event.nodes as any);
+      setEdges(event.edges as any);
+      setLoading(false);
+      addActivity({
+        type: 'graph:update',
+        message: 'Graph data refreshed',
+        timestamp: event.timestamp || new Date().toISOString(),
+        icon: '🔄',
+        color: '#3B82F6',
+      });
+    },
+    // onAgentStarted
+    (event) => {
+      console.log('🤖 Agent started:', event);
+
+      // Update workflow stage
+      setCurrentStage('execution');
+      setCompletedStages(['discovery', 'analysis', 'decomposition', 'assignment']);
+
+      // Build activity message with parameters
+      let message = `${event.agentId} started working on Issue #${event.issueNumber}`;
+      if (event.parameters?.taskTitle) {
+        message += ` - ${event.parameters.taskTitle}`;
+      }
+
+      addActivity({
+        type: 'agent:started',
+        message,
+        timestamp: event.timestamp || new Date().toISOString(),
+        icon: '🤖',
+        color: '#10B981',
+      });
+
+      // Add explanation
+      const agentName = event.agentId === 'codegen' ? 'CodeGenAgent'
+        : event.agentId === 'review' ? 'ReviewAgent'
+        : event.agentId === 'pr' ? 'PRAgent'
+        : event.agentId === 'deployment' ? 'DeploymentAgent'
+        : event.agentId;
+
+      addExplanation({
+        timestamp: event.timestamp || new Date().toISOString(),
+        title: `💻 ${agentName}が実行開始`,
+        explanation: `${agentName}がIssue #${event.issueNumber}の処理を開始しました。進捗状況はプログレスバーで確認できます。`,
+        details: event.parameters ? [
+          `タスク: ${event.parameters.taskTitle || '未設定'}`,
+          `優先度: ${event.parameters.priority || '通常'}`,
+          `コンテキスト: ${event.parameters.context || '自動判定'}`,
+        ] : [],
+        type: 'success',
+        icon: '💻',
+      });
+
+      // Update agent node status with parameters and focus on issue node
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'agent' && (node.data as any).agentId === event.agentId) {
+            // NEW: Set thinking message
+            const thinkingMessages: Record<string, string> = {
+              codegen: 'コード構造を分析中...',
+              review: 'コード品質をレビュー中...',
+              pr: 'Pull Requestを作成中...',
+              deployment: 'デプロイ準備中...',
+            };
+
+            setAgentThinking((prev) => ({
+              ...prev,
+              [event.agentId]: {
+                thinking: thinkingMessages[event.agentId] || 'タスクを実行中...',
+                position: node.position,
+                status: 'running',
+              },
+            }));
+
+            // NEW: Activate particle flow for this node
+            setTimeout(() => {
+              activateEdgesForNode(node.id, edges as GraphEdge[], 5000);
+            }, 100);
+
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status: 'running',
+                currentIssue: event.issueNumber,
+                progress: 0,
+                parameters: event.parameters || {},
+              },
+            };
+          }
+          return node;
+        })
+      );
+
+      // Auto-focus on the Issue node (not the agent node)
+      const issueNode = nodes.find((n) =>
+        n.type === 'issue' && (n.data as any).number === event.issueNumber
+      );
+      if (issueNode) {
+        setTimeout(() => focusOnNode(issueNode.id), 300);
+      }
+    },
+    // onAgentProgress
+    (event) => {
+      console.log('📈 Agent progress:', event);
+
+      // NEW: Update thinking message based on progress
+      const getProgressMessage = (agentId: string, progress: number): string => {
+        if (agentId === 'codegen') {
+          if (progress < 30) return 'コードベースを分析中...';
+          if (progress < 60) return 'コードを生成中...';
+          return 'テストを実行中...';
+        }
+        if (agentId === 'review') {
+          if (progress < 40) return 'コード品質を分析中...';
+          if (progress < 70) return 'セキュリティスキャン実行中...';
+          return 'レビューコメント作成中...';
+        }
+        if (agentId === 'pr') {
+          if (progress < 50) return 'コミットメッセージ作成中...';
+          return 'Pull Request作成中...';
+        }
+        if (agentId === 'deployment') {
+          if (progress < 30) return 'ビルドを実行中...';
+          if (progress < 70) return 'テストを実行中...';
+          return 'デプロイ中...';
+        }
+        return `処理中... ${progress}%`;
+      };
+
+      setAgentThinking((prev) => {
+        if (prev[event.agentId]) {
+          return {
+            ...prev,
+            [event.agentId]: {
+              ...prev[event.agentId],
+              thinking: getProgressMessage(event.agentId, event.progress),
+            },
+          };
+        }
+        return prev;
+      });
+
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'agent' && (node.data as any).agentId === event.agentId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                progress: event.progress,
+              },
+            };
+          }
+          return node;
+        })
+      );
+    },
+    // onAgentCompleted
+    (event) => {
+      console.log('✅ Agent completed:', event);
+
+      // Update workflow stage to completed
+      setCompletedStages(['discovery', 'analysis', 'decomposition', 'assignment', 'execution']);
+      setCurrentStage(null);
+
+      // NEW: Trigger celebration! 🎉
+      celebrate();
+
+      // NEW: Clear thinking message after delay
+      setTimeout(() => {
+        setAgentThinking((prev) => {
+          const newThinking = { ...prev };
+          delete newThinking[event.agentId];
+          return newThinking;
+        });
+      }, 2000);
+
+      addActivity({
+        type: 'agent:completed',
+        message: `${event.agentId} completed Issue #${event.issueNumber}`,
+        timestamp: event.timestamp || new Date().toISOString(),
+        icon: '✅',
+        color: '#22C55E',
+      });
+
+      // Add explanation
+      const agentName = event.agentId === 'codegen' ? 'CodeGenAgent'
+        : event.agentId === 'review' ? 'ReviewAgent'
+        : event.agentId === 'pr' ? 'PRAgent'
+        : event.agentId === 'deployment' ? 'DeploymentAgent'
+        : event.agentId;
+
+      addExplanation({
+        timestamp: event.timestamp || new Date().toISOString(),
+        title: `✅ タスク完了！`,
+        explanation: `${agentName}がIssue #${event.issueNumber}の処理を完了しました。結果はGitHubで確認できます。`,
+        details: [
+          `結果: 正常終了`,
+          '',
+          '次のタスクがあれば、同様のプロセスで自動処理を開始します。',
+        ],
+        type: 'success',
+        icon: '✅',
+      });
+
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'agent' && (node.data as any).agentId === event.agentId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status: 'completed',
+                progress: 100,
+                currentIssue: undefined,
+              },
+            };
+          }
+          return node;
+        })
+      );
+
+      // Reset to idle after 3 seconds
+      setTimeout(() => {
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.type === 'agent' && (node.data as any).agentId === event.agentId) {
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  status: 'idle',
+                  progress: 0,
+                },
+              };
+            }
+            return node;
+          })
+        );
+      }, 3000);
+    },
+    // onAgentError
+    (event) => {
+      console.error('❌ Agent error:', event);
+      addActivity({
+        type: 'agent:error',
+        message: `${event.agentId} failed on Issue #${event.issueNumber}: ${event.error}`,
+        timestamp: event.timestamp || new Date().toISOString(),
+        icon: '❌',
+        color: '#EF4444',
+      });
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'agent' && (node.data as any).agentId === event.agentId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status: 'error',
+                currentIssue: undefined,
+              },
+            };
+          }
+          return node;
+        })
+      );
+    },
+    // onStateTransition
+    (event) => {
+      console.log('🔄 State transition:', event);
+      addActivity({
+        type: 'state:transition',
+        message: `Issue #${event.issueNumber}: ${event.from} → ${event.to}`,
+        timestamp: event.timestamp || new Date().toISOString(),
+        icon: '🔄',
+        color: '#8B5CF6',
+      });
+      // Animate edge for state transition
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.source.includes(`issue-${event.issueNumber}`)) {
+            return { ...edge, animated: true };
+          }
+          return edge;
+        })
+      );
+
+      // Stop animation after 2 seconds
+      setTimeout(() => {
+        setEdges((eds) =>
+          eds.map((edge) => ({ ...edge, animated: false }))
+        );
+      }, 2000);
+    },
+    // onTaskDiscovered
+    (event) => {
+      console.log('📥 Tasks discovered:', event);
+
+      // Update workflow stage
+      setCurrentStage('discovery');
+      setCompletedStages([]);
+
+      addActivity({
+        type: 'task:discovered',
+        message: `${event.tasks.length} tasks discovered and queued for processing`,
+        timestamp: event.timestamp,
+        icon: '📥',
+        color: '#6366F1',
+      });
+
+      // Add explanation
+      addExplanation({
+        timestamp: event.timestamp,
+        title: '📥 タスク発見フェーズ',
+        explanation: `GitHubから${event.tasks.length}個のIssueを読み込みました。これらのタスクを順番に分析していきます。`,
+        details: event.tasks.map((task, i) =>
+          `${i + 1}. Issue #${task.issueNumber}: ${task.title} (${task.priority})`
+        ),
+        type: 'info',
+        icon: '📥',
+      });
+
+      // Show each task in the activity log
+      event.tasks.forEach((task, index) => {
+        setTimeout(() => {
+          addActivity({
+            type: 'task:discovered',
+            message: `Task ${index + 1}: Issue #${task.issueNumber} - ${task.title} [${task.priority}]`,
+            timestamp: event.timestamp,
+            icon: '📋',
+            color: '#8B5CF6',
+          });
+        }, index * 200);
+      });
+    },
+    // onCoordinatorAnalyzing
+    (event) => {
+      console.log('🔍 Coordinator analyzing:', event);
+
+      // Update workflow stage
+      setCurrentStage('analysis');
+      setCompletedStages(['discovery']);
+
+      addActivity({
+        type: 'coordinator:analyzing',
+        message: `CoordinatorAgent analyzing Issue #${event.issueNumber}: ${event.analysis.type} | ${event.analysis.priority} | ${event.analysis.complexity}`,
+        timestamp: event.timestamp,
+        icon: '🔍',
+        color: '#10B981',
+      });
+
+      // Add explanation
+      addExplanation({
+        timestamp: event.timestamp,
+        title: '🔍 Issue分析中',
+        explanation: `CoordinatorAgentがIssue #${event.issueNumber}の内容を詳しく分析しています。`,
+        details: [
+          `タイプ: ${event.analysis.type} - このタスクの種類を判定`,
+          `優先度: ${event.analysis.priority} - 緊急度を評価`,
+          `複雑度: ${event.analysis.complexity} - 難易度を算出`,
+          '',
+          '次のステップ：この分析結果に基づいて、タスクをサブタスクに分解します。',
+        ],
+        type: 'thinking',
+        icon: '🔍',
+      });
+
+      // Focus on the coordinator agent
+      const coordinatorNode = nodes.find(
+        (n) => n.type === 'agent' && (n.data as any).agentId === 'coordinator'
+      );
+      if (coordinatorNode) {
+        setTimeout(() => focusOnNode(coordinatorNode.id), 100);
+      }
+
+      // Highlight the issue node being analyzed
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.type === 'issue' && (node.data as any).number === event.issueNumber) {
+            return {
+              ...node,
+              style: {
+                ...node.style,
+                border: '3px solid #10B981',
+                boxShadow: '0 0 20px rgba(16, 185, 129, 0.5)',
+              },
+            };
+          }
+          return node;
+        })
+      );
+
+      // Remove highlight after 2 seconds
+      setTimeout(() => {
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.type === 'issue' && (node.data as any).number === event.issueNumber) {
+              return {
+                ...node,
+                style: {
+                  ...node.style,
+                  border: undefined,
+                  boxShadow: undefined,
+                },
+              };
+            }
+            return node;
+          })
+        );
+      }, 2000);
+    },
+    // onCoordinatorDecomposing
+    (event) => {
+      console.log('🧩 Coordinator decomposing:', event);
+
+      // Update workflow stage
+      setCurrentStage('decomposition');
+      setCompletedStages(['discovery', 'analysis']);
+
+      addActivity({
+        type: 'coordinator:decomposing',
+        message: `CoordinatorAgent decomposed Issue #${event.issueNumber} into ${event.subtasks.length} subtasks`,
+        timestamp: event.timestamp,
+        icon: '🧩',
+        color: '#F59E0B',
+      });
+
+      // Add explanation
+      addExplanation({
+        timestamp: event.timestamp,
+        title: '🧩 タスク分解中',
+        explanation: `CoordinatorAgentがIssue #${event.issueNumber}を${event.subtasks.length}個のサブタスクに分解しました。大きなタスクを小さく分けることで、各Specialist Agentが効率的に処理できます。`,
+        details: event.subtasks.map((subtask, i) =>
+          `サブタスク${i + 1}: ${subtask.title} [${subtask.type}]`
+        ),
+        type: 'info',
+        icon: '🧩',
+      });
+
+      // Show each subtask
+      event.subtasks.forEach((subtask, index) => {
+        setTimeout(() => {
+          addActivity({
+            type: 'coordinator:decomposing',
+            message: `  Subtask ${index + 1}: ${subtask.title} [${subtask.type}]`,
+            timestamp: event.timestamp,
+            icon: '  ├─',
+            color: '#FBBF24',
+          });
+        }, index * 150);
+      });
+    },
+    // onCoordinatorAssigning
+    (event) => {
+      console.log('🎯 Coordinator assigning:', event);
+
+      // Update workflow stage
+      setCurrentStage('assignment');
+      setCompletedStages(['discovery', 'analysis', 'decomposition']);
+
+      addActivity({
+        type: 'coordinator:assigning',
+        message: `CoordinatorAgent assigning tasks for Issue #${event.issueNumber}`,
+        timestamp: event.timestamp,
+        icon: '🎯',
+        color: '#8B5CF6',
+      });
+
+      // Add explanation
+      addExplanation({
+        timestamp: event.timestamp,
+        title: '🎯 Agent割り当て中',
+        explanation: `CoordinatorAgentが各サブタスクに最適なSpecialist Agentを選択しています。各Agentの専門性を考慮して、最も効率的な組み合わせを決定します。`,
+        details: event.assignments.map((a) =>
+          `${a.agentId} ← 理由: ${a.reason}`
+        ),
+        type: 'info',
+        icon: '🎯',
+      });
+
+      // Show each assignment and focus on the assigned agent
+      event.assignments.forEach((assignment, index) => {
+        setTimeout(() => {
+          addActivity({
+            type: 'coordinator:assigning',
+            message: `  → ${assignment.agentId}: ${assignment.reason}`,
+            timestamp: event.timestamp,
+            icon: '  🤖',
+            color: '#A78BFA',
+          });
+
+          // Focus on the assigned agent
+          const agentNode = nodes.find(
+            (n) => n.type === 'agent' && (n.data as any).agentId === assignment.agentId
+          );
+          if (agentNode) {
+            focusOnNode(agentNode.id);
+          }
+        }, index * 500);
+      });
+    }
+  );
+
+  // Build agent status map from agent nodes
+  const agentStatusMap = useMemo(() => {
+    const statusMap: Record<string, { status: string; progress?: number }> = {};
+    nodes.filter(n => n.type === 'agent').forEach(agent => {
+      const data = agent.data as any;
+      statusMap[data.agentId] = {
+        status: data.status || 'idle',
+        progress: data.progress
+      };
+    });
+    return statusMap;
+  }, [nodes]);
+
+  // Define node types with agent status passed to IssueNode
+  const nodeTypes: NodeTypes = useMemo(() => ({
+    issue: (props: any) => <IssueNode {...props} agentStatuses={agentStatusMap} />,
+    agent: AgentNode,
+    state: StateNode,
+  }), [agentStatusMap]);
+
+  // Filter nodes based on active filters
+  const filteredNodes = useMemo(() => {
+    // First, filter out agent nodes (they're now embedded in Issue nodes)
+    let filtered = nodes.filter(n => n.type !== 'agent');
+
+    // Filter by state
+    if (filters.states.length > 0) {
+      filtered = filtered.filter((node) => {
+        if (node.type === 'issue') {
+          const data = node.data as any;
+          return filters.states.some((s) => data.state?.includes(s));
+        }
+        return true; // Keep non-issue nodes
+      });
+    }
+
+    // Filter by agent
+    if (filters.agents.length > 0) {
+      filtered = filtered.filter((node) => {
+        if (node.type === 'issue') {
+          const data = node.data as any;
+          return data.assignedAgents?.some((a: string) => filters.agents.includes(a));
+        }
+        return true;
+      });
+    }
+
+    // Filter by priority
+    if (filters.priorities.length > 0) {
+      filtered = filtered.filter((node) => {
+        if (node.type === 'issue') {
+          const data = node.data as any;
+          return filters.priorities.some((p) => data.priority?.includes(p));
+        }
+        return true;
+      });
+    }
+
+    // Show only active
+    if (filters.showOnlyActive) {
+      filtered = filtered.filter((node) => {
+        if (node.type === 'issue') {
+          const data = node.data as any;
+          return !data.state?.includes('done') && !data.state?.includes('failed');
+        }
+        return true;
+      });
+    }
+
+    // Apply Dagre layout to prevent overlaps
+    if (filtered.length > 0) {
+      filtered = getLayoutedElements(filtered as any, edges as any) as any;
+    }
+
+    return filtered;
+  }, [nodes, filters, edges]);
+
+  // Auto-fit view when nodes change
+  useEffect(() => {
+    if (reactFlowInstance.current && filteredNodes.length > 0) {
+      setTimeout(() => {
+        reactFlowInstance.current?.fitView({ padding: 0.2, duration: 300 });
+      }, 100);
+    }
+  }, [filteredNodes]);
+
+  const onConnect = useCallback(
+    (connection: Connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges]
+  );
+
+  const onNodeClick = useCallback((_: React.MouseEvent, node: any) => {
+    // NEW: Show detailed modal instead of just sidebar
+    setDetailsNode(node as GraphNode);
+    setSelectedNode(node as GraphNode);
+  }, []);
+
+  // Manual refresh function
+  const handleRefresh = useCallback(() => {
+    setLoading(true);
+    fetch('http://localhost:3001/api/refresh', { method: 'POST' })
+      .then((res) => res.json())
+      .then(() => {
+        console.log('✅ Graph refresh triggered');
+        addActivity({
+          type: 'graph:update',
+          message: 'Manual refresh triggered',
+          timestamp: new Date().toISOString(),
+          icon: '🔄',
+          color: '#3B82F6',
+        });
+      })
+      .catch((error) => {
+        console.error('❌ Failed to refresh graph:', error);
+      })
+      .finally(() => {
+        setTimeout(() => setLoading(false), 500);
+      });
+  }, [addActivity]);
+
+  // Fetch initial graph data with progressive loading
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingStage(0); // Connecting...
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        setLoadingStage(1); // Loading graph...
+        const res = await fetch('http://localhost:3001/api/graph');
+        const data = await res.json();
+
+        setLoadingStage(2); // Rendering nodes...
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        setNodes(data.nodes);
+        setEdges(data.edges);
+
+        setLoadingStage(3); // Complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch initial graph:', error);
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [setNodes, setEdges]);
+
+  // Welcome Tour steps
+  const tourSteps: TourStep[] = [
+    {
+      target: '.react-flow',
+      title: 'グラフビュー',
+      content: 'Issueとエージェントの関係を視覚化します。ノードをクリックすると詳細が表示されます。',
+      placement: 'bottom',
+    },
+    {
+      target: '[title="Toggle System Metrics"]',
+      title: 'システムメトリクス',
+      content: 'リアルタイムのシステム状態を確認できます。アクティブなエージェント数、成功率などを表示します。',
+      placement: 'left',
+    },
+    {
+      target: '[title="Toggle Workflow Stages"]',
+      title: 'ワークフローステージ',
+      content: 'タスクの進行状況を5つのステージで確認できます。現在どの段階にいるかが一目でわかります。',
+      placement: 'bottom',
+    },
+    {
+      target: '.explanation-panel',
+      title: '説明パネル',
+      content: '何が起きているかを日本語で説明します。初めての方でもわかりやすい内容です。',
+      placement: 'left',
+    },
+    {
+      target: '[title="Toggle Activity Log"]',
+      title: 'アクティビティログ',
+      content: '全てのイベントを時系列で確認できます。デバッグや履歴確認に便利です。',
+      placement: 'top',
+    },
+  ];
+
+  if (loading) {
+    return (
+      <ProgressiveLoader
+        stages={[
+          'Connecting to server...',
+          'Loading graph data...',
+          'Rendering nodes...',
+          'Complete!',
+        ]}
+        currentStage={loadingStage}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-screen w-full flex-col">
+      {/* Stats Panel - Conditional */}
+      {showStats && <StatsPanel nodes={nodes as any} />}
+
+      {/* NEW: System Metrics Dashboard (top-right) - Conditional */}
+      {showMetrics && <SystemMetricsDashboard nodes={nodes as any} startTime={systemStartTime} />}
+
+      {/* Workflow Stage Indicator - Conditional */}
+      {showWorkflow && (
+        <WorkflowStageIndicator
+          currentStage={currentStage}
+          completedStages={completedStages}
+        />
+      )}
+
+      {/* NEW: Celebration Effect */}
+      {visualMode === 'rich' && !prefersReducedMotion && (
+        <CelebrationEffect trigger={celebrationTrigger} />
+      )}
+
+      {/* Main content area */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Connection status and controls */}
+        <div className="absolute left-4 top-4 z-10 flex gap-2">
+          <div className="rounded-lg bg-white p-2 shadow-lg">
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-3 w-3 rounded-full ${
+                  connected ? 'animate-pulse bg-green-500' : 'bg-red-500'
+                }`}
+              />
+              <span className="text-sm font-medium">
+                {connected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+          </div>
+
+          {/* Manual refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="rounded-lg bg-white p-2 shadow-lg transition-colors hover:bg-gray-50 disabled:opacity-50"
+            title="Refresh graph manually"
+          >
+            <svg
+              className={`h-5 w-5 text-gray-700 ${loading ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
+
+          {/* Filter button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="rounded-lg bg-white p-2 shadow-lg transition-colors hover:bg-gray-50"
+            title="Filter nodes"
+          >
+            <svg
+              className="h-5 w-5 text-gray-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+          </button>
+
+          {/* Panel toggles */}
+          <div className="flex gap-1 rounded-lg bg-white p-1 shadow-lg">
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className={`rounded px-2 py-1.5 text-xs font-medium transition ${
+                showStats ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+              title="Toggle Stats Panel"
+            >
+              📊
+            </button>
+            <button
+              onClick={() => setShowMetrics(!showMetrics)}
+              className={`rounded px-2 py-1.5 text-xs font-medium transition ${
+                showMetrics ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+              title="Toggle System Metrics"
+            >
+              📈
+            </button>
+            <button
+              onClick={() => setShowWorkflow(!showWorkflow)}
+              className={`rounded px-2 py-1.5 text-xs font-medium transition ${
+                showWorkflow ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+              title="Toggle Workflow Stages"
+            >
+              🚀
+            </button>
+            <button
+              onClick={() => setShowActivityLog(!showActivityLog)}
+              className={`rounded px-2 py-1.5 text-xs font-medium transition ${
+                showActivityLog ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+              title="Toggle Activity Log"
+            >
+              📝
+            </button>
+            <button
+              onClick={() => setShowLegend(!showLegend)}
+              className={`rounded px-2 py-1.5 text-xs font-medium transition ${
+                showLegend ? 'bg-blue-600 text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+              }`}
+              title="Toggle Legend"
+            >
+              ℹ️
+            </button>
+          </div>
+        </div>
+
+        {/* Effects & Performance controls */}
+        <div className="absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
+          <div
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 shadow-lg border ${
+              prefersHighContrast
+                ? 'bg-slate-900/90 border-white/20 text-slate-100'
+                : 'bg-white/90 border-gray-200 text-gray-700'
+            }`}
+          >
+            <span className="text-[10px] font-semibold uppercase tracking-widest">Effects</span>
+            <button
+              onClick={() => setVisualMode('rich')}
+              disabled={prefersReducedMotion}
+              className={`rounded px-2 py-1 text-xs font-semibold transition ${
+                visualMode === 'rich' && !prefersReducedMotion
+                  ? 'bg-purple-600 text-white shadow'
+                  : 'bg-transparent hover:bg-black/10'
+              } ${prefersReducedMotion ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              Rich
+            </button>
+            <button
+              onClick={() => setVisualMode('light')}
+              className={`rounded px-2 py-1 text-xs font-semibold transition ${
+                visualMode === 'light'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'bg-transparent hover:bg-black/10'
+              }`}
+            >
+              Light
+            </button>
+          </div>
+
+          <button
+            onClick={() => setShowPerformanceStats((prev) => !prev)}
+            className={`rounded-lg px-3 py-2 text-xs font-semibold shadow-lg transition ${
+              prefersHighContrast
+                ? 'bg-slate-900/90 border border-white/20 text-slate-100 hover:bg-slate-800/90'
+                : 'bg-white/90 border border-gray-200 text-gray-700 hover:bg-gray-100'
+            }`}
+            title="Shift+Pで切り替え"
+          >
+            {showPerformanceStats ? 'Hide Performance' : 'Show Performance'}
+          </button>
+        </div>
+
+        {/* Filter Panel */}
+        {showFilters && (
+          <FilterPanel
+            filters={filters}
+            onFilterChange={setFilters}
+            onClose={() => setShowFilters(false)}
+          />
+        )}
+
+        {/* React Flow Canvas */}
+        <div className={`flex-1 ${selectedNode && !isMobile ? 'lg:pr-80' : ''}`}>
+          <ReactFlow
+            nodes={filteredNodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={onNodeClick}
+            onInit={(instance) => {
+              reactFlowInstance.current = instance;
+            }}
+            nodeTypes={nodeTypes}
+            fitView
+            attributionPosition="bottom-left"
+            minZoom={isMobile ? 0.3 : 0.5}
+            maxZoom={isMobile ? 1.5 : 2}
+          >
+            <Background variant={BackgroundVariant.Dots} gap={20} size={2} color="#4F46E5" />
+            <Controls
+              className="!bg-white/90 !backdrop-blur !border !border-gray-200 !shadow-xl"
+              showInteractive={!isMobile}
+            />
+            {!isMobile && (
+              <MiniMap
+                className="!bg-gray-900/90 !border !border-gray-700"
+                nodeColor={(node) => {
+                  if (node.type === 'agent') {
+                    const data = node.data as any;
+                    if (data.status === 'running') return '#8B5CF6';
+                    if (data.status === 'completed') return '#10B981';
+                    if (data.status === 'error') return '#EF4444';
+                  }
+                  return '#6B7280';
+                }}
+              />
+            )}
+          </ReactFlow>
+
+          {/* NEW: Particle Flow Animation */}
+          {visualMode === 'rich' && !prefersReducedMotion && (
+            <ParticleFlow
+              edges={edges as GraphEdge[]}
+              nodes={nodes as any[]}
+              activeEdgeIds={activeEdgeIds}
+            />
+          )}
+
+          {/* NEW: Agent Thinking Bubbles */}
+          {visualMode !== 'light' && !prefersReducedMotion && (
+            <AgentThinkingBubbles
+              bubbles={Object.entries(agentThinking).map(([agentId, data]) => {
+                const agentNames: Record<string, string> = {
+                  codegen: 'CodeGen',
+                  review: 'Review',
+                  pr: 'PR',
+                  deployment: 'Deploy',
+                  coordinator: 'Coordinator',
+                };
+                return {
+                  agentId,
+                  agentName: agentNames[agentId] || agentId,
+                  thinking: data.thinking,
+                  position: data.position,
+                  status: data.status as any,
+                };
+              })}
+            />
+          )}
+        </div>
+
+        {/* Sidebar */}
+        {selectedNode && (
+          <Sidebar selectedNode={selectedNode} onClose={() => setSelectedNode(null)} />
+        )}
+
+        {/* Explanation Panel - Always visible but minimized by default */}
+        <ExplanationPanel entries={explanations} />
+
+        {/* Legend Panel - Conditional */}
+        {showLegend && <LegendPanel />}
+      </div>
+
+      {/* Activity Log - Conditional */}
+      {showActivityLog && <ActivityLog activities={activities} />}
+
+      {/* NEW: Node Details Modal */}
+      <NodeDetailsModal
+        node={detailsNode}
+        onClose={() => {
+          setDetailsNode(null);
+          setSelectedNode(null);
+        }}
+      />
+
+      <PerformanceStats
+        isVisible={showPerformanceStats}
+        nodeCount={nodes.length}
+        edgeCount={edges.length}
+        visualMode={visualMode}
+      />
+
+      {/* Welcome Tour */}
+      <WelcomeTour
+        steps={tourSteps}
+        onComplete={() => {
+          console.log('✅ Welcome tour completed');
+          addActivity({
+            type: 'graph:update',
+            message: 'Welcome tour completed - Ready to explore!',
+            timestamp: new Date().toISOString(),
+            icon: '🎓',
+            color: '#10B981',
+          });
+        }}
+        onSkip={() => {
+          console.log('⏭️ Welcome tour skipped');
+        }}
+      />
+    </div>
+  );
+}

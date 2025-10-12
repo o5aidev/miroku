@@ -16,7 +16,6 @@
  * - Auto-labels based on content
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { Octokit } from '@octokit/rest';
 import { graphql } from '@octokit/graphql';
 import chalk from 'chalk';
@@ -53,17 +52,11 @@ interface IssueTemplate {
 // ============================================================================
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const REPOSITORY = process.env.GITHUB_REPOSITORY || 'ShunsukeHayashi/Autonomous-Operations';
 const [owner, repo] = REPOSITORY.split('/');
 
 if (!GITHUB_TOKEN) {
   console.error(chalk.red('❌ GITHUB_TOKEN environment variable is required'));
-  process.exit(1);
-}
-
-if (!ANTHROPIC_API_KEY) {
-  console.error(chalk.red('❌ ANTHROPIC_API_KEY environment variable is required'));
   process.exit(1);
 }
 
@@ -73,7 +66,6 @@ const graphqlWithAuth = graphql.defaults({
     authorization: `token ${GITHUB_TOKEN}`,
   },
 });
-const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
 
 // ============================================================================
 // GraphQL Queries
@@ -133,69 +125,88 @@ class IdeaToIssueConverter {
   }
 
   /**
-   * Analyze discussion and generate issue template with Claude AI
+   * Analyze discussion and generate issue template with rule-based heuristics
    */
   async analyzeAndGenerateIssue(discussion: Discussion): Promise<IssueTemplate> {
-    const prompt = `You are a product manager converting feature ideas into actionable GitHub Issues.
+    const titleLower = discussion.title.toLowerCase();
+    const bodyLower = discussion.body.toLowerCase();
+    const combined = `${titleLower} ${bodyLower}`;
 
-**Discussion Title:** ${discussion.title}
+    // Determine title prefix
+    let titlePrefix = '[Feature]';
+    if (combined.match(/\b(improve|enhance|better|optimize)\b/)) {
+      titlePrefix = '[Enhancement]';
+    }
 
-**Discussion Body:**
+    // Priority detection
+    let priority = 'P2-Medium';
+    const labels: string[] = ['type:feature', 'phase:planning', 'agent:codegen'];
+
+    if (combined.match(/\b(critical|urgent|blocking)\b/)) {
+      priority = 'P0-Critical';
+      labels.push('priority:P0-Critical');
+    } else if (combined.match(/\b(important|high priority|major)\b/)) {
+      priority = 'P1-High';
+      labels.push('priority:P1-High');
+    } else if (combined.match(/\b(low priority|minor|nice to have)\b/)) {
+      priority = 'P3-Low';
+      labels.push('priority:P3-Low');
+    } else {
+      labels.push('priority:P2-Medium');
+    }
+
+    // Special labels
+    if (combined.match(/\b(security|auth|permission|vulnerability)\b/)) {
+      labels.push('special:security');
+    }
+    if (combined.match(/\b(cost|expensive|pricing)\b/)) {
+      labels.push('special:cost-watch');
+    }
+    if (combined.match(/\b(experiment|prototype|poc)\b/)) {
+      labels.push('special:experiment');
+    }
+
+    // Estimated effort
+    let estimatedEffort = 'M';
+    if (combined.length > 1000 || combined.match(/\b(complex|large|major|significant)\b/)) {
+      estimatedEffort = 'L';
+    } else if (combined.length > 2000) {
+      estimatedEffort = 'XL';
+    } else if (combined.length < 200 || combined.match(/\b(simple|quick|small|minor)\b/)) {
+      estimatedEffort = 'S';
+    }
+
+    // Generate structured body
+    const body = `## Problem Statement
+
 ${discussion.body}
 
-**Author:** @${discussion.author.login}
+## Proposed Solution
 
-Analyze this feature idea and create a structured Issue with:
+_To be refined during planning phase_
 
-1. Clear, actionable title (prefix with [Feature] or [Enhancement])
-2. Well-structured body with:
-   - Problem statement
-   - Proposed solution
-   - User story (if applicable)
-   - Acceptance criteria
-   - Technical considerations
-3. Appropriate labels from:
-   - Type: type:feature, type:enhancement, type:refactor
-   - Priority: priority:P0-Critical, priority:P1-High, priority:P2-Medium, priority:P3-Low
-   - Phase: phase:planning, phase:implementation
-   - Agent: agent:codegen, agent:coordinator, agent:review
-   - Special: special:security, special:cost-watch, special:experiment
-4. Estimated effort: S (< 4h), M (4-16h), L (16-40h), XL (> 40h)
+## Acceptance Criteria
 
-Respond in JSON format:
-{
-  "title": "Issue title",
-  "body": "Issue body in markdown",
-  "labels": ["type:feature", "priority:P2-Medium", "phase:planning", "agent:codegen"],
-  "priority": "P2-Medium",
-  "estimatedEffort": "M",
-  "reasoning": "Why these choices"
-}`;
+- [ ] Feature is implemented and tested
+- [ ] Documentation is updated
+- [ ] Code review is complete
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-    });
+## Technical Considerations
 
-    const content = message.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
+_To be determined during technical review_
 
-    // Extract JSON from response
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Could not parse JSON from Claude response');
-    }
+## Original Discussion
 
-    const template: IssueTemplate = JSON.parse(jsonMatch[0]);
-    return template;
+For more context and discussion, see [Discussion #${discussion.number}](${discussion.url})`;
+
+    return {
+      title: `${titlePrefix} ${discussion.title}`,
+      body,
+      labels,
+      priority,
+      estimatedEffort,
+      reasoning: `Rule-based analysis: Detected as ${priority} priority with ${estimatedEffort} effort`,
+    };
   }
 
   /**
@@ -281,8 +292,8 @@ ${template.reasoning}
     console.log(chalk.gray(`  Category: ${discussion.category}`));
     console.log(chalk.gray(`  URL: ${discussion.url}\n`));
 
-    // Step 2: Analyze with AI
-    spinner = ora('Analyzing discussion with Claude AI...').start();
+    // Step 2: Analyze with heuristics
+    spinner = ora('Analyzing discussion...').start();
     const template = await this.analyzeAndGenerateIssue(discussion);
     spinner.succeed('Analysis complete');
 
@@ -340,4 +351,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   });
 }
 
-export { IdeaToIssueConverter, Discussion, IssueTemplate };
+export { IdeaToIssueConverter };
+export type { Discussion, IssueTemplate };

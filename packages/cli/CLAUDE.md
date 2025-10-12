@@ -1,5 +1,168 @@
 # Miyabi CLI - Claude Code Context
 
+**🤖 IMPORTANT: This tool is designed for AI coding agents (Claude Code)**
+**Human users should NOT see this file. Refer to README.md instead.**
+
+---
+
+## AI Agent Quick Start (Claude Code)
+
+### Critical Rules for AI Agents
+
+1. **ALWAYS use `--json` flag** - Parse structured output, never scrape text
+2. **ALWAYS use `--yes` flag** - Skip interactive prompts automatically
+3. **ALWAYS check exit codes** - 0=success, 1-5=specific errors
+4. **NEVER execute without GITHUB_TOKEN** - Set `export GITHUB_TOKEN=ghp_xxx` first
+
+### Environment Setup (Required)
+
+```bash
+export GITHUB_TOKEN=ghp_xxx          # Required for all commands
+export MIYABI_JSON=1                 # Force JSON output
+export MIYABI_AUTO_YES=1             # Force non-interactive mode
+export MIYABI_VERBOSE=1              # Enable verbose logging (optional)
+```
+
+### Exit Codes for AI Agents
+
+```
+0 = SUCCESS               - Command completed successfully
+1 = GENERAL_ERROR         - Unknown error
+2 = CONFIG_ERROR          - Missing GITHUB_TOKEN or invalid config
+3 = VALIDATION_ERROR      - Invalid arguments, directory exists
+4 = NETWORK_ERROR         - GitHub API unreachable
+5 = AUTH_ERROR            - Authentication failed, invalid token
+```
+
+### AI Agent Command Patterns
+
+#### Pattern 1: Check Project Status (FULLY IMPLEMENTED)
+
+```bash
+miyabi status --json
+```
+
+**Success response:**
+```json
+{
+  "success": true,
+  "data": {
+    "repository": { "owner": "user", "name": "repo", "url": "..." },
+    "issues": {
+      "total": 15,
+      "byState": { "pending": 3, "analyzing": 2, "implementing": 4, ... }
+    },
+    "pullRequests": [...],
+    "summary": { "totalOpen": 15, "activeAgents": 7, "blocked": 0 }
+  },
+  "timestamp": "2025-10-11T00:00:00Z"
+}
+```
+
+**Decision tree for AI agents:**
+- `data.issues.byState.pending > 0` → Run IssueAgent to analyze
+- `data.issues.byState.implementing > 0` → Run ReviewAgent to check
+- `data.summary.blocked > 0` → Alert human intervention needed
+
+#### Pattern 2: Install Miyabi to Existing Project
+
+```bash
+cd /path/to/existing/project
+miyabi install --json --yes --non-interactive
+```
+
+**AI agent should check:**
+1. Exit code (0 = success)
+2. Verify `.claude/` directory created: `ls -la .claude`
+3. Verify status works: `miyabi status --json`
+
+#### Pattern 3: Run Specific Agent
+
+```bash
+miyabi agent run codegen --issue=123 --json
+```
+
+**Available agents:**
+- `coordinator` - Task decomposition
+- `codegen` - Code generation (Claude Sonnet 4)
+- `review` - Code quality (80+ score)
+- `issue` - Issue analysis/labeling
+- `pr` - Pull Request creation
+- `deploy` - CI/CD deployment
+
+#### Pattern 4: Autonomous Mode
+
+```bash
+miyabi auto --interval=10 --max-duration=60 --json
+```
+
+### Error Handling for AI Agents
+
+```typescript
+// Pseudo-code for AI agent error handling
+const result = await exec('miyabi status --json');
+const exitCode = result.exitCode;
+const parsed = JSON.parse(result.stdout);
+
+if (exitCode !== 0) {
+  if (exitCode === 2) {
+    // CONFIG_ERROR - Missing GITHUB_TOKEN
+    await setGitHubToken();
+    return retry();
+  } else if (exitCode === 5) {
+    // AUTH_ERROR - Invalid token
+    throw new Error('GitHub authentication failed');
+  }
+}
+
+if (!parsed.success) {
+  console.error(`Error: ${parsed.error.code}`);
+  console.error(`Message: ${parsed.error.message}`);
+  console.error(`Suggestion: ${parsed.error.suggestion}`);
+
+  if (parsed.error.recoverable) {
+    // Apply suggestion and retry
+  } else {
+    // Fatal error, abort
+    throw new Error(parsed.error.message);
+  }
+}
+```
+
+### Recommended Workflow for AI Agents
+
+```bash
+# Step 1: Set environment
+export GITHUB_TOKEN=ghp_xxx
+export MIYABI_JSON=1
+export MIYABI_AUTO_YES=1
+
+# Step 2: Check status
+miyabi status --json > status.json
+[ $? -ne 0 ] && exit $?
+
+# Step 3: Parse and decide
+PENDING=$(jq -r '.data.issues.byState.pending' status.json)
+
+# Step 4: Execute agent if needed
+if [ "$PENDING" -gt 0 ]; then
+  miyabi agent run issue --json --yes
+fi
+```
+
+### Current Implementation Status (v0.8.4)
+
+- ✅ **miyabi status --json** - Fully implemented, production-ready
+- ⚠️ **Other commands** - Accept --json flag, full implementation in Phase 2
+- ✅ **Exit codes** - All commands return proper exit codes
+- ✅ **Environment variables** - MIYABI_JSON, MIYABI_AUTO_YES supported
+
+### For More Details
+
+See [AI_AGENT_USAGE.md](./AI_AGENT_USAGE.md) for comprehensive AI agent documentation.
+
+---
+
 ## プロジェクト概要
 
 **Miyabi** - 一つのコマンドで全てが完結する自律型開発フレームワーク

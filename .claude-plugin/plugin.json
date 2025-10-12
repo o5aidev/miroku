@@ -1,139 +1,22 @@
 {
-  "name": "miyabi",
-  "version": "0.8.2",
-  "description": "完全自律型AI開発オペレーションプラットフォーム - GitHub as OS アーキテクチャに基づき、Issue作成からコード実装、PR作成、デプロイまでを完全自動化",
+  "name": "miyabi-operations",
+  "version": "1.0.0",
+  "description": "Autonomous development operations powered by GitHub as OS architecture",
   "author": {
     "name": "Shunsuke Hayashi",
     "email": "supernovasyun@gmail.com",
     "url": "https://github.com/ShunsukeHayashi"
   },
-  "homepage": "https://github.com/ShunsukeHayashi/Miyabi",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ShunsukeHayashi/Miyabi.git"
-  },
-  "license": "Apache-2.0",
+  "homepage": "https://shunsukehayashi.github.io/Miyabi/",
+  "repository": "https://github.com/ShunsukeHayashi/Miyabi",
+  "license": "MIT",
   "keywords": [
-    "ai",
-    "agents",
     "autonomous",
     "github",
+    "ci-cd",
+    "agents",
     "devops",
     "automation",
-    "claude-code",
-    "development"
-  ],
-  "engines": {
-    "claudeCode": ">=2.0.0"
-  },
-  "dependencies": {
-    "node": ">=18.0.0",
-    "git": "*",
-    "gh": "*"
-  },
-  "commands": [
-    {
-      "name": "miyabi-init",
-      "description": "新規プロジェクトを作成",
-      "file": "commands/miyabi-init.md"
-    },
-    {
-      "name": "miyabi-status",
-      "description": "プロジェクトステータスを確認",
-      "file": "commands/miyabi-status.md"
-    },
-    {
-      "name": "miyabi-auto",
-      "description": "Water Spider 自動モード起動",
-      "file": "commands/miyabi-auto.md"
-    },
-    {
-      "name": "miyabi-todos",
-      "description": "TODO コメント検出と Issue 化",
-      "file": "commands/miyabi-todos.md"
-    },
-    {
-      "name": "miyabi-agent",
-      "description": "指定 Agent を実行",
-      "file": "commands/miyabi-agent.md"
-    },
-    {
-      "name": "miyabi-docs",
-      "description": "ドキュメント自動生成",
-      "file": "commands/miyabi-docs.md"
-    },
-    {
-      "name": "miyabi-deploy",
-      "description": "デプロイ実行",
-      "file": "commands/miyabi-deploy.md"
-    },
-    {
-      "name": "miyabi-test",
-      "description": "テスト実行",
-      "file": "commands/miyabi-test.md"
-    }
-  ],
-  "agents": [
-    {
-      "name": "coordinator",
-      "description": "タスク統括・並列実行制御",
-      "file": "agents/coordinator.md"
-    },
-    {
-      "name": "codegen",
-      "description": "AI駆動コード生成",
-      "file": "agents/codegen.md"
-    },
-    {
-      "name": "review",
-      "description": "コード品質判定",
-      "file": "agents/review.md"
-    },
-    {
-      "name": "issue",
-      "description": "Issue分析・ラベル管理",
-      "file": "agents/issue.md"
-    },
-    {
-      "name": "pr",
-      "description": "Pull Request自動作成",
-      "file": "agents/pr.md"
-    },
-    {
-      "name": "deployment",
-      "description": "CI/CDデプロイ自動化",
-      "file": "agents/deployment.md"
-    },
-    {
-      "name": "test",
-      "description": "テスト自動実行",
-      "file": "agents/test.md"
-    }
-  ],
-  "hooks": [
-    {
-      "event": "pre-commit",
-      "script": "hooks/pre-commit.sh"
-    },
-    {
-      "event": "post-commit",
-      "script": "hooks/post-commit.sh"
-    },
-    {
-      "event": "pre-pr",
-      "script": "hooks/pre-pr.sh"
-    },
-    {
-      "event": "post-test",
-      "script": "hooks/post-test.sh"
-    }
-  ],
-  "mcpServers": [
-    {
-      "name": "miyabi-integration",
-      "command": "node",
-      "args": ["mcp-servers/miyabi-integration.js"],
-      "description": "Miyabi 統合 MCP Server"
-    }
+    "label-system"
   ]
 }

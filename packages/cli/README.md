@@ -938,6 +938,58 @@ npx miyabi status
 ```
 </details>
 
+<details>
+<summary><strong>`npx miyabi-agent-sdk` エラー</strong></summary>
+
+**エラー:**
+```
+npm error code ETARGET
+npm error notarget No matching version found for miyabi-agent-sdk@*
+```
+
+**原因:**
+`miyabi-agent-sdk` はライブラリであり、CLIツールではありません。
+`npx miyabi-agent-sdk` のように実行することはできません。
+
+**正しい使い方:**
+
+**Option 1: Miyabi CLI を使用（推奨）**
+```bash
+# Miyabi CLI から Agent を実行
+npx miyabi agent run codegen --issue=123
+npx miyabi agent run review --pr=456 --issue=123
+npx miyabi agent run pr --issue=123
+```
+
+**Option 2: プログラムから直接使用**
+```typescript
+// package.json
+{
+  "dependencies": {
+    "miyabi-agent-sdk": "^0.1.0-alpha.2"
+  }
+}
+
+// your-code.ts
+import { CodeGenAgent } from 'miyabi-agent-sdk';
+
+const agent = new CodeGenAgent({
+  githubToken: process.env.GITHUB_TOKEN,
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+});
+
+const result = await agent.generate({
+  issueNumber: 123,
+  repository: 'my-repo',
+  owner: 'my-org',
+});
+```
+
+**詳細:**
+- `miyabi` - CLIツール（`npx miyabi`で実行）
+- `miyabi-agent-sdk` - ライブラリ（`import`で使用）
+</details>
+
 ---
 
 ## 📚 Documentation

@@ -1,0 +1,83 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+export class GitignoreParser {
+  private patterns: string[] = [];
+  private compiledPatterns: RegExp[] = [];
+
+  constructor(gitignoreContent?: string) {
+    if (gitignoreContent) {
+      this.parseContent(gitignoreContent);
+    }
+  }
+
+  public static fromFile(filePath: string): GitignoreParser {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return new GitignoreParser(content);
+  }
+
+  public parseContent(content: string): void {
+    this.patterns = content
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0 && !line.startsWith('#'));
+    
+    this.compilePatterns();
+  }
+
+  public isIgnored(filePath: string): boolean {
+    const normalizedPath = this.normalizePath(filePath);
+    
+    return this.compiledPatterns.some(pattern => pattern.test(normalizedPath));
+  }
+
+  public getPatterns(): string[] {
+    return [...this.patterns];
+  }
+
+  public addPattern(pattern: string): void {
+    if (!this.patterns.includes(pattern)) {
+      this.patterns.push(pattern);
+      this.compilePatterns();
+    }
+  }
+
+  public removePattern(pattern: string): boolean {
+    const index = this.patterns.indexOf(pattern);
+    if (index !== -1) {
+      this.patterns.splice(index, 1);
+      this.compilePatterns();
+      return true;
+    }
+    return false;
+  }
+
+  public clear(): void {
+    this.patterns = [];
+    this.compiledPatterns = [];
+  }
+
+  private compilePatterns(): void {
+    this.compiledPatterns = this.patterns.map(pattern => {
+      // Convert gitignore pattern to regex
+      let regexPattern = pattern
+        .replace(/\./g, '\\.')
+        .replace(/\*/g, '[^/]*')
+        .replace(/\*\*/g, '.*')
+        .replace(/\?/g, '[^/]');
+
+      // Handle directory patterns
+      if (pattern.endsWith('/')) {
+        regexPattern = regexPattern.slice(0, -1) + '(/.*)?$';
+      } else {
+        regexPattern = `^${regexPattern}$|^${regexPattern}/.*$`;
+      }
+
+      return new RegExp(regexPattern);
+    });
+  }
+
+  private normalizePath(filePath: string): string {
+    return filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  }
+}

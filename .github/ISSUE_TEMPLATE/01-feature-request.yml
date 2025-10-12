@@ -1,0 +1,125 @@
+name: ✨ Feature Request (新機能リクエスト)
+description: 新しい機能や機能拡張の提案
+title: "[Feature] "
+labels: ["📥 state:pending", "✨ type:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ✨ 新機能リクエスト
+
+        新しい機能や機能拡張を提案していただきありがとうございます！
+        以下のフォームに記入することで、**IssueAgentが自動的に優先度・深刻度を推定**します。
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 機能の説明
+      description: どのような機能を追加したいですか？
+      placeholder: |
+        例: ダークモード機能を追加したい。
+        ユーザーが画面の配色を暗いテーマに切り替えられるようにする。
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 🎯 動機・ユースケース
+      description: なぜこの機能が必要ですか？どのような場面で使いますか？
+      placeholder: |
+        例: 夜間作業時に画面が眩しくて目が疲れる。
+        ダークモードがあれば長時間作業しやすくなる。
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 提案する解決策
+      description: どのように実装すべきだと考えますか？（任意）
+      placeholder: |
+        例: 設定画面にテーマ切り替えトグルを追加。
+        CSSカスタムプロパティを使って全体のカラースキームを変更。
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 代替案
+      description: 他にどのような方法がありますか？（任意）
+      placeholder: |
+        例: ブラウザの拡張機能で対応する
+        OS のダークモード設定に連動させる
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: ⚠️ 優先度（推定）
+      description: |
+        **IssueAgentが自動推定しますが、あなたの感覚での優先度を教えてください**
+        - P0-Critical: 即座に必要（セキュリティ、本番障害）
+        - P1-High: 1週間以内に欲しい（主要機能）
+        - P2-Medium: 1ヶ月以内に欲しい（標準機能）
+        - P3-Low: いつか実装されれば嬉しい
+      options:
+        - "📝 P3-Low (いつか実装されれば嬉しい)"
+        - "📊 P2-Medium (1ヶ月以内に欲しい)"
+        - "⚠️ P1-High (1週間以内に欲しい)"
+        - "🔥 P0-Critical (即座に必要)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: 🎓 実装難易度（推定）
+      description: |
+        **あなたが感じる実装の難しさを教えてください**
+        - 小: 2時間以内
+        - 中: 1日以内
+        - 大: 3日以内
+        - 特大: 1週間以上
+      options:
+        - "小 (2時間以内)"
+        - "中 (1日以内)"
+        - "大 (3日以内)"
+        - "特大 (1週間以上)"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: special
+    attributes:
+      label: 🔖 特殊なラベル
+      description: 該当するものがあればチェックしてください
+      options:
+        - label: "💰 cost-watch: Claude API使用量が多くなる可能性がある"
+        - label: "🔄 dependencies: 他のIssueに依存している"
+        - label: "🎓 learning: 新しい技術の学習が必要"
+        - label: "🔬 experiment: 実験的な機能（失敗の可能性あり）"
+        - label: "👋 good-first-issue: 初心者向けタスク"
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ## 🤖 次のステップ
+
+        1. **Issueを送信**すると、`📥 state:pending` ラベルが自動付与されます
+        2. **IssueAgent**が内容を分析し、以下を自動推定します：
+           - `priority:*` (優先度)
+           - `severity:*` (深刻度)
+           - `good-first-issue` (該当する場合)
+        3. **CoordinatorAgent**が依存関係を分析し、実装計画を立てます
+        4. **CodeGenAgent**がコードを自動生成し、PRを作成します
+
+        ### 🚀 即座に実行したい場合
+
+        Issue作成後、以下のラベルを手動で追加してください：
+        - `🤖 trigger:agent-execute` - 1分以内にAgentが起動します
+
+        ### 📚 詳細情報
+
+        - [Label System完全ガイド](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/LABEL_SYSTEM_GUIDE.md)
+        - [Agent SDK統合ガイド](https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/AGENT_SDK_LABEL_INTEGRATION.md)
