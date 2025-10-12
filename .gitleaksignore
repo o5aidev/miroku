@@ -1,0 +1,54 @@
+# Gitleaks Ignore File
+# Whitelist documentation examples and placeholder credentials
+# These are not real secrets but examples for users
+
+# Documentation files with example credentials
+.env.example:*
+*.md:*
+**/templates/**/*.md:*
+**/examples/**:*
+
+# Specific files with example credentials
+.claude/commands/agent-run.md:67
+.claude/commands/agent-run.md:68
+.claude/agents/review-agent.md:135
+packages/cli/templates/claude-code/commands/agent-run.md:67
+packages/cli/templates/claude-code/commands/agent-run.md:68
+packages/cli/templates/claude-code/agents/review-agent.md:135
+
+# Docker compose - development only passwords
+docker-compose.yml:68
+
+# Setup guide documentation
+packages/cli/SETUP_GUIDE.md:130
+packages/cli/src/commands/setup.ts:159
+
+# Getting started guide - all example credentials
+GETTING_STARTED.md:354
+GETTING_STARTED.md:436
+GETTING_STARTED.md:446
+GETTING_STARTED.md:472
+GETTING_STARTED.md:489
+GETTING_STARTED.md:493
+GETTING_STARTED.md:1460
+
+# Deployment documentation
+DEPLOYMENT.md:90
+DEPLOYMENT.md:91
+
+# Quick start guide
+QUICKSTART.md:66
+
+# Template instructions
+TEMPLATE_INSTRUCTIONS.md:71
+TEMPLATE_INSTRUCTIONS.md:82
+
+# Verification reports (example output)
+VERIFICATION_REPORT_JP.md:20
+VERIFICATION_REPORT_JP.md:355
+
+# Pattern-based ignores
+# Ignore lines with placeholder patterns like ghp_xxxx, sk-ant-xxxx
+*:*ghp_xxxxxxxxxxxx*
+*:*sk-ant-xxxxxxxxxxxx*
+*:*github_pat_xxxxxxxxxxxx*

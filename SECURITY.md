@@ -140,3 +140,20 @@ Run security audit:
 npm run security:audit
 npm run security:scan
 ```
+
+#### Documentation Examples
+
+Documentation files contain **example credentials** for user guidance. These are **not real secrets** and are whitelisted in `.gitleaksignore`:
+
+**Safe patterns (examples only):**
+- `ghp_xxxxxxxxxxxx` - Placeholder GitHub token
+- `sk-ant-xxxxxxxxxxxx` - Placeholder Anthropic API key
+- `github_pat_xxxxxxxxxxxx` - Placeholder GitHub PAT
+
+**Whitelisted locations:**
+- `.env.example` - Example configuration
+- `*.md` - All documentation files
+- `templates/**/*.md` - Template documentation
+- `docker-compose.yml` - Development passwords
+
+These placeholders help users understand where to place their credentials without exposing real secrets.
