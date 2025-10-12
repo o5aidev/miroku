@@ -62,7 +62,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 # Build all packages (exclude dashboard-server due to TypeScript errors)
-RUN pnpm -r --filter='!@agentic-os/dashboard-server' run build
+RUN pnpm -r --filter='!@miyabi/dashboard-server' run build
 
 # Stage 4: Runtime image
 FROM base AS runtime
