@@ -109,14 +109,21 @@ npx miyabi
 ```
 
 Then select from the menu:
-- 🌸 **Setup Guide** (for beginners)
+- 🌸 **First-Time Setup** (onboarding wizard)
 - 🆕 **Create New Project**
 - 📦 **Add to Existing Project**
 - 📊 **Check Status**
+- 🩺 **Health Check** (diagnostics)
 
 #### Direct Commands (Fastest)
 
 ```bash
+# First-time setup wizard
+npx miyabi onboard
+
+# Health check & diagnostics
+npx miyabi doctor
+
 # Create new project
 npx miyabi init my-awesome-project
 
@@ -656,6 +663,131 @@ npx miyabi setup --skip-token --skip-config
 3. ✅ Token creation
 4. ✅ Configuration
 5. ✅ First project creation
+
+---
+
+### `onboard`
+
+Comprehensive first-run wizard for new users.
+
+```bash
+# Interactive onboarding
+npx miyabi onboard
+
+# Skip optional features
+npx miyabi onboard --skip-demo --skip-tour
+```
+
+**Options:**
+- `--skip-demo` - Skip demo project creation
+- `--skip-tour` - Skip feature tour
+- `--non-interactive` - Exit (requires interactive mode)
+- `-y, --yes` - Same as --non-interactive
+
+**What it does:**
+1. ✅ Welcome & introduction
+2. ✅ System health check (calls `doctor`)
+3. ✅ 30-second "What is Miyabi?" overview
+4. ✅ Demo project creation (optional)
+5. ✅ Interactive feature tour
+6. ✅ Quick commands reference
+7. ✅ Resource links
+
+**Perfect for:**
+- 🆕 First-time Miyabi users
+- 📚 Learning the system
+- 🎓 Understanding capabilities
+- 🚀 Quick start
+
+---
+
+### `doctor`
+
+System health check and diagnostics.
+
+```bash
+# Basic health check
+npx miyabi doctor
+
+# Detailed diagnostics
+npx miyabi doctor --verbose
+
+# JSON output (for AI agents)
+npx miyabi doctor --json
+```
+
+**Health Checks Performed:**
+
+| Check | Description | Fix Suggestions |
+|-------|-------------|-----------------|
+| **Node.js** | Version ≥18.0.0 | Upgrade Node.js |
+| **Git** | Installation & version | Install Git |
+| **GitHub CLI** | `gh` authentication | Run `gh auth login` |
+| **GITHUB_TOKEN** | Token format validation | Set env var or use gh CLI |
+| **Token Permissions** | Required scopes check | Add `repo`, `workflow`, `project` |
+| **Network** | GitHub API connectivity | Check internet connection |
+| **Repository** | Git repo detection | Initialize git repo |
+| **.miyabi.yml** | Config file validation | Fix YAML syntax |
+| **Claude Code** | Environment detection | N/A (informational) |
+
+**Output Example:**
+
+```
+🩺 Miyabi Health Check
+
+  ✓ Node.js: v20.10.0 (OK)
+  ✓ Git: git version 2.42.0 (OK)
+  ✓ GitHub CLI: gh version 2.40.0 (Authenticated)
+  ✓ GITHUB_TOKEN: Valid token format
+  ⚠ Token Permissions: Missing recommended scopes: project
+    💡 Add recommended scopes for full functionality: https://github.com/settings/tokens
+  ✓ Network Connectivity: GitHub API accessible
+  ✓ Repository: Git repository detected
+  ✓ Claude Code: Standard terminal
+
+Summary:
+  ✓ 7 checks passed
+  ⚠ 1 warnings
+  8 total checks
+
+⚠ Overall: Issues detected (but not critical)
+
+Next Steps:
+  1. Review the suggestions above to fix issues
+  2. Run this command again to verify fixes
+  3. For help: https://github.com/ShunsukeHayashi/Miyabi/issues
+```
+
+**JSON Mode:**
+
+```bash
+npx miyabi doctor --json
+```
+
+```json
+{
+  "checks": [
+    {
+      "name": "Node.js",
+      "status": "pass",
+      "message": "v20.10.0 (OK)",
+      "details": "Node.js v20.10.0 meets minimum requirement (≥18)"
+    },
+    ...
+  ],
+  "summary": {
+    "passed": 7,
+    "warned": 1,
+    "failed": 0,
+    "total": 8
+  },
+  "overallStatus": "issues"
+}
+```
+
+**Exit Codes:**
+- `0` - Healthy or minor issues
+- `1` - Critical issues found
 
 ---
 
