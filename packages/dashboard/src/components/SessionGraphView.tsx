@@ -124,7 +124,9 @@ export function SessionGraphView() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setGraphData(data);
+      // The JSON structure has a 'graph' property containing nodes and edges
+      const graphData = data.graph || data;
+      setGraphData(graphData);
     } catch (err) {
       console.error('Error loading graph:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -168,7 +170,7 @@ export function SessionGraphView() {
     return elements;
   }
 
-  function getCytoscapeStyle() {
+  function getCytoscapeStyle(): any {
     return [
       {
         selector: 'node',
