@@ -119,3 +119,7 @@ claude-plugin/
 /src/
 /__tests__/
 /commands/
+.worktrees/
+data/
+.ai/
+reports/

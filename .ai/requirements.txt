@@ -1,7 +1,0 @@
-# YAML Context Engineering Agent requirements placeholder
-# Python runtime constraint
-python==3.9.*
-
-# Tooling requirements (extend as dependencies are identified)
-pyyaml>=6.0.1
-requests>=2.32.0
