@@ -19,7 +19,8 @@ export type AgentType =
   | 'IssueAgent'
   | 'PRAgent'
   | 'DeploymentAgent'
-  | 'AutoFixAgent';
+  | 'AutoFixAgent'
+  | 'WaterSpiderAgent';
 
 export type Severity =
   | 'Sev.1-Critical'
@@ -760,4 +761,4 @@ export interface Escalation {
 // ============================================================================
 
 export type { WorktreeInfo, WorktreeManagerConfig } from '../worktree/worktree-manager.js';
-export type { ExecutionProgress, ParallelExecutionResult } from '../execution/parallel-execution-manager.js';
+export type { ExecutionProgress } from '../execution/parallel-execution-manager.js';
