@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import type { FeedbackLoop, IterationRecord, WorktreeInfo, ExecutionProgress } from '../../../agents/types/index';
+import type { FeedbackLoop, IterationRecord, WorktreeInfo, ExecutionProgress } from '../../../../agents/types/index';
 
 interface FeedbackLoopData {
   loops: FeedbackLoop[];
@@ -269,7 +269,7 @@ const LoopDetailsModal: React.FC<{ loop: FeedbackLoop; onClose: () => void }> = 
                 </tr>
               </thead>
               <tbody>
-                {loop.iterations.map((iteration, index) => (
+                {loop.iterations.map((iteration: IterationRecord, index: number) => (
                   <tr key={index} className="border-b border-gray-700">
                     <td className="p-2">{iteration.iteration}</td>
                     <td className="p-2">{iteration.consumptionReport.overallScore}</td>
