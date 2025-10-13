@@ -13,7 +13,7 @@
  */
 
 import { AgentConfig, Task, AgentResult, AgentType } from '../../agents/types/index.js';
-import { PerformanceOptimizer, createPerformanceOptimizer } from '../performance-optimizer.js';
+import { PerformanceOptimizer, createPerformanceOptimizer } from '../cicd/performance-optimizer.js';
 import { Octokit } from '@octokit/rest';
 
 // ============================================================================
