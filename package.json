@@ -136,7 +136,7 @@
     "cli-spinners": "^2.9.2",
     "cli-table3": "^0.6.5",
     "figlet": "^1.7.0",
-    "gradient-string": "^2.0.2",
+    "gradient-string": "^3.0.0",
     "log-symbols": "^6.0.0",
     "lru-cache": "^11.2.2",
     "ora": "^8.0.1",
