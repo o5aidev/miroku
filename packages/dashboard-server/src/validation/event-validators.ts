@@ -25,7 +25,7 @@ export const AgentIdSchema = z.enum([
   'deployment',
   'test',
 ], {
-  errorMap: () => ({ message: 'Invalid agentId. Must be one of: coordinator, codegen, review, issue, pr, deployment, test' }),
+  message: 'Invalid agentId. Must be one of: coordinator, codegen, review, issue, pr, deployment, test',
 });
 
 /**
@@ -128,7 +128,7 @@ export const GraphUpdateEventSchema = z.object({
       x: z.number(),
       y: z.number(),
     }),
-    metadata: z.record(z.any()).optional(),
+    metadata: z.record(z.string(), z.any()).optional(),
   })),
   edges: z.array(z.object({
     id: z.string().min(1),
@@ -215,7 +215,7 @@ export const AgentErrorEventSchema = z.object({
     message: z.string().max(1000),
     severity: SeveritySchema,
     stack: z.string().optional(),
-    context: z.record(z.any()).optional(),
+    context: z.record(z.string(), z.any()).optional(),
     recoverable: z.boolean(),
     suggestedAction: z.string().max(500).optional(),
   }),

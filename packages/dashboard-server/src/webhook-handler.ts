@@ -37,11 +37,12 @@ export class WebhookHandler {
   private setupHandlers() {
     // Issue opened
     this.webhooks.on('issues.opened', async ({ payload }) => {
-      console.log(`📥 Issue opened: #${payload.issue.number}`);
+      const issue = payload.issue as any;
+      console.log(`📥 Issue opened: #${issue.number}`);
 
       try {
         const graph = await this.graphBuilder.buildIssueGraph(
-          payload.issue.number
+          issue.number
         );
 
         const event: GraphUpdateEvent = {
@@ -51,7 +52,7 @@ export class WebhookHandler {
         };
 
         this.io.emit('graph:update', event);
-        console.log(`✅ Graph updated for issue #${payload.issue.number}`);
+        console.log(`✅ Graph updated for issue #${issue.number}`);
       } catch (error) {
         console.error('❌ Error updating graph:', error);
       }
@@ -147,7 +148,8 @@ export class WebhookHandler {
 
     // Pull request events
     this.webhooks.on('pull_request.opened', async ({ payload }) => {
-      console.log(`🔀 PR opened: #${payload.pull_request.number}`);
+      const pr = payload.pull_request as any;
+      console.log(`🔀 PR opened: #${pr.number}`);
 
       // TODO: Add PR nodes to graph
     });

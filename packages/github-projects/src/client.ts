@@ -22,7 +22,6 @@ import type {
 import {
   ProjectNotFoundError,
   FieldNotFoundError,
-  RateLimitExceededError,
 } from './types.js';
 import { withRetry, type GitHubRetryConfig } from '@miyabi/agent-sdk';
 
@@ -51,7 +50,7 @@ export class GitHubProjectsClient {
   private config: ProjectConfig;
   private retryConfig?: Partial<GitHubRetryConfig>;
   // Legacy properties for backward compatibility
-  private retryOnRateLimit: boolean;
+  private _retryOnRateLimit: boolean; // Unused but kept for backward compatibility
   private maxRetries: number;
 
   constructor(clientConfig: ClientConfig) {
@@ -64,16 +63,19 @@ export class GitHubProjectsClient {
     // Support new retry config or legacy properties
     if (clientConfig.retryConfig) {
       this.retryConfig = clientConfig.retryConfig;
-      this.retryOnRateLimit = true;
+      this._retryOnRateLimit = true;
       this.maxRetries = clientConfig.retryConfig.retries ?? 3;
     } else {
       // Legacy support
-      this.retryOnRateLimit = clientConfig.retryOnRateLimit ?? true;
+      this._retryOnRateLimit = clientConfig.retryOnRateLimit ?? true;
       this.maxRetries = clientConfig.maxRetries ?? 3;
       this.retryConfig = {
         retries: this.maxRetries,
       };
     }
+
+    // Suppress unused variable warning - kept for backward compatibility
+    void this._retryOnRateLimit;
   }
 
   // ==========================================================================

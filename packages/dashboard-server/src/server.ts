@@ -785,7 +785,9 @@ app.post('/api/layout/recalculate', async (req, res) => {
     const graph = await graphBuilder.buildFullGraph();
 
     // Recalculate layout
-    const layoutResult = layoutEngine.calculateLayout(graph.nodes, graph.edges);
+    // Type assertion needed because dashboard-server and dashboard have different GraphNode/GraphEdge types
+    // DeviceNode is in dashboard-server but not in dashboard
+    const layoutResult = layoutEngine.calculateLayout(graph.nodes as any, graph.edges as any);
 
     // Broadcast updated graph
     const updateEvent = {
