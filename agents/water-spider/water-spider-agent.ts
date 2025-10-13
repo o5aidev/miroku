@@ -59,7 +59,7 @@ export class WaterSpiderAgent extends BaseAgent {
   /**
    * Main execution: Start Water Spider monitoring
    */
-  async execute(task: Task): Promise<AgentResult> {
+  async execute(_task: Task): Promise<AgentResult> {
     this.log('🕷️  WaterSpiderAgent starting (Water Spider Pattern)');
     this.log(`   Monitor Interval: ${this.monitorInterval}ms`);
     this.log(`   Max Idle Time: ${this.maxIdleTime}ms`);

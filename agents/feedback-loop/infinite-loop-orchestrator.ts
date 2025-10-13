@@ -12,7 +12,6 @@ import type {
   ConsumptionReport,
   ConvergenceMetrics,
   GoalRefinement,
-  NextAction,
   ActualMetrics,
   Escalation,
 } from '../types/index.js';
@@ -337,7 +336,7 @@ export class InfiniteLoopOrchestrator {
 
   private generateFeedback(
     report: ConsumptionReport,
-    goal: GoalDefinition
+    _goal: GoalDefinition
   ): FeedbackRecord {
     const timestamp = new Date().toISOString();
 

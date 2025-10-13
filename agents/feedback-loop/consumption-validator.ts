@@ -402,7 +402,7 @@ export class ConsumptionValidator {
 
   private generateRecommendations(
     gaps: GapAnalysis[],
-    results: ValidationResult[]
+    _results: ValidationResult[]
   ): string[] {
     const recommendations: string[] = [];
 
@@ -448,7 +448,7 @@ export class ConsumptionValidator {
     return recommendations;
   }
 
-  private generateNextActions(gaps: GapAnalysis[], goal: GoalDefinition): NextAction[] {
+  private generateNextActions(gaps: GapAnalysis[], _goal: GoalDefinition): NextAction[] {
     const actions: NextAction[] = [];
     let actionId = 1;
 

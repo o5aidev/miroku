@@ -313,7 +313,7 @@ export class MetricsCollector {
    */
   private async collectCoverage(): Promise<CoverageResult> {
     try {
-      const { stdout } = await execAsync(
+      await execAsync(
         'npx vitest run --coverage --reporter=json',
         {
           cwd: this.config.workingDirectory,
@@ -346,17 +346,17 @@ export class MetricsCollector {
           const data = file as any;
           totalLines += Object.keys(data.statementMap || {}).length;
           coveredLines += Object.values(data.s || {}).filter(
-            (v) => v > 0
+            (v: unknown) => (v as number) > 0
           ).length;
 
           totalStatements += Object.keys(data.statementMap || {}).length;
           coveredStatements += Object.values(data.s || {}).filter(
-            (v) => v > 0
+            (v: unknown) => (v as number) > 0
           ).length;
 
           totalFunctions += Object.keys(data.fnMap || {}).length;
           coveredFunctions += Object.values(data.f || {}).filter(
-            (v) => v > 0
+            (v: unknown) => (v as number) > 0
           ).length;
 
           totalBranches += Object.keys(data.branchMap || {}).length;

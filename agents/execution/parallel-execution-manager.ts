@@ -9,7 +9,6 @@
  */
 
 import { WorktreeManager, type WorktreeInfo } from '../worktree/worktree-manager.js';
-import { WaterSpiderAgent } from '../water-spider/water-spider-agent.js';
 import { InfiniteLoopOrchestrator } from '../feedback-loop/infinite-loop-orchestrator.js';
 import { GoalManager } from '../feedback-loop/goal-manager.js';
 import { ConsumptionValidator } from '../feedback-loop/consumption-validator.js';
