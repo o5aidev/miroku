@@ -10,6 +10,7 @@ import { WaterSpiderAgent } from '../../agents/water-spider/water-spider-agent.j
 import { GoalManager } from '../../agents/feedback-loop/goal-manager.js';
 import { ConsumptionValidator } from '../../agents/feedback-loop/consumption-validator.js';
 import { InfiniteLoopOrchestrator } from '../../agents/feedback-loop/infinite-loop-orchestrator.js';
+import { MetricsCollector } from '../../agents/feedback-loop/metrics-collector.js';
 import type {
   GoalDefinition,
   ActualMetrics,
@@ -186,6 +187,8 @@ export class IntegratedSystem {
     description: string;
     issueNumber?: number;
     taskId?: string;
+    workingDirectory?: string;
+    useRealMetrics?: boolean;
     successCriteria: GoalDefinition['successCriteria'];
     testSpecs: GoalDefinition['testSpecs'];
     acceptanceCriteria: string[];
@@ -208,6 +211,10 @@ export class IntegratedSystem {
     });
 
     this.activeGoals.set(goal.id, goal);
+
+    // Store execution parameters for collectMetrics
+    (goal as any).workingDirectory = params.workingDirectory || process.cwd();
+    (goal as any).useRealMetrics = params.useRealMetrics ?? false;
 
     console.log(`✅ Goal created: ${goal.id}`);
     console.log('');
@@ -303,20 +310,42 @@ export class IntegratedSystem {
   // ============================================================================
 
   private async collectMetrics(goalId: string): Promise<ActualMetrics> {
-    // In real scenario, this would collect metrics from actual execution
-    // For now, return simulated progressive improvement
-
     const goal = this.activeGoals.get(goalId);
     if (!goal) {
       throw new Error(`Goal not found: ${goalId}`);
     }
 
+    const useRealMetrics = (goal as any).useRealMetrics || false;
+    const workingDirectory = (goal as any).workingDirectory || process.cwd();
+
+    if (useRealMetrics) {
+      // Use MetricsCollector for real metrics
+      console.log(`📊 Collecting real metrics from: ${workingDirectory}`);
+
+      const collector = new MetricsCollector({
+        workingDirectory,
+        skipTests: false,
+        skipCoverage: false,
+        verbose: true,
+      });
+
+      try {
+        const metrics = await collector.collect();
+        console.log(`✅ Real metrics collected: ${metrics.qualityScore}/100`);
+        return metrics;
+      } catch (error: any) {
+        console.error(`❌ Failed to collect real metrics:`, error.message);
+        console.log(`⚠️  Falling back to simulated metrics`);
+        // Fall through to simulation
+      }
+    }
+
+    // Simulated progressive improvement (fallback)
     const loop = Array.from(this.activeLoops.values()).find(
       (l) => l.goalId === goalId
     );
     const iteration = loop?.iteration || 0;
 
-    // Simulate progressive improvement
     const baseScore = 40 + iteration * 12;
     const qualityScore = Math.min(100, baseScore);
 
@@ -404,6 +433,49 @@ async function main() {
       });
       break;
 
+    case 'test-metrics':
+      // Test real metrics collection
+      console.log('🧪 Testing Real Metrics Collection...');
+      console.log('');
+
+      const testGoal = system['goalManager'].createGoal({
+        title: 'Test: Metrics Collection',
+        description: 'Test real-time metrics collection',
+        successCriteria: {
+          minQualityScore: 70,
+          maxEslintErrors: 50,
+          maxTypeScriptErrors: 50,
+          maxSecurityIssues: 10,
+          minTestCoverage: 50,
+          minTestsPassed: 1,
+        },
+        testSpecs: [],
+        acceptanceCriteria: ['Metrics collected successfully'],
+        priority: 1,
+      });
+
+      system['activeGoals'].set(testGoal.id, testGoal);
+      (testGoal as any).workingDirectory = process.cwd();
+      (testGoal as any).useRealMetrics = true;
+
+      const metrics = await system['collectMetrics'](testGoal.id);
+
+      console.log('');
+      console.log('📊 Collected Metrics:');
+      console.log(`   Quality Score: ${metrics.qualityScore}/100`);
+      console.log(`   ESLint Errors: ${metrics.eslintErrors}`);
+      console.log(`   TypeScript Errors: ${metrics.typeScriptErrors}`);
+      console.log(`   Security Issues: ${metrics.securityIssues}`);
+      console.log(`   Test Coverage: ${metrics.testCoverage.toFixed(1)}%`);
+      console.log(`   Tests Passed: ${metrics.testsPassed}`);
+      console.log(`   Tests Failed: ${metrics.testsFailed}`);
+      console.log(`   Build Time: ${metrics.buildTimeMs}ms`);
+      console.log(`   Lines of Code: ${metrics.linesOfCode}`);
+      console.log(`   Cyclomatic Complexity: ${metrics.cyclomaticComplexity}`);
+      console.log('');
+      console.log('✅ Metrics collection test completed!');
+      process.exit(0);
+
     case 'status':
       const status = system.getStatus();
       console.log('Integrated System Status:');
@@ -417,9 +489,10 @@ async function main() {
       console.log('Integrated System - Water Spider + Feedback Loop');
       console.log('');
       console.log('Commands:');
-      console.log('  start   Start integrated system');
-      console.log('  demo    Run demonstration');
-      console.log('  status  Show system status');
+      console.log('  start         Start integrated system');
+      console.log('  demo          Run demonstration');
+      console.log('  test-metrics  Test real metrics collection');
+      console.log('  status        Show system status');
       process.exit(1);
   }
 }

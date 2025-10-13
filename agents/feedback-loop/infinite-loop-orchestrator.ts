@@ -14,11 +14,38 @@ import type {
   GoalRefinement,
   NextAction,
   ActualMetrics,
+  Escalation,
 } from '../types/index.js';
 import { GoalManager } from './goal-manager.js';
 import { ConsumptionValidator } from './consumption-validator.js';
+import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// ============================================================================
+// Error Classes
+// ============================================================================
+
+export class TimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TimeoutError';
+  }
+}
+
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+export class RetryableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RetryableError';
+  }
+}
 
 export interface InfiniteLoopConfig {
   maxIterations: number;
@@ -27,6 +54,13 @@ export interface InfiniteLoopConfig {
   autoRefinementEnabled: boolean;
   logsDirectory: string;
   autoSave: boolean;
+
+  // Error handling configuration
+  timeout?: number; // Timeout in milliseconds (default: 300000 = 5 minutes)
+  maxRetries?: number; // Maximum retry attempts (default: 3)
+  enableEscalation?: boolean; // Enable GitHub/Slack escalation (default: true)
+  githubOwner?: string; // GitHub repository owner
+  githubRepo?: string; // GitHub repository name
 }
 
 /**
@@ -94,9 +128,92 @@ export class InfiniteLoopOrchestrator {
   }
 
   /**
-   * Execute one iteration of the feedback loop
+   * Execute one iteration of the feedback loop (with error handling)
    */
   async executeIteration(
+    loopId: string,
+    sessionId: string,
+    actualMetrics: ActualMetrics
+  ): Promise<IterationRecord> {
+    const loop = this.activeLoops.get(loopId);
+    if (!loop) {
+      throw new Error(`Loop not found: ${loopId}`);
+    }
+
+    const timeout = this.config.timeout || 300000; // 5 minutes default
+    const maxRetries = this.config.maxRetries || 3;
+
+    try {
+      // Execute with timeout
+      return await Promise.race([
+        this.executeIterationInternal(loopId, sessionId, actualMetrics),
+        this.createTimeout(timeout, sessionId),
+      ]);
+    } catch (error: any) {
+      // Handle timeout
+      if (error instanceof TimeoutError) {
+        console.error(`⏱️  Iteration timeout: ${sessionId} (${timeout}ms)`);
+        loop.status = 'escalated';
+        this.activeLoops.set(loopId, loop);
+
+        // Escalate
+        if (this.config.enableEscalation !== false) {
+          await this.escalate({
+            loopId,
+            reason: 'Iteration timeout',
+            escalationLevel: 'TechLead',
+            severity: 'high',
+            context: {
+              sessionId,
+              iteration: loop.iteration,
+              timeout,
+            },
+          });
+        }
+
+        throw error;
+      }
+
+      // Handle network/retryable errors
+      if (error instanceof NetworkError || error instanceof RetryableError) {
+        console.error(`🌐 Retryable error: ${error.message}`);
+
+        // Retry with exponential backoff
+        return await this.retryWithBackoff(
+          () => this.executeIterationInternal(loopId, sessionId, actualMetrics),
+          maxRetries,
+          sessionId
+        );
+      }
+
+      // Handle unexpected errors
+      console.error(`❌ Unexpected error in iteration:`, error);
+      loop.status = 'diverged';
+      this.activeLoops.set(loopId, loop);
+
+      // Escalate critical errors
+      if (this.config.enableEscalation !== false) {
+        await this.escalate({
+          loopId,
+          reason: `Unexpected error: ${error.message}`,
+          escalationLevel: 'TechLead',
+          severity: 'critical',
+          context: {
+            sessionId,
+            iteration: loop.iteration,
+            errorStack: error.stack,
+          },
+        });
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Execute one iteration of the feedback loop (internal implementation)
+   */
+  private async executeIterationInternal(
     loopId: string,
     sessionId: string,
     actualMetrics: ActualMetrics
@@ -347,7 +464,7 @@ export class InfiniteLoopOrchestrator {
       }
     }
 
-    return [...new Set(references)]; // Remove duplicates
+    return Array.from(new Set(references)); // Remove duplicates
   }
 
   private updateConvergenceMetrics(loop: FeedbackLoop): ConvergenceMetrics {
@@ -519,5 +636,200 @@ export class InfiniteLoopOrchestrator {
     const filename = `iteration-${loopId}-${iteration.iteration}.json`;
     const filePath = path.join(this.config.logsDirectory, filename);
     fs.writeFileSync(filePath, JSON.stringify(iteration, null, 2), 'utf-8');
+  }
+
+  // ============================================================================
+  // Error Handling Methods
+  // ============================================================================
+
+  /**
+   * Create a timeout promise that rejects after specified milliseconds
+   */
+  private createTimeout(ms: number, sessionId: string): Promise<never> {
+    return new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new TimeoutError(`Iteration timeout after ${ms}ms for session ${sessionId}`));
+      }, ms);
+    });
+  }
+
+  /**
+   * Retry function with exponential backoff
+   */
+  private async retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries: number,
+    context: string
+  ): Promise<T> {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        // Don't retry on last attempt
+        if (attempt === maxRetries - 1) {
+          throw error;
+        }
+
+        // Don't retry on non-retryable errors
+        if (!(error instanceof NetworkError || error instanceof RetryableError)) {
+          throw error;
+        }
+
+        // Calculate exponential backoff delay
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s, ...
+        console.log(
+          `🔄 Retry attempt ${attempt + 1}/${maxRetries} for ${context} after ${delay}ms`
+        );
+
+        await this.sleep(delay);
+      }
+    }
+
+    throw new Error(`Max retries (${maxRetries}) exceeded for ${context}`);
+  }
+
+  /**
+   * Escalate error to GitHub Issues and/or Slack
+   */
+  private async escalate(escalation: Escalation): Promise<void> {
+    console.log(`🚨 Escalating: ${escalation.reason}`);
+
+    // Escalate to GitHub Issues
+    if (process.env.GITHUB_TOKEN && this.config.githubOwner && this.config.githubRepo) {
+      try {
+        await this.escalateToGitHub(escalation);
+      } catch (error: any) {
+        console.error(`Failed to escalate to GitHub:`, error.message);
+      }
+    }
+
+    // Escalate to Slack
+    if (process.env.SLACK_WEBHOOK_URL) {
+      try {
+        await this.escalateToSlack(escalation);
+      } catch (error: any) {
+        console.error(`Failed to escalate to Slack:`, error.message);
+      }
+    }
+  }
+
+  /**
+   * Create GitHub Issue comment for escalation
+   */
+  private async escalateToGitHub(escalation: Escalation): Promise<void> {
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+    const issueNumber = escalation.context.issueNumber;
+    if (!issueNumber) {
+      console.warn('⚠️  No issue number in context, skipping GitHub escalation');
+      return;
+    }
+
+    const body = `
+## 🚨 Escalation: ${escalation.reason}
+
+**Level**: ${escalation.escalationLevel}
+**Severity**: ${escalation.severity}
+**Loop ID**: ${escalation.loopId}
+**Session ID**: ${escalation.context.sessionId}
+**Iteration**: ${escalation.context.iteration}
+
+### Context
+\`\`\`json
+${JSON.stringify(escalation.context, null, 2)}
+\`\`\`
+
+### Recommended Actions
+- Review the feedback loop logs in \`${this.config.logsDirectory}\`
+- Check session metrics and identify bottlenecks
+- Consider adjusting goal criteria or implementation approach
+
+Please investigate and provide guidance.
+
+---
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+Co-Authored-By: Claude <noreply@anthropic.com>
+    `.trim();
+
+    await octokit.issues.createComment({
+      owner: this.config.githubOwner!,
+      repo: this.config.githubRepo!,
+      issue_number: issueNumber,
+      body,
+    });
+
+    console.log(`✅ Escalation posted to GitHub Issue #${issueNumber}`);
+  }
+
+  /**
+   * Send escalation notification to Slack
+   */
+  private async escalateToSlack(escalation: Escalation): Promise<void> {
+    const webhookUrl = process.env.SLACK_WEBHOOK_URL!;
+
+    const severityEmoji = {
+      low: '🟢',
+      medium: '🟡',
+      high: '🟠',
+      critical: '🔴',
+    }[escalation.severity];
+
+    const payload = {
+      text: `${severityEmoji} Escalation: ${escalation.reason}`,
+      blocks: [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: `🚨 Escalation: ${escalation.reason}`,
+          },
+        },
+        {
+          type: 'section',
+          fields: [
+            {
+              type: 'mrkdwn',
+              text: `*Level:*\n${escalation.escalationLevel}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Severity:*\n${escalation.severity}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Loop ID:*\n${escalation.loopId}`,
+            },
+            {
+              type: 'mrkdwn',
+              text: `*Iteration:*\n${escalation.context.iteration}`,
+            },
+          ],
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*Session:* ${escalation.context.sessionId}`,
+          },
+        },
+      ],
+    };
+
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log(`✅ Escalation sent to Slack`);
+  }
+
+  /**
+   * Sleep helper
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

@@ -743,3 +743,14 @@ export interface GoalRefinement {
   // Expected impact
   expectedImpact: string;
 }
+
+/**
+ * Escalation information for error handling
+ */
+export interface Escalation {
+  loopId: string;
+  reason: string;
+  escalationLevel: EscalationTarget;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  context: Record<string, any>;
+}
