@@ -55,24 +55,27 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null);
   const responseCallbacksRef = useRef<Map<number, (response: AgentResponse) => void>>(new Map());
+  const connectingRef = useRef<boolean>(false);
 
   /**
    * WebSocket接続を確立
    */
   const connect = useCallback(() => {
     // すでに接続中なら何もしない
-    if (wsRef.current?.readyState === WebSocket.OPEN || state.connecting) {
+    if (wsRef.current?.readyState === WebSocket.OPEN || connectingRef.current) {
       return;
     }
 
-    setState((prev) => ({ ...prev, connecting: true, error: null }));
+    connectingRef.current = true;
+    setState((prev: WebSocketState) => ({ ...prev, connecting: true, error: null }));
 
     try {
       const ws = new WebSocket(WS_URL);
 
       ws.onopen = () => {
         console.log('[WebSocket] Connected to agents system');
-        setState((prev) => ({
+        connectingRef.current = false;
+        setState((prev: WebSocketState) => ({
           ...prev,
           connected: true,
           connecting: false,
@@ -96,7 +99,7 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
           const response: AgentResponse = JSON.parse(event.data);
           console.log('[WebSocket] Received:', response.type, response);
 
-          setState((prev) => ({
+          setState((prev: WebSocketState) => ({
             ...prev,
             lastResponse: response,
             lastUpdate: new Date(),
@@ -115,7 +118,8 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
 
       ws.onerror = (error) => {
         console.error('[WebSocket] Error:', error);
-        setState((prev) => ({
+        connectingRef.current = false;
+        setState((prev: WebSocketState) => ({
           ...prev,
           error: 'WebSocket接続エラー',
           connecting: false,
@@ -124,7 +128,8 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
 
       ws.onclose = () => {
         console.log('[WebSocket] Disconnected');
-        setState((prev) => ({
+        connectingRef.current = false;
+        setState((prev: WebSocketState) => ({
           ...prev,
           connected: false,
           connecting: false,
@@ -149,13 +154,14 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
       wsRef.current = ws;
     } catch (error) {
       console.error('[WebSocket] Connection error:', error);
-      setState((prev) => ({
+      connectingRef.current = false;
+      setState((prev: WebSocketState) => ({
         ...prev,
         error: '接続に失敗しました',
         connecting: false,
       }));
     }
-  }, [state.connecting]);
+  }, []); // No dependencies - stable function
 
   /**
    * WebSocket接続を切断
@@ -176,7 +182,8 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
       wsRef.current = null;
     }
 
-    setState((prev) => ({
+    connectingRef.current = false;
+    setState((prev: WebSocketState) => ({
       ...prev,
       connected: false,
       connecting: false,
@@ -264,7 +271,7 @@ export function useAgentWebSocket(): [WebSocketState, WebSocketActions] {
     return () => {
       disconnect();
     };
-  }, []);
+  }, [connect, disconnect]);
 
   return [
     state,
