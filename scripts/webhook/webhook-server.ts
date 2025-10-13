@@ -5,10 +5,9 @@
  * Port: 3002 (to avoid conflict with local-env-collector on 3001)
  */
 
-import express from 'express';
-import type { Request, Response } from 'express';
+import express, { type Express, type Request, type Response } from 'express';
 
-const app = express();
+const app: Express = express();
 const PORT = 3002;
 
 // Middleware
@@ -97,7 +96,7 @@ app.get('/api/session/:id/recommendation', (req: Request, res: Response) => {
     });
   }
 
-  res.json({
+  return res.json({
     action: 'wait',
     message: 'まだ実行中です',
   });

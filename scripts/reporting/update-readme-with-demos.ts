@@ -23,7 +23,7 @@ export class ReadmeUpdater {
       
       logger.success('README.md updated with demo content');
     } catch (error) {
-      logger.error('Failed to update README:', undefined, error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to update README:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

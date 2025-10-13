@@ -40,7 +40,7 @@ export class DemoGenerator {
       
       logger.success('Demo assets generated successfully!');
     } catch (error) {
-      logger.error('Failed to generate demo assets:', undefined, error instanceof Error ? error : new Error(String(error)));
+      logger.error('Failed to generate demo assets:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

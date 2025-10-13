@@ -6,7 +6,7 @@
  * Generates JSON data for GitHub Pages dashboard
  */
 
-import { getProjectItems } from './projects-graphql.js';
+import { getProjectItems } from '../projects-graphql.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

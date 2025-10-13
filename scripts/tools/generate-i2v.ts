@@ -218,7 +218,7 @@ async function pollTask(apiKey: string, taskId: string): Promise<string | null> 
       throw new Error(`Failed to query task (${response.status}): ${errorText}`);
     }
 
-    const data: SeedanceTaskResponse = await response.json();
+    const data = await response.json() as SeedanceTaskResponse;
 
     console.log(`   [${attempts}/${MAX_POLL_ATTEMPTS}] Status: ${data.status}`);
 
