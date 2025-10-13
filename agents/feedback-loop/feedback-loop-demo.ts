@@ -8,10 +8,7 @@ import { GoalManager } from './goal-manager.js';
 import { ConsumptionValidator } from './consumption-validator.js';
 import { InfiniteLoopOrchestrator } from './infinite-loop-orchestrator.js';
 import type {
-  GoalDefinition,
   ActualMetrics,
-  IterationRecord,
-  FeedbackLoop,
 } from '../types/index.js';
 
 /**

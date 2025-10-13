@@ -7,7 +7,6 @@
 import {
   ToolRequirement,
   HookRequirement,
-  TemplateRequirement,
   DynamicToolSpec,
   ToolCreationResult,
 } from './types/agent-analysis.js';
@@ -122,7 +121,7 @@ export class ToolFactory {
    * Generate command tool implementation
    */
   private generateCommandTool(requirement: ToolRequirement): string {
-    const { name, parameters } = requirement;
+    const { name } = requirement;
 
     return `
 import { exec } from 'child_process';
@@ -288,7 +287,7 @@ export async function ${this.sanitizeName(name)}(params: any): Promise<any> {
       name,
       description,
       priority,
-      async execute(context: HookContext): Promise<void> {
+      async execute(_context: HookContext): Promise<void> {
         logger.info(`[PreHook: ${name}] Executing...`);
 
         // Dynamic hook logic based on config
@@ -352,7 +351,7 @@ export async function ${this.sanitizeName(name)}(params: any): Promise<any> {
       name,
       description,
       priority,
-      async execute(context: HookContext, error: Error): Promise<void> {
+      async execute(_context: HookContext, error: Error): Promise<void> {
         logger.error(`[ErrorHook: ${name}] Handling error...`);
 
         // Error handling logic

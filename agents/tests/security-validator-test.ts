@@ -7,7 +7,6 @@
 import {
   SecurityValidator,
   SecurityIssueType,
-  SecurityValidationResult,
 } from '../utils/security-validator.js';
 import { logger } from '../ui/index.js';
 
@@ -378,7 +377,7 @@ new Function('return 1');
 exec('ls');
   `.trim();
 
-  const { sanitized: sanitized2, removed: removed2 } = SecurityValidator.sanitize(code2);
+  const { removed: removed2 } = SecurityValidator.sanitize(code2);
   assert(removed2.length === 3, 'All dangerous patterns are sanitized');
 }
 

@@ -8,7 +8,6 @@ import { PreHook, PostHook, ErrorHook, HookContext } from '../../types/hooks.js'
 import { AgentResult } from '../../types/index.js';
 import {
   DashboardEvent,
-  DashboardEventType,
   DashboardWebhookResponse,
   AgentStartedEvent,
   AgentProgressEvent,
@@ -87,7 +86,7 @@ export class DashboardWebhookHook implements PreHook, PostHook, ErrorHook {
         taskId: context.task.id,
         taskTitle: context.task.title,
         taskDescription: context.task.description,
-        priority: context.task.priority,
+        priority: `P${context.task.priority}`,
         estimatedDuration: context.task.estimatedDuration,
         dependencies: context.task.dependencies,
       },
@@ -108,7 +107,7 @@ export class DashboardWebhookHook implements PreHook, PostHook, ErrorHook {
       sessionId: this.config.sessionId,
       deviceIdentifier: this.config.deviceIdentifier,
       result: {
-        success: result.status === 'success' || result.status === 'completed',
+        success: result.status === 'success',
         status: result.status,
         durationMs: Date.now() - context.startTime,
         qualityScore: result.metrics?.qualityScore,
@@ -212,7 +211,7 @@ export class DashboardWebhookHook implements PreHook, PostHook, ErrorHook {
           throw new Error(`Dashboard webhook failed: ${response.status} ${response.statusText}`);
         }
 
-        const result: DashboardWebhookResponse = await response.json();
+        const result = (await response.json()) as DashboardWebhookResponse;
 
         if (!result.success) {
           throw new Error(`Dashboard webhook rejected: ${result.error || 'Unknown error'}`);

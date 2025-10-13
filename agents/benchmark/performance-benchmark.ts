@@ -405,14 +405,15 @@ async function benchmark5_E2EIntegration(taskCount: number): Promise<BenchmarkRe
             }
           );
 
-          if (toolResult.success && toolResult.value.tool) {
+          const toolValue = toolResult.success ? toolResult.value : null;
+          if (toolValue?.tool) {
             // 3. セキュリティ検証（簡易版）
             const code = `function test() { return ${i}; }`;
             const validation = SecurityValidator.validate(code);
 
             // 4. ツール実行
             if (validation.safe) {
-              result = await toolCreator.executeTool(toolResult.value.tool, { value: i }, context);
+              result = await toolCreator.executeTool(toolValue.tool, { value: i }, context);
               cache.set(cacheKey, result);
             }
           }

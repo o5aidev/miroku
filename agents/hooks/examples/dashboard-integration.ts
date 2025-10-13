@@ -22,7 +22,7 @@ class DashboardIntegratedAgent extends BaseAgent {
   private dashboardHook: DashboardWebhookHook;
 
   constructor(config: AgentConfig) {
-    super('DashboardIntegratedAgent', config);
+    super('DashboardIntegratedAgent' as import('../../types/index.js').AgentType, config);
 
     // Initialize hook manager
     this.hookManager = new HookManager();
@@ -230,7 +230,7 @@ class CoordinatedDashboardExample {
         super(agentType as any, config);
       }
 
-      async execute(task: Task): Promise<AgentResult> {
+      async execute(_task: Task): Promise<AgentResult> {
         // Agent-specific implementation
         return {
           status: 'success',
@@ -276,7 +276,7 @@ class CustomEventExample extends BaseAgent {
   private dashboardHook: DashboardWebhookHook;
 
   constructor(config: AgentConfig) {
-    super('CustomEventExample', config);
+    super('CustomEventExample' as import('../../types/index.js').AgentType, config);
 
     this.dashboardHook = new DashboardWebhookHook({
       dashboardUrl: process.env.DASHBOARD_URL || 'http://localhost:3001',
@@ -285,13 +285,6 @@ class CustomEventExample extends BaseAgent {
   }
 
   async execute(task: Task): Promise<AgentResult> {
-    const context: HookContext = {
-      agentType: this.agentType,
-      task,
-      config: this.config,
-      startTime: this.startTime,
-    };
-
     // Send custom metric event
     await this.dashboardHook.sendCustomEvent({
       eventType: 'metric:recorded',
@@ -341,6 +334,8 @@ async function basicUsage() {
   const agent = new DashboardIntegratedAgent({
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   });
@@ -350,7 +345,7 @@ async function basicUsage() {
     title: 'Example Task with Dashboard Tracking',
     description: 'This task will be tracked in the dashboard',
     type: 'feature',
-    priority: 'P2',
+    priority: 2,
     dependencies: [],
     metadata: {
       issueNumber: 123,
@@ -374,6 +369,8 @@ async function coordinatedUsage() {
   const agent1 = coordinator.createAgent('CodeGenAgent', {
     deviceIdentifier: 'device-1',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   });
@@ -381,6 +378,8 @@ async function coordinatedUsage() {
   const agent2 = coordinator.createAgent('ReviewAgent', {
     deviceIdentifier: 'device-1',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   });
@@ -391,7 +390,7 @@ async function coordinatedUsage() {
     title: 'Task 1',
     description: 'First task',
     type: 'feature',
-    priority: 'P2',
+    priority: 2,
     dependencies: [],
   };
 
@@ -400,7 +399,7 @@ async function coordinatedUsage() {
     title: 'Task 2',
     description: 'Second task',
     type: 'feature',
-    priority: 'P2',
+    priority: 2,
     dependencies: ['task-1'],
   };
 

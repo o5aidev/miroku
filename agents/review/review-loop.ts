@@ -132,7 +132,7 @@ export class ReviewLoop {
       assignedAgent: 'ReviewAgent',
       dependencies: [],
       estimatedDuration: 15,
-      status: 'in-progress',
+      status: 'running',
     };
 
     try {
@@ -209,7 +209,7 @@ export class ReviewLoop {
 
     let index = 1;
 
-    const displayGroup = (issues: QualityIssue[], label: string) => {
+    const displayGroup = (issues: QualityIssue[], _label: string) => {
       if (issues.length === 0) return;
 
       for (const issue of issues) {

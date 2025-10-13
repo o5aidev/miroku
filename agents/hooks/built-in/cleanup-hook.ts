@@ -21,7 +21,7 @@ export class CleanupHook implements PostHook {
     this.tempFiles = options.tempFiles || [];
   }
 
-  async execute(context: HookContext, result: AgentResult): Promise<void> {
+  async execute(context: HookContext, _result: AgentResult): Promise<void> {
     logger.info('Starting cleanup...');
 
     let cleanedFiles = 0;

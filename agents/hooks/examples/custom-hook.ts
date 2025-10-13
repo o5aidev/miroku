@@ -18,7 +18,7 @@ export class GitWorkingTreeCheckHook implements PreHook {
   description = 'Ensures git working tree is clean before execution';
   priority = 15;
 
-  async execute(context: HookContext): Promise<void> {
+  async execute(_context: HookContext): Promise<void> {
     logger.info('Checking git working tree status...');
 
     const { spawn } = await import('child_process');
@@ -69,7 +69,7 @@ export class PerformanceTrackingHook implements PreHook, PostHook {
   private startMemory: number = 0;
   private startCpu: NodeJS.CpuUsage = { user: 0, system: 0 };
 
-  async execute(context: HookContext): Promise<void> {
+  async execute(_context: HookContext): Promise<void> {
     // PreHook: Record start metrics
     this.startMemory = process.memoryUsage().heapUsed;
     this.startCpu = process.cpuUsage();
@@ -77,7 +77,7 @@ export class PerformanceTrackingHook implements PreHook, PostHook {
     logger.info('Performance tracking started');
   }
 
-  async executePost(context: HookContext, result: AgentResult): Promise<void> {
+  async executePost(context: HookContext, _result: AgentResult): Promise<void> {
     // PostHook: Calculate metrics
     const endMemory = process.memoryUsage().heapUsed;
     const endCpu = process.cpuUsage(this.startCpu);
@@ -152,7 +152,7 @@ export class TaskValidationHook implements PreHook {
     }
 
     // Validate priority
-    const validPriorities = ['P0', 'P1', 'P2', 'P3'];
+    const validPriorities = [0, 1, 2, 3];
     if (!validPriorities.includes(context.task.priority)) {
       throw new Error(
         `Invalid priority: ${context.task.priority}. Must be one of: ${validPriorities.join(', ')}`
@@ -229,10 +229,3 @@ hookManager.registerPreHook(new PerformanceTrackingHook());
 // Register custom posthooks
 hookManager.registerPostHook(new PerformanceTrackingHook());
 hookManager.registerPostHook(new ArtifactArchiveHook('.ai/archives'));
-
-export {
-  GitWorkingTreeCheckHook,
-  PerformanceTrackingHook,
-  TaskValidationHook,
-  ArtifactArchiveHook,
-};

@@ -9,16 +9,12 @@
 
 import { DynamicToolCreator } from '../dynamic-tool-creator.js';
 import { TTLCache, memoize } from '../utils/cache.js';
-import { retryWithBackoff, retryUntil } from '../utils/retry.js';
+import { retryWithBackoff } from '../utils/retry.js';
 import { SecurityValidator } from '../utils/security-validator.js';
 import {
   AnalysisError,
   ToolCreationError,
-  TimeoutError,
-  ExecutionError,
-  ErrorUtils,
 } from '../types/errors.js';
-import { logger } from '../ui/index.js';
 import type { IToolCreator } from '../types/tool-creator-interface.js';
 
 // Demo色付きログ
@@ -92,7 +88,7 @@ async function scenario1_TypeSafety(): Promise<void> {
   const history = toolCreator.getExecutionHistory();
   demoLog.result(`実行履歴: ${history.length}件`);
   if (history.length > 0) {
-    demoLog.info(`最新実行: ${history[0].toolName} - ${history[0].success ? '成功' : '失敗'}`);
+    demoLog.info(`最新実行: ${history[0].toolId} - ${history[0].result.success ? '成功' : '失敗'}`);
   }
 
   demoLog.success('Scenario 1完了: 型安全性が確保され、全メソッドが正しく動作');
@@ -127,7 +123,7 @@ async function scenario2_ErrorHandling(): Promise<void> {
     initialDelayMs: 500,
     backoffMultiplier: 2,
     jitterFactor: 0.1,
-    onRetry: (attempt, error, delay) => {
+    onRetry: (attempt, _error, delay) => {
       demoLog.info(`リトライ ${attempt}: ${delay}ms待機後に再試行`);
     },
   });
@@ -144,10 +140,7 @@ async function scenario2_ErrorHandling(): Promise<void> {
 
   demoLog.step('エラー分類とコンテキスト確認');
   try {
-    throw AnalysisError.complexityCalculationFailed('task-123', 'Demo error', {
-      taskName: 'Calculate complexity',
-      score: 0,
-    });
+    throw AnalysisError.complexityCalculationFailed('task-123', 'Demo error');
   } catch (error) {
     if (error instanceof AnalysisError) {
       demoLog.info(`エラーコード: ${error.code}`);
@@ -171,7 +164,7 @@ async function scenario3_CacheOptimization(): Promise<void> {
     maxSize: 10,
     ttlMs: 5000,
     autoCleanup: true,
-    onEvict: (key, value) => {
+    onEvict: (key, _value) => {
       demoLog.info(`LRU Eviction: ${key} が削除されました`);
     },
   });

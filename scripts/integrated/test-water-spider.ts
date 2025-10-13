@@ -13,8 +13,6 @@ import type { WaterSpiderConfig } from '../../agents/water-spider/water-spider-a
 import { SessionManager } from '../../agents/water-spider/session-manager.js';
 import { WebhookClient } from '../../agents/water-spider/webhook-client.js';
 import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
@@ -41,7 +39,7 @@ async function main() {
       webhookUrl: 'http://localhost:3002',
     };
 
-    const sessionManager = new SessionManager(config);
+    void new SessionManager(config);
     testResults.push({
       test: 'SessionManager initialization',
       passed: true,
@@ -61,7 +59,7 @@ async function main() {
   // Test 2: WebhookClient initialization
   console.log('2️⃣ Test: WebhookClient initialization');
   try {
-    const webhookClient = new WebhookClient('http://localhost:3002');
+    void new WebhookClient('http://localhost:3002');
     testResults.push({
       test: 'WebhookClient initialization',
       passed: true,
@@ -172,7 +170,7 @@ async function main() {
       webhookUrl: 'http://localhost:3002',
     };
 
-    const waterSpider = new WaterSpiderAgent(config);
+    void new WaterSpiderAgent(config);
 
     testResults.push({
       test: 'WaterSpiderAgent initialization',

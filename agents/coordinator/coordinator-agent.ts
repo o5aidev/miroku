@@ -114,7 +114,7 @@ export class CoordinatorAgent extends BaseAgent {
 
     // Estimate total duration
     const estimatedTotalDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration ?? 0),
       0
     );
 
@@ -255,7 +255,7 @@ export class CoordinatorAgent extends BaseAgent {
     const concurrency = Math.min(tasks.length, 5); // Max 5 parallel
 
     const estimatedDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration ?? 0),
       0
     );
 
@@ -346,14 +346,14 @@ export class CoordinatorAgent extends BaseAgent {
 
         try {
           // Instantiate and execute the appropriate specialist agent
-          const agent = await this.createSpecialistAgent(task.assignedAgent);
+          const agent = await this.createSpecialistAgent(task.assignedAgent || 'CodeGenAgent');
           const result = await agent.execute(task);
           const durationMs = Date.now() - startTime;
 
           return {
             taskId: task.id,
             status: result.status === 'success' ? ('completed' as AgentStatus) : ('failed' as AgentStatus),
-            agentType: task.assignedAgent,
+            agentType: task.assignedAgent || 'CodeGenAgent',
             durationMs,
             result,
           };
@@ -364,7 +364,7 @@ export class CoordinatorAgent extends BaseAgent {
           return {
             taskId: task.id,
             status: 'failed' as AgentStatus,
-            agentType: task.assignedAgent,
+            agentType: task.assignedAgent || 'CodeGenAgent',
             durationMs,
             result: {
               status: 'failed' as const,
@@ -499,7 +499,8 @@ export class CoordinatorAgent extends BaseAgent {
 
     try {
       // Read existing content
-      const existingContent = await this.readFile(plansPath);
+      const fs = await import('fs/promises');
+      const existingContent = await fs.readFile(plansPath, 'utf-8');
 
       // Update with report data
       const updatedContent = PlansGenerator.updateWithProgress(existingContent, report);

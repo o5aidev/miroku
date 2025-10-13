@@ -116,6 +116,13 @@ export class RichLogger {
   }
 
   /**
+   * Warning message (alias for warning())
+   */
+  warn(message: string, options: LogOptions = {}): void {
+    this.warning(message, options);
+  }
+
+  /**
    * Info message
    */
   info(message: string, options: LogOptions = {}): void {

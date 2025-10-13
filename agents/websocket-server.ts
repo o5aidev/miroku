@@ -4,10 +4,10 @@
  * ダッシュボードからのUIクリックを受信し、agentsシステムで処理
  */
 
+// @ts-expect-error - ws package needs to be installed: npm install ws @types/ws
 import { WebSocketServer, WebSocket } from 'ws';
 import { AgentRegistry } from './agent-registry.js';
 import { AgentAnalyzer } from './agent-analyzer.js';
-import { ToolFactory } from './tool-factory.js';
 import { SecurityValidator } from './utils/security-validator.js';
 import { TTLCache } from './utils/cache.js';
 import { logger } from './ui/index.js';
@@ -31,7 +31,6 @@ export class AgentWebSocketServer {
   private wss: WebSocketServer;
   private registry?: AgentRegistry;
   private analyzer?: AgentAnalyzer;
-  private toolFactory?: ToolFactory;
   private cache: TTLCache<any>;
   private port: number;
 
@@ -72,7 +71,7 @@ export class AgentWebSocketServer {
         logger.info('[WebSocket] Dashboard disconnected');
       });
 
-      ws.on('error', (error) => {
+      ws.on('error', (error: Error) => {
         logger.error(`[WebSocket] Error: ${error.message}`);
       });
 
@@ -118,7 +117,7 @@ export class AgentWebSocketServer {
     }
   }
 
-  private async handleQuery(command: string, payload: any): Promise<AgentResponse> {
+  private async handleQuery(command: string, _payload: any): Promise<AgentResponse> {
     switch (command) {
       case 'get-stats':
         return await this.getImprovementsStats();
@@ -336,7 +335,7 @@ export class AgentWebSocketServer {
   /**
    * リトライテスト
    */
-  private async retryTest(payload: any): Promise<AgentResponse> {
+  private async retryTest(_payload: any): Promise<AgentResponse> {
     logger.info('[WebSocket] Executing retry test');
 
     let attempt = 0;
@@ -405,7 +404,7 @@ export class AgentWebSocketServer {
       timestamp: Date.now(),
     });
 
-    this.wss.clients.forEach((client) => {
+    this.wss.clients.forEach((client: WebSocket) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }

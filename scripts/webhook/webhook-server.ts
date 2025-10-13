@@ -107,7 +107,7 @@ app.get('/api/session/:id/recommendation', (req: Request, res: Response) => {
  * GET /api/sessions
  * Get all session states (for monitoring dashboard)
  */
-app.get('/api/sessions', (req: Request, res: Response) => {
+app.get('/api/sessions', (_req: Request, res: Response) => {
   const sessions = Array.from(sessionStates.values());
   res.json({
     timestamp: new Date().toISOString(),
@@ -120,7 +120,7 @@ app.get('/api/sessions', (req: Request, res: Response) => {
  * GET /health
  * Health check endpoint
  */
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     uptime: process.uptime(),

@@ -16,7 +16,7 @@ class BasicAgent extends BaseAgent {
   private hookManager: HookManager;
 
   constructor(config: AgentConfig) {
-    super('BasicAgent', config);
+    super('BasicAgent' as import('../../types/index.js').AgentType, config);
 
     // Initialize hook manager
     this.hookManager = new HookManager();
@@ -81,7 +81,7 @@ class BasicAgent extends BaseAgent {
     }
   }
 
-  private async doWork(task: Task): Promise<void> {
+  private async doWork(_task: Task): Promise<void> {
     // Simulate work
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -92,6 +92,8 @@ async function main() {
   const agent = new BasicAgent({
     deviceIdentifier: 'example-device',
     githubToken: process.env.GITHUB_TOKEN || '',
+    useTaskTool: false,
+    useWorktree: false,
     reportDirectory: '.ai/reports',
     logDirectory: '.ai/logs',
   });
@@ -101,7 +103,7 @@ async function main() {
     title: 'Example Task',
     description: 'This is an example task',
     type: 'feature',
-    priority: 'P2',
+    priority: 2,
     dependencies: [],
   };
 

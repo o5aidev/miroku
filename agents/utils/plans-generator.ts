@@ -16,7 +16,6 @@ import {
   Task,
   DAG,
   TaskDecomposition,
-  ExecutionPlan,
   ExecutionReport,
   Issue,
 } from '../types/index.js';

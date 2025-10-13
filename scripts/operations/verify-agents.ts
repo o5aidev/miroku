@@ -142,7 +142,7 @@ function verifyLint(agent: string, verbose: boolean): { passed: boolean; error?:
 /**
  * Run TypeScript type checking
  */
-function verifyTypecheck(agent: string, verbose: boolean): { passed: boolean; error?: string } {
+function verifyTypecheck(_agent: string, verbose: boolean): { passed: boolean; error?: string } {
   if (verbose) {
     console.log(`  🔍 Running TypeScript type check...`);
   }

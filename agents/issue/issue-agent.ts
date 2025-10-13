@@ -407,6 +407,7 @@ export class IssueAgent extends BaseAgent {
       PRAgent: '🔀PRAgent',
       DeploymentAgent: '🚀DeploymentAgent',
       AutoFixAgent: '🔧AutoFixAgent',
+      WaterSpiderAgent: '🕷️WaterSpiderAgent',
     };
     labels.push(agentLabels[analysis.agentType]);
 

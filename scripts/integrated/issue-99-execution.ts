@@ -75,26 +75,26 @@ Task 1.4: CI/CD Integration
     },
     testSpecs: [
       {
-        filePath: 'tests/ReviewAgent.test.ts',
-        testType: 'unit',
-        framework: 'vitest',
+        id: 'test-99-1',
+        name: 'ReviewAgent Snapshot Tests',
+        description: 'Unit tests for ReviewAgent snapshot testing',
+        type: 'unit',
+        testFile: 'tests/ReviewAgent.test.ts',
+        testFunction: 'ReviewAgent snapshot tests',
         expectedBehavior: 'Generate consistent quality report snapshots',
-        testCases: [
-          'should generate consistent quality report structure',
-          'should generate consistent review comments',
-          'should exclude dynamic fields from snapshots',
-        ],
+        dependencies: [],
+        status: 'pending',
       },
       {
-        filePath: '.github/workflows/snapshot-test.yml',
-        testType: 'integration',
-        framework: 'github-actions',
+        id: 'test-99-2',
+        name: 'CI/CD Snapshot Integration',
+        description: 'GitHub Actions workflow for snapshot testing',
+        type: 'integration',
+        testFile: '.github/workflows/snapshot-test.yml',
+        testFunction: 'GitHub Actions snapshot workflow',
         expectedBehavior: 'Detect snapshot changes in CI/CD',
-        testCases: [
-          'should run snapshot tests on PR',
-          'should fail on snapshot changes',
-          'should upload diff artifacts',
-        ],
+        dependencies: ['test-99-1'],
+        status: 'pending',
       },
     ],
     acceptanceCriteria: [
@@ -229,7 +229,7 @@ Task 1.4: CI/CD Integration
     // Show next actions
     if (iteration.consumptionReport.nextActions.length > 0) {
       const nextAction = iteration.consumptionReport.nextActions[0];
-      console.log(`   🎯 Next: ${nextAction.action}`);
+      console.log(`   🎯 Next: ${nextAction.description}`);
     }
 
     console.log('');

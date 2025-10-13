@@ -23,9 +23,8 @@ import {
   retryWithBackoff,
   retryUntil,
   retryBatch,
-  RetryResult
 } from '../utils/retry.js';
-import { TTLCache, memoize, CacheStats } from '../utils/cache.js';
+import { TTLCache, memoize } from '../utils/cache.js';
 import { logger } from '../ui/index.js';
 
 // Test counters
@@ -501,11 +500,11 @@ async function testRetryLogic(): Promise<void> {
   );
 
   assert(result5.success === false, 'Timeout returns failure');
-  assert(result5.error?.message.includes('timed out'), 'Timeout error message is correct');
+  assert(result5.error?.message.includes('timed out') ?? false, 'Timeout error message is correct');
 
   // Test 3.6: onRetry callback
   let retryCallbackCount = 0;
-  const result6 = await retryWithBackoff(
+  void await retryWithBackoff(
     async () => {
       if (retryCallbackCount < 2) {
         throw new AgentError('Retry me', 'RETRY', {}, true);
@@ -720,7 +719,7 @@ async function testTTLCache(): Promise<void> {
     maxSize: 2,
     ttlMs: 10000,
     autoCleanup: false,
-    onEvict: (key, value) => {
+    onEvict: (key, _value) => {
       evictedKeys.push(key);
     },
   });

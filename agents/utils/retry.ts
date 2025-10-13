@@ -4,7 +4,7 @@
  * Provides intelligent retry logic for transient failures
  */
 
-import { AgentError, ErrorUtils } from '../types/errors.js';
+import { ErrorUtils } from '../types/errors.js';
 import { logger } from '../ui/index.js';
 
 /**
@@ -204,7 +204,6 @@ export async function retryUntil<T>(
   const opts = { ...DEFAULT_RETRY_OPTIONS, ...options };
   const startTime = Date.now();
 
-  let lastResult: T | undefined;
   let attempts = 0;
 
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
@@ -212,7 +211,6 @@ export async function retryUntil<T>(
 
     try {
       const result = await executeWithTimeout(operation, opts.attemptTimeoutMs);
-      lastResult = result;
 
       // Check predicate
       if (predicate(result)) {

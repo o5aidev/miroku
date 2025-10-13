@@ -12,7 +12,7 @@ import { DynamicToolCreator } from '../dynamic-tool-creator.js';
 import { TTLCache } from '../utils/cache.js';
 import { SecurityValidator } from '../utils/security-validator.js';
 import type { IToolCreator } from '../types/tool-creator-interface.js';
-import type { DynamicToolSpec } from '../types/tool-types.js';
+import type { DynamicToolSpec } from '../types/agent-analysis.js';
 
 // 共通モジュールをインポート
 import {
@@ -20,7 +20,6 @@ import {
   displayComparison,
   displayBenchmarkHeader,
   type BenchmarkResult,
-  type TaskResult,
 } from './common.js';
 
 const profiler = new PerformanceProfiler();

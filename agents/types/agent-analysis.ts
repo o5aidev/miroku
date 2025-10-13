@@ -4,7 +4,6 @@
  * Types for intelligent agent analysis and dynamic tool creation
  */
 
-import { Task } from './index.js';
 import { AgentTemplate } from './agent-template.js';
 
 /**

@@ -10,7 +10,6 @@
 
 import { WorktreeManager } from '../../agents/worktree/worktree-manager.js';
 import type { Issue } from '../../agents/types/index.js';
-import * as path from 'path';
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
@@ -23,7 +22,7 @@ async function main() {
   // Test 1: WorktreeManager initialization
   console.log('1️⃣ Test: WorktreeManager initialization');
   try {
-    const manager = new WorktreeManager({
+    void new WorktreeManager({
       basePath: '.worktrees',
       repoRoot: process.cwd(),
       mainBranch: 'main',
@@ -171,7 +170,7 @@ async function main() {
   // Test 5: Create test worktree (dry-run simulation)
   console.log('5️⃣ Test: Worktree creation (simulation)');
   try {
-    const manager = new WorktreeManager({
+    void new WorktreeManager({
       basePath: '.worktrees',
       repoRoot: process.cwd(),
       enableLogging: false,

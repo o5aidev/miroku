@@ -12,7 +12,6 @@ import { AgentFactory } from '../agent-factory.js';
 import { AgentRegistry } from '../agent-registry.js';
 import { AgentAnalyzer } from '../agent-analyzer.js';
 import { ToolFactory } from '../tool-factory.js';
-import { DynamicToolCreator } from '../dynamic-tool-creator.js';
 import { AgentTemplate, AgentExecutionContext } from '../types/agent-template.js';
 import { Task, AgentResult, AgentConfig } from '../types/index.js';
 import { ToolRequirement } from '../types/agent-analysis.js';
@@ -381,7 +380,7 @@ const codegenTemplate: AgentTemplate = {
   supportedTypes: ['feature', 'bug', 'refactor'],
   priority: 10,
 
-  async executor(task: Task, context: AgentExecutionContext): Promise<AgentResult> {
+  async executor(_task: Task, context: AgentExecutionContext): Promise<AgentResult> {
     context.log('Basic codegen executing...');
     await context.utils.sleep(1000);
     return {
@@ -400,7 +399,7 @@ const reviewTemplate: AgentTemplate = {
   supportedTypes: ['feature', 'bug', 'refactor'],
   priority: 15,
 
-  async executor(task: Task, context: AgentExecutionContext): Promise<AgentResult> {
+  async executor(_task: Task, context: AgentExecutionContext): Promise<AgentResult> {
     context.log('Review executing...');
     await context.utils.sleep(1500);
     return {

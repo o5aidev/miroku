@@ -185,7 +185,6 @@ export class DAGManager {
   static findCyclePath(dag: DAG): string[] {
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
-    const path: string[] = [];
 
     const adjList = new Map<string, string[]>();
     for (const node of dag.nodes) {
@@ -257,7 +256,7 @@ export class DAGManager {
     }
 
     // 3. Check for long duration tasks
-    const longTasks = tasks.filter((t) => t.estimatedDuration > 60);
+    const longTasks = tasks.filter((t) => (t.estimatedDuration ?? 0) > 60);
     if (longTasks.length > 0) {
       recommendations.push(
         `${longTasks.length} tasks estimated >1 hour - consider breaking down`
@@ -315,15 +314,13 @@ export class DAGManager {
     // Process levels in order (topological order guaranteed)
     for (const level of dag.levels) {
       for (const taskId of level) {
-        const task = taskMap.get(taskId)!;
-
         // Find maximum completion time of all dependencies
         let maxPredecessorEnd = 0;
         for (const edge of dag.edges) {
           if (edge.to === taskId) {
             const predTask = taskMap.get(edge.from)!;
             const predStart = earliestStart.get(edge.from) || 0;
-            const predEnd = predStart + predTask.estimatedDuration;
+            const predEnd = predStart + (predTask.estimatedDuration ?? 0);
             maxPredecessorEnd = Math.max(maxPredecessorEnd, predEnd);
           }
         }
@@ -336,7 +333,7 @@ export class DAGManager {
     let criticalPathLength = 0;
     for (const task of tasks) {
       const start = earliestStart.get(task.id) || 0;
-      const end = start + task.estimatedDuration;
+      const end = start + (task.estimatedDuration ?? 0);
       criticalPathLength = Math.max(criticalPathLength, end);
     }
 

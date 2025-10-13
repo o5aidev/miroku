@@ -86,7 +86,7 @@ export class WebhookClient {
         return { action: 'wait', message: 'Server unavailable' };
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { action: 'continue' | 'wait'; message: string };
       return data;
     } catch {
       return { action: 'wait', message: 'Server unavailable' };

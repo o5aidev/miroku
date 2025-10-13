@@ -14,7 +14,6 @@ import {
 } from './types/agent-template.js';
 import { HookManager } from './hooks/hook-manager.js';
 import { DynamicToolCreator } from './dynamic-tool-creator.js';
-import { logger } from './ui/index.js';
 
 export class DynamicAgent extends BaseAgent {
   private template: AgentTemplate;

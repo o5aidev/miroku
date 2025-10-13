@@ -25,7 +25,7 @@ const simpleCodeGenTemplate: AgentTemplate = {
   supportedTypes: ['feature', 'bug', 'refactor'],
   priority: 10,
 
-  async executor(task: Task, context: AgentExecutionContext): Promise<AgentResult> {
+  async executor(_task: Task, context: AgentExecutionContext): Promise<AgentResult> {
     context.log('Starting code generation...');
 
     // Step 1: Analyze
@@ -74,12 +74,12 @@ const advancedCodeGenTemplate: AgentTemplate = {
 
   requiredCapabilities: ['anthropic-api', 'typescript', 'git'],
 
-  async initialize(config: AgentConfig): Promise<void> {
+  async initialize(_config: AgentConfig): Promise<void> {
     // Initialize Claude API client
     console.log('Initializing Claude API...');
   },
 
-  async executor(task: Task, context: AgentExecutionContext): Promise<AgentResult> {
+  async executor(_task: Task, context: AgentExecutionContext): Promise<AgentResult> {
     context.log('Advanced code generation starting...');
 
     // Simulate Claude API call
@@ -107,7 +107,7 @@ const advancedCodeGenTemplate: AgentTemplate = {
     };
   },
 
-  async cleanup(config: AgentConfig): Promise<void> {
+  async cleanup(_config: AgentConfig): Promise<void> {
     // Cleanup Claude API resources
     console.log('Cleaning up Claude API resources...');
   },
@@ -130,7 +130,7 @@ const reviewAgentTemplate: AgentTemplate = {
   supportedTypes: ['feature', 'bug', 'refactor'],
   priority: 15,
 
-  async executor(task: Task, context: AgentExecutionContext): Promise<AgentResult> {
+  async executor(_task: Task, context: AgentExecutionContext): Promise<AgentResult> {
     context.log('Starting code review...');
 
     // Step 1: ESLint

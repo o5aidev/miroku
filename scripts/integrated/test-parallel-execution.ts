@@ -8,7 +8,6 @@
  */
 
 import { ParallelExecutionManager } from '../../agents/execution/parallel-execution-manager.js';
-import type { Issue } from '../../agents/types/index.js';
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════════════════╗');
@@ -21,7 +20,7 @@ async function main() {
   // Test 1: ParallelExecutionManager initialization
   console.log('1️⃣ Test: ParallelExecutionManager initialization');
   try {
-    const manager = new ParallelExecutionManager({
+    void new ParallelExecutionManager({
       maxConcurrency: 2,
       worktreeConfig: {
         basePath: '.worktrees',
@@ -169,7 +168,7 @@ async function main() {
     console.log('   🔧 Testing different configurations:');
 
     for (const { maxConcurrency, desc } of validConfigs) {
-      const manager = new ParallelExecutionManager({
+      void new ParallelExecutionManager({
         maxConcurrency,
         worktreeConfig: {
           basePath: '.worktrees',

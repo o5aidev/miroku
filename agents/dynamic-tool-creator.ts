@@ -11,7 +11,7 @@ import {
 } from './types/agent-analysis.js';
 import type { IToolCreator } from './types/tool-creator-interface.js';
 import { ToolFactory } from './tool-factory.js';
-import { SecurityValidator, SecurityValidationResult } from './utils/security-validator.js';
+import { SecurityValidator } from './utils/security-validator.js';
 import { logger } from './ui/index.js';
 
 /**
@@ -282,7 +282,7 @@ export class DynamicToolCreator implements IToolCreator {
    * Execute API-type tool
    */
   private async executeApiTool(
-    tool: DynamicToolSpec,
+    _tool: DynamicToolSpec,
     params: any
   ): Promise<any> {
     const url = params.url;
@@ -339,7 +339,7 @@ export class DynamicToolCreator implements IToolCreator {
    */
   async createToolFromDescription(
     description: string,
-    context: DynamicToolContext
+    _context: DynamicToolContext
   ): Promise<ToolCreationResult> {
     logger.info('[DynamicToolCreator] Analyzing tool description...');
 

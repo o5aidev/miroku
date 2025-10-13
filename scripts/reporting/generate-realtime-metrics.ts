@@ -92,14 +92,14 @@ async function generateMetrics(): Promise<DashboardData> {
 
   // Summary metrics
   const completedItems = items.filter(
-    (item) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
+    (item: any) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
   );
-  const inProgressItems = items.filter((item) => item.content.state === 'OPEN');
+  const inProgressItems = items.filter((item: any) => item.content.state === 'OPEN');
 
   // Agent metrics
   const agentMap = new Map<string, any[]>();
-  items.forEach((item) => {
-    const agentField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Agent');
+  items.forEach((item: any) => {
+    const agentField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Agent');
     const agent = (agentField as any)?.name || 'Unassigned';
 
     if (!agentMap.has(agent)) {
@@ -110,17 +110,17 @@ async function generateMetrics(): Promise<DashboardData> {
 
   const agents: AgentMetrics[] = Array.from(agentMap.entries()).map(([name, agentItems]) => {
     const completed = agentItems.filter(
-      (item) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
+      (item: any) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
     );
     const durations = agentItems
-      .map((item) => {
+      .map((item: any) => {
         const durationField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Duration');
         return (durationField as any)?.number || null;
       })
-      .filter((d) => d !== null);
+      .filter((d: any) => d !== null);
 
     const avgDuration = durations.length > 0
-      ? durations.reduce((a, b) => a + b, 0) / durations.length
+      ? durations.reduce((a: any, b: any) => a + b, 0) / durations.length
       : 0;
 
     return {
@@ -136,8 +136,8 @@ async function generateMetrics(): Promise<DashboardData> {
 
   // State metrics
   const stateMap = new Map<string, any[]>();
-  items.forEach((item) => {
-    const stateField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'State');
+  items.forEach((item: any) => {
+    const stateField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'State');
     const state = (stateField as any)?.name || item.content.state;
 
     if (!stateMap.has(state)) {
@@ -155,8 +155,8 @@ async function generateMetrics(): Promise<DashboardData> {
 
   // Priority metrics
   const priorityMap = new Map<string, any[]>();
-  items.forEach((item) => {
-    const priorityField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Priority');
+  items.forEach((item: any) => {
+    const priorityField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Priority');
     const priority = (priorityField as any)?.name || 'P2-Medium';
 
     if (!priorityMap.has(priority)) {
@@ -168,7 +168,7 @@ async function generateMetrics(): Promise<DashboardData> {
   const priorities: PriorityMetrics[] = Array.from(priorityMap.entries()).map(
     ([priority, priorityItems]) => {
       const completed = priorityItems.filter(
-        (item) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
+        (item: any) => item.content.state === 'CLOSED' || item.content.state === 'MERGED'
       );
       return {
         priority,
@@ -185,10 +185,10 @@ async function generateMetrics(): Promise<DashboardData> {
   const recentActivity = completedItems
     .slice(-10)
     .reverse()
-    .map((item) => {
-      const agentField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Agent');
-      const stateField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'State');
-      const durationField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Duration');
+    .map((item: any) => {
+      const agentField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Agent');
+      const stateField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'State');
+      const durationField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Duration');
 
       return {
         number: item.content.number,
@@ -211,14 +211,14 @@ async function generateMetrics(): Promise<DashboardData> {
 
   // Calculate average duration and cost
   const allDurations = items
-    .map((item) => {
-      const durationField = item.fieldValues.nodes.find((fv) => fv.field?.name === 'Duration');
+    .map((item: any) => {
+      const durationField = item.fieldValues.nodes.find((fv: any) => fv.field?.name === 'Duration');
       return (durationField as any)?.number || null;
     })
-    .filter((d) => d !== null);
+    .filter((d: any) => d !== null);
 
   const avgDuration = allDurations.length > 0
-    ? allDurations.reduce((a, b) => a + b, 0) / allDurations.length
+    ? allDurations.reduce((a: any, b: any) => a + b, 0) / allDurations.length
     : 0;
 
   const totalCost = avgDuration * items.length * 0.015;
