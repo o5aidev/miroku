@@ -103,7 +103,7 @@
 
 ---
 
-### 🟢 めだまん (Medaman)
+### 🔵 めだまん (Medaman)
 
 **元の名前**: ReviewAgent
 
@@ -1059,12 +1059,11 @@ https://your-app.web.app で使えるよ！」
 | しきるん | CoordinatorAgent | コーディング |
 | あきんどさん | AIEntrepreneurAgent | ビジネス |
 
-### 🟢 実行役（12キャラ）
+### 🟢 実行役（10キャラ）
 
 | キャラ名 | 元の名前 | チーム |
 |---------|---------|--------|
 | つくるん | CodeGenAgent | コーディング |
-| めだまん | ReviewAgent | コーディング |
 | つくろん | ProductConceptAgent | ビジネス |
 | かくん | ProductDesignAgent | ビジネス |
 | みちびきん | FunnelDesignAgent | ビジネス |
@@ -1075,10 +1074,11 @@ https://your-app.web.app で使えるよ！」
 | うるん | SalesAgent | ビジネス |
 | おきゃくさま | CRMAgent | ビジネス |
 
-### 🔵 分析役（5キャラ）
+### 🔵 分析役（6キャラ）
 
 | キャラ名 | 元の名前 | チーム |
 |---------|---------|--------|
+| めだまん | ReviewAgent | コーディング |
 | みつけるん | IssueAgent | コーディング |
 | なりきりん | PersonaAgent | ビジネス |
 | じぶんさん | SelfAnalysisAgent | ビジネス |

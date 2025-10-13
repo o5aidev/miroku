@@ -18,6 +18,7 @@ import {
   DeploymentConfig,
   DeploymentResult,
 } from '../types/index.js';
+import { getGlobalLogger } from '../logging/issue-trace-logger.js';
 import * as fs from 'fs';
 
 export class DeploymentAgent extends BaseAgent {
@@ -65,6 +66,18 @@ export class DeploymentAgent extends BaseAgent {
 
       // 7. Update deployment history
       this.deploymentHistory.push(deploymentResult);
+
+      // 7.5. Record deployment to trace logger (if issue context available)
+      if (task.metadata?.issueNumber) {
+        try {
+          const traceLogger = getGlobalLogger();
+          await traceLogger.recordDeployment(task.metadata.issueNumber as number, deploymentResult);
+          this.log(`📋 Deployment recorded to trace log`);
+        } catch (error) {
+          // Trace logger not initialized - continue without logging
+          this.log(`⚠️  Trace logger not available: ${(error as Error).message}`);
+        }
+      }
 
       // 8. Notify stakeholders
       await this.notifyDeployment(deploymentResult, deploymentConfig);

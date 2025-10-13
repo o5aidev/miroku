@@ -25,6 +25,7 @@ import { Octokit } from '@octokit/rest';
 import { withRetry } from '../../utils/retry.js';
 import { GitRepository } from '../utils/git-repository.js';
 import { getGitHubClient } from '../../utils/api-client.js';
+import { getGlobalLogger } from '../logging/issue-trace-logger.js';
 
 export class PRAgent extends BaseAgent {
   private octokit: Octokit;
@@ -95,6 +96,18 @@ export class PRAgent extends BaseAgent {
       // 5. Request reviewers
       if (prRequest.reviewers && prRequest.reviewers.length > 0) {
         await this.requestReviewers(pr.number, prRequest.reviewers);
+      }
+
+      // 6. Record PR to trace logger (if issue context available)
+      if (task.metadata?.issueNumber) {
+        try {
+          const traceLogger = getGlobalLogger();
+          await traceLogger.recordPullRequest(task.metadata.issueNumber as number, pr);
+          this.log(`📋 PR recorded to trace log`);
+        } catch (error) {
+          // Trace logger not initialized - continue without logging
+          this.log(`⚠️  Trace logger not available: ${(error as Error).message}`);
+        }
       }
 
       this.log(`✅ PR created: #${pr.number} - ${pr.url}`);

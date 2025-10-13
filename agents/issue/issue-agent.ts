@@ -28,6 +28,7 @@ import { withRetry } from '../../utils/retry.js';
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { GitRepository } from '../utils/git-repository.js';
 import { getGitHubClient, withGitHubCache } from '../../utils/api-client.js';
+import { getGlobalLogger } from '../logging/issue-trace-logger.js';
 
 export class IssueAgent extends BaseAgent {
   private octokit: Octokit;
@@ -192,6 +193,24 @@ export class IssueAgent extends BaseAgent {
         `Applied labels: ${labels.join(', ')}`,
         labels.join(', ')
       );
+
+      // Record label changes to trace logger
+      try {
+        const traceLogger = getGlobalLogger();
+        for (const label of labels) {
+          await traceLogger.recordLabelChange(
+            issueNumber,
+            'added',
+            label,
+            'IssueAgent',
+            'Automated label classification'
+          );
+        }
+        this.log(`📋 ${labels.length} label changes recorded to trace log`);
+      } catch (error) {
+        // Trace logger not initialized - continue without logging
+        this.log(`⚠️  Trace logger not available: ${(error as Error).message}`);
+      }
     } catch (error) {
       await this.logToolInvocation(
         'github_api_add_labels',

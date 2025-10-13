@@ -28,6 +28,7 @@ import {
   ReviewComment,
 } from '../types/index.js';
 import { SecurityScannerRegistry } from './security-scanner.js';
+import { getGlobalLogger } from '../logging/issue-trace-logger.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -64,6 +65,18 @@ export class ReviewAgent extends BaseAgent {
         typeScriptIssues,
         securityIssues
       );
+
+      // 3.5. Record quality report to trace logger (if issue context available)
+      if (task.metadata?.issueNumber) {
+        try {
+          const traceLogger = getGlobalLogger();
+          await traceLogger.recordQualityReport(task.metadata.issueNumber as number, qualityReport);
+          this.log(`📋 Quality report recorded to trace log`);
+        } catch (error) {
+          // Trace logger not initialized - continue without logging
+          this.log(`⚠️  Trace logger not available: ${(error as Error).message}`);
+        }
+      }
 
       // 4. Generate review comments
       const comments = this.generateReviewComments(
