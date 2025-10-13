@@ -754,3 +754,10 @@ export interface Escalation {
   severity: 'low' | 'medium' | 'high' | 'critical';
   context: Record<string, any>;
 }
+
+// ============================================================================
+// Re-exports from other modules
+// ============================================================================
+
+export type { WorktreeInfo, WorktreeManagerConfig } from '../worktree/worktree-manager.js';
+export type { ExecutionProgress, ParallelExecutionResult } from '../execution/parallel-execution-manager.js';
