@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FlowCanvas } from './components/FlowCanvas';
 import { FlowCanvasMock } from './components/FlowCanvasMock';
 import { ERView } from './components/ERView';
@@ -6,14 +6,46 @@ import { IssueDependencyView } from './components/IssueDependencyView';
 import { ImprovementsPanel } from './components/ImprovementsPanel';
 import { DevicePanel } from './components/DevicePanel';
 import { SessionGraphView } from './components/SessionGraphView';
+import { Login } from './components/Login';
 import { useAccessibilityPreferences } from './hooks/useAccessibilityPreferences';
+import { authService, User } from './services/auth';
 
 type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements' | 'session-graph';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('flow');
   const [showDevicePanel, setShowDevicePanel] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const { prefersHighContrast } = useAccessibilityPreferences();
+
+  // Check authentication on mount
+  useEffect(() => {
+    const currentUser = authService.getUser();
+    if (currentUser && authService.isAuthenticated()) {
+      setIsAuthenticated(true);
+      setUser(currentUser);
+    }
+  }, []);
+
+  // Handle login
+  const handleLogin = async (name: string, password: string, rememberMe: boolean) => {
+    const response = await authService.login({ name, password, rememberMe });
+    setIsAuthenticated(true);
+    setUser(response.user);
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    await authService.logout();
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen w-full flex-col">
@@ -169,6 +201,13 @@ function App() {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* User Info */}
+            {user && (
+              <span className="hidden sm:inline text-xs text-white/80 mr-1">
+                👤 {user.name}
+              </span>
+            )}
+
             <button
               onClick={() => setShowDevicePanel(!showDevicePanel)}
               title="Toggle Device Panel"
@@ -199,6 +238,16 @@ function App() {
             >
               Docs
             </a>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              title="ログアウト"
+              className="rounded bg-red-500/20 px-2 py-0.5 text-xs text-red-200 transition-colors hover:bg-red-500/30 sm:px-2.5 sm:py-1"
+            >
+              <span className="hidden sm:inline">ログアウト</span>
+              <span className="sm:hidden">🚪</span>
+            </button>
           </div>
         </div>
       </header>

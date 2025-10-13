@@ -29,6 +29,7 @@ import {
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { DAGManager } from '../utils/dag-manager.js';
 import { PlansGenerator } from '../utils/plans-generator.js';
+import { IssueTraceLogger, initGlobalLogger, createDefaultConfig } from '../logging/issue-trace-logger.js';
 import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {

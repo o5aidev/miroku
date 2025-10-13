@@ -1,6 +1,6 @@
 # Miyabi Entity-Relation Model - 統合データモデル
 
-**すべての一周テンプレートを繋ぐ統合Entity-Relationshipモデル**
+**すべてのIssueテンプレートを繋ぐ統合Entity-Relationshipモデル**
 
 ---
 

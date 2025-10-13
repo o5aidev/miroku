@@ -312,6 +312,160 @@ export interface LDDLog {
 }
 
 // ============================================================================
+// Issue Trace Log Types (E14)
+// ============================================================================
+
+/**
+ * Issue Trace Log - Complete lifecycle tracking for Issues
+ *
+ * Tracks the entire journey of an Issue through the agent system:
+ * - State transitions (pending → analyzing → implementing → reviewing → done)
+ * - Agent executions (Coordinator, CodeGen, Review, PR, Deployment)
+ * - Quality reports (100-point scoring system)
+ * - Pull requests (Conventional Commits)
+ * - Deployments (Firebase/Vercel/AWS)
+ * - Escalations (TechLead/PO/CISO/CTO)
+ *
+ * This enables:
+ * - Full audit trail for each Issue
+ * - Performance analysis across agents
+ * - Debugging and troubleshooting
+ * - Dashboard visualization
+ * - Compliance and reporting
+ */
+export interface IssueTraceLog {
+  // Issue identification
+  issueNumber: number;
+  issueTitle: string;
+  issueUrl: string;
+  issueBody: string;
+
+  // Trace metadata
+  traceId: string; // Unique trace ID (UUID)
+  sessionId: string; // Session ID for this trace
+  deviceIdentifier: string;
+
+  // Timing
+  startTime: string; // ISO 8601
+  endTime?: string; // ISO 8601
+  durationMs?: number;
+
+  // Current state
+  currentState: IssueState;
+
+  // State transition history
+  stateTransitions: StateTransition[];
+
+  // Agent execution history
+  agentExecutions: AgentExecution[];
+
+  // Task decomposition (from CoordinatorAgent)
+  taskDecomposition?: TaskDecomposition;
+
+  // Quality reports (from ReviewAgent)
+  qualityReports: QualityReport[];
+
+  // Pull Requests (from PRAgent)
+  pullRequests: PRResult[];
+
+  // Deployments (from DeploymentAgent)
+  deployments: DeploymentResult[];
+
+  // Escalations
+  escalations: EscalationInfo[];
+
+  // Labels history
+  labelHistory: LabelChange[];
+
+  // Comments/notes
+  notes: TraceNote[];
+
+  // Worktree info (if using worktree execution)
+  worktreeInfo?: {
+    path: string;
+    branch: string;
+    createdAt: string;
+    removedAt?: string;
+  };
+}
+
+/**
+ * Issue state in the lifecycle
+ * Maps to the STATE label category in the 53-label system
+ */
+export type IssueState =
+  | 'pending'      // 📥 state:pending
+  | 'analyzing'    // 🔍 state:analyzing
+  | 'implementing' // 🏗️ state:implementing
+  | 'reviewing'    // 👀 state:reviewing
+  | 'deploying'    // 🚀 state:deploying
+  | 'done'         // ✅ state:done
+  | 'escalated'    // 🚨 escalated to human
+  | 'failed';      // ❌ failed
+
+/**
+ * State transition record
+ */
+export interface StateTransition {
+  from: IssueState;
+  to: IssueState;
+  timestamp: string; // ISO 8601
+  triggeredBy: AgentType | 'manual' | 'system';
+  reason?: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Agent execution record with full details
+ */
+export interface AgentExecution {
+  executionId: string; // Unique execution ID
+  agentType: AgentType;
+  startTime: string; // ISO 8601
+  endTime?: string; // ISO 8601
+  durationMs?: number;
+  status: 'running' | 'completed' | 'failed' | 'escalated';
+  result?: AgentResult;
+  metrics?: AgentMetrics;
+  error?: string;
+  logs?: string[]; // Log messages
+  worktreePath?: string; // If executed in worktree
+}
+
+/**
+ * Label change record
+ */
+export interface LabelChange {
+  timestamp: string; // ISO 8601
+  action: 'added' | 'removed';
+  label: string;
+  changedBy: AgentType | 'manual' | 'system';
+  reason?: string;
+}
+
+/**
+ * Trace note/comment
+ */
+export interface TraceNote {
+  timestamp: string; // ISO 8601
+  author: AgentType | 'human' | 'system';
+  content: string;
+  severity?: 'info' | 'warning' | 'error' | 'critical';
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Issue Trace Log Storage Configuration
+ */
+export interface IssueTraceLogConfig {
+  logDirectory: string; // Base directory for trace logs
+  enableFileLogging: boolean; // Write to file system
+  enableDashboardSync: boolean; // Sync to dashboard
+  retentionDays: number; // How long to keep logs
+  compressionEnabled: boolean; // Compress old logs
+}
+
+// ============================================================================
 // Parallel Execution Types
 // ============================================================================
 

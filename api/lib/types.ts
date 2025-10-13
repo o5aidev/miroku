@@ -149,3 +149,41 @@ export interface AuthUser {
   email: string;
   role: 'user' | 'admin';
 }
+
+/**
+ * User entity for authentication
+ * Represents a stored user with hashed password
+ */
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  role: 'user' | 'admin';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * User credentials for login
+ */
+export interface LoginCredentials {
+  name: string;
+  password: string;
+  rememberMe?: boolean;
+}
+
+/**
+ * Authentication response
+ */
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken?: string;
+  expiresIn: number;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: 'user' | 'admin';
+  };
+}

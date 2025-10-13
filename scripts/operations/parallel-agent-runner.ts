@@ -13,7 +13,7 @@
  */
 
 import { AgentConfig, Task, AgentResult, AgentType } from '../../agents/types/index.js';
-import { PerformanceOptimizer, createPerformanceOptimizer } from './performance-optimizer.js';
+import { PerformanceOptimizer, createPerformanceOptimizer } from '../performance-optimizer.js';
 import { Octokit } from '@octokit/rest';
 
 // ============================================================================
@@ -180,6 +180,7 @@ export class ParallelAgentRunner {
       'PRAgent': ['pr-management', 'git', 'collaboration'],
       'DeploymentAgent': ['deployment', 'devops', 'monitoring'],
       'AutoFixAgent': ['debugging', 'fixing', 'testing'],
+      'WaterSpiderAgent': ['monitoring', 'auto-continue', 'session-management'],
     };
 
     return skillMap[agentType] || [];

@@ -14,8 +14,8 @@ import { Octokit } from '@octokit/rest';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getGitHubTokenSync } from './github-token-helper.js';
-import { getGitHubClient, withGitHubCache } from '../utils/api-client.js';
-import { logConcurrencyRecommendation, getSafeConcurrency } from '../utils/system-optimizer.js';
+import { getGitHubClient, withGitHubCache } from '../../utils/api-client.js';
+import { logConcurrencyRecommendation, getSafeConcurrency } from '../../utils/system-optimizer.js';
 
 // ============================================================================
 // CLI Arguments

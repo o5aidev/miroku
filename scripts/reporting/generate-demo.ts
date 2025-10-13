@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { logger } from '../src/ui/index.js';
+import { logger } from '../../agents/ui/index.js';
 
 /**
  * Demo generation script for creating screenshots and GIFs

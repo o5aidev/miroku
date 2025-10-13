@@ -107,7 +107,7 @@ export function optionalAuth(
 }
 
 /**
- * Generate JWT token
+ * Generate JWT token (30 minutes expiry)
  */
 export function generateToken(user: {
   id: string;
@@ -122,7 +122,7 @@ export function generateToken(user: {
     },
     JWT_SECRET,
     {
-      expiresIn: '7d' // 7 days
+      expiresIn: '30m' // 30 minutes
     }
   );
 }

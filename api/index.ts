@@ -16,6 +16,7 @@ dotenv.config();
 import marketplaceRoutes from './routes/marketplace';
 import licenseRoutes from './routes/licenses';
 import usageRoutes from './routes/usage';
+import authRoutes from './routes/auth';
 
 // Initialize Express app
 const app = express();
@@ -38,6 +39,7 @@ app.get('/health', (req, res) => {
 });
 
 // API v1 routes
+app.use('/v1/auth', authRoutes);
 app.use('/v1/marketplace', marketplaceRoutes);
 app.use('/v1/licenses', licenseRoutes);
 app.use('/v1/usage', usageRoutes);
@@ -49,6 +51,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     documentation: 'https://github.com/ShunsukeHayashi/Miyabi/blob/main/docs/MARKETPLACE_API_REFERENCE.md',
     endpoints: {
+      auth: '/v1/auth',
       marketplace: '/v1/marketplace',
       licenses: '/v1/licenses',
       usage: '/v1/usage'

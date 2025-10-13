@@ -90,6 +90,7 @@ TodoWrite([
 
 **使用例:** 大規模な改善提案、複数フェーズのプロジェクト
 
+**TodoWrite形式 (JSON):**
 ```typescript
 [
   {
@@ -110,10 +111,28 @@ TodoWrite([
 ]
 ```
 
+**視覚的表現 (Markdown):**
+```markdown
+# [Issue #XXX] 大規模な改善提案
+> TypeScript型安全性の向上とエラーハンドリング強化
+
+## Phase 1: 型安全性の向上
+- [x] IToolCreator interface作成
+
+## Phase 2: エラーハンドリング強化
+- [ ] 5種類のエラークラス実装
+- [ ] Exponential Backoff実装
+
+## Phase 3: キャッシュ最適化
+- [ ] TTLCache実装
+- [ ] LRU eviction実装
+```
+
 ### パターン2: 機能追加型タスク
 
 **使用例:** 新機能追加、統合作業
 
+**TodoWrite形式 (JSON):**
 ```typescript
 [
   {
@@ -139,10 +158,27 @@ TodoWrite([
 ]
 ```
 
+**視覚的表現 (Markdown):**
+```markdown
+# [Issue #YYY] WebSocket統合機能の追加
+> リアルタイム通信機能を実装してUIに統合
+
+## 実装
+- [x] WebSocketサーバー作成 (port 8080で待ち受け)
+- [ ] WebSocketクライアントフック (useAgentWebSocket)
+
+## 統合
+- [ ] ImprovementsPanelにUI統合 (4つのアクションボタン)
+
+## テスト
+- [ ] WebSocket通信テスト実行
+```
+
 ### パターン3: バグ修正型タスク
 
 **使用例:** バグ修正、エラー対応
 
+**TodoWrite形式 (JSON):**
 ```typescript
 [
   {
@@ -161,6 +197,21 @@ TodoWrite([
     activeForm: "【待機中】npm run demo:intelligent実行準備"
   }
 ]
+```
+
+**視覚的表現 (Markdown):**
+```markdown
+# [Issue #ZZZ] ツール作成失敗のバグ修正
+> IToolCreatorインターフェース不一致の修正
+
+## 調査
+- [x] エラー原因特定 (ツール作成失敗の原因調査)
+
+## 修正
+- [ ] createSimpleTool引数修正 (インターフェース準拠)
+
+## 検証
+- [ ] 修正後の動作確認 (全シナリオテスト)
 ```
 
 ## エラー処理とリカバリ
