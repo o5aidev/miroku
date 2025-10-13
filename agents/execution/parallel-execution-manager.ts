@@ -182,6 +182,7 @@ export class ParallelExecutionManager {
           {
             maxIterations: this.config.feedbackLoopConfig.maxIterations,
             convergenceThreshold: this.config.feedbackLoopConfig.convergenceThreshold,
+            minIterationsBeforeConvergence: 3,
             autoRefinementEnabled: this.config.feedbackLoopConfig.autoRefinementEnabled,
             logsDirectory: './loops',
             autoSave: true,
@@ -274,6 +275,7 @@ export class ParallelExecutionManager {
         {
           maxIterations: this.config.feedbackLoopConfig.maxIterations,
           convergenceThreshold: this.config.feedbackLoopConfig.convergenceThreshold,
+          minIterationsBeforeConvergence: 3,
           autoRefinementEnabled: this.config.feedbackLoopConfig.autoRefinementEnabled,
           logsDirectory: task.worktree.path + '/loops',
           autoSave: true,
