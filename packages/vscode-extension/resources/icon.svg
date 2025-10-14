@@ -1,0 +1,33 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#FF69B4" opacity="0.1"/>
+
+  <!-- Cherry blossom petals (5 petals) -->
+  <g transform="translate(64, 64)">
+    <!-- Petal 1 (top) -->
+    <ellipse cx="0" cy="-25" rx="12" ry="18" fill="#FF69B4" transform="rotate(0)"/>
+
+    <!-- Petal 2 (right top) -->
+    <ellipse cx="0" cy="-25" rx="12" ry="18" fill="#FF69B4" transform="rotate(72)"/>
+
+    <!-- Petal 3 (right bottom) -->
+    <ellipse cx="0" cy="-25" rx="12" ry="18" fill="#FF69B4" transform="rotate(144)"/>
+
+    <!-- Petal 4 (left bottom) -->
+    <ellipse cx="0" cy="-25" rx="12" ry="18" fill="#FF69B4" transform="rotate(216)"/>
+
+    <!-- Petal 5 (left top) -->
+    <ellipse cx="0" cy="-25" rx="12" ry="18" fill="#FF69B4" transform="rotate(288)"/>
+
+    <!-- Center circle -->
+    <circle cx="0" cy="0" r="8" fill="#FFD700"/>
+
+    <!-- Inner details -->
+    <circle cx="0" cy="0" r="4" fill="#FF69B4"/>
+  </g>
+
+  <!-- Miyabi text (optional, subtle) -->
+  <text x="64" y="105" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#FF69B4">
+    Miyabi
+  </text>
+</svg>

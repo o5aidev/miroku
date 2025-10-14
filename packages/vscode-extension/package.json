@@ -1,0 +1,266 @@
+{
+  "name": "miyabi-vscode",
+  "displayName": "Miyabi - Autonomous Development Assistant",
+  "description": "Real-time Agent visualization and project management for Miyabi autonomous development platform",
+  "version": "0.1.0",
+  "publisher": "miyabi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShunsukeHayashi/Miyabi.git",
+    "directory": "packages/vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Visualization",
+    "Debuggers"
+  ],
+  "keywords": [
+    "miyabi",
+    "agent",
+    "autonomous",
+    "github",
+    "visualization"
+  ],
+  "activationEvents": [
+    "workspaceContains:.miyabi.yml",
+    "onCommand:miyabi.openDashboard",
+    "onView:miyabiIssues"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "miyabi.init",
+        "title": "Miyabi: Initialize Project",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "miyabi.openDashboard",
+        "title": "Miyabi: Open Dashboard",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "miyabi.refreshIssues",
+        "title": "Miyabi: Refresh Issues",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "miyabi.runAgent",
+        "title": "Miyabi: Run Agent",
+        "icon": "$(run)"
+      },
+      {
+        "command": "miyabi.showStatus",
+        "title": "Miyabi: Show Project Status"
+      },
+      {
+        "command": "miyabi.openSettings",
+        "title": "Miyabi: Open Settings"
+      },
+      {
+        "command": "miyabi.issue.runAgent",
+        "title": "Run Agent on Issue",
+        "icon": "$(play)"
+      },
+      {
+        "command": "miyabi.issue.openInBrowser",
+        "title": "Open Issue in Browser",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "miyabi.issue.copyUrl",
+        "title": "Copy Issue URL",
+        "icon": "$(clippy)"
+      },
+      {
+        "command": "miyabi.issue.copyNumber",
+        "title": "Copy Issue Number",
+        "icon": "$(symbol-number)"
+      },
+      {
+        "command": "miyabi.agent.start",
+        "title": "Start Agent",
+        "icon": "$(play)"
+      },
+      {
+        "command": "miyabi.agent.stop",
+        "title": "Stop Agent",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "miyabi.agent.viewLogs",
+        "title": "View Agent Logs",
+        "icon": "$(output)"
+      },
+      {
+        "command": "miyabi.status.refresh",
+        "title": "Refresh Status",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "miyabi.status.openRepository",
+        "title": "Open Repository in Browser",
+        "icon": "$(github)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "miyabi",
+          "title": "Miyabi",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "miyabi": [
+        {
+          "id": "miyabiIssues",
+          "name": "Issues",
+          "icon": "$(issues)",
+          "contextualTitle": "Miyabi Issues"
+        },
+        {
+          "id": "miyabiAgents",
+          "name": "Agents",
+          "icon": "$(robot)",
+          "contextualTitle": "Miyabi Agents"
+        },
+        {
+          "id": "miyabiStatus",
+          "name": "Project Status",
+          "icon": "$(pulse)",
+          "contextualTitle": "Miyabi Status"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "miyabiIssues",
+        "contents": "No Miyabi project found in this workspace.\n[Initialize Miyabi](command:miyabi.init)\n[Open Settings](command:miyabi.openSettings)"
+      }
+    ],
+    "configuration": {
+      "title": "Miyabi",
+      "properties": {
+        "miyabi.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3001",
+          "description": "Miyabi Dashboard Server URL"
+        },
+        "miyabi.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh issues and agent status"
+        },
+        "miyabi.refreshInterval": {
+          "type": "number",
+          "default": 60000,
+          "description": "Auto-refresh interval in milliseconds (minimum 60000ms to avoid rate limits)"
+        },
+        "miyabi.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for agent events"
+        }
+      }
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "miyabi.refreshIssues",
+          "when": "view == miyabiIssues",
+          "group": "navigation"
+        },
+        {
+          "command": "miyabi.openDashboard",
+          "when": "view == miyabiAgents",
+          "group": "navigation"
+        },
+        {
+          "command": "miyabi.status.refresh",
+          "when": "view == miyabiStatus",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "miyabi.issue.openInBrowser",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "navigation@1"
+        },
+        {
+          "command": "miyabi.issue.runAgent",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "actions@1"
+        },
+        {
+          "command": "miyabi.issue.copyUrl",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "clipboard@1"
+        },
+        {
+          "command": "miyabi.issue.copyNumber",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "clipboard@2"
+        },
+        {
+          "command": "miyabi.agent.start",
+          "when": "view == miyabiAgents && viewItem == miyabiAgent",
+          "group": "actions@1"
+        },
+        {
+          "command": "miyabi.agent.viewLogs",
+          "when": "view == miyabiAgents && viewItem == miyabiAgent",
+          "group": "actions@2"
+        },
+        {
+          "command": "miyabi.status.openRepository",
+          "when": "view == miyabiStatus && viewItem == miyabiStatus",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/inline": [
+        {
+          "command": "miyabi.issue.runAgent",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "inline@1"
+        },
+        {
+          "command": "miyabi.issue.openInBrowser",
+          "when": "view == miyabiIssues && viewItem == miyabiIssue",
+          "group": "inline@2"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run esbuild-prod",
+    "compile": "tsc -p ./",
+    "esbuild-prod": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+    "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "esbuild-watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "@vscode/test-electron": "^2.3.8",
+    "@vscode/vsce": "^2.22.0",
+    "esbuild": "^0.25.10",
+    "eslint": "^8.56.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.6.0"
+  }
+}
