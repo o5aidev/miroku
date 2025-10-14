@@ -135,7 +135,8 @@
     "integrated:issue:99": "tsx scripts/integrated/issue-99-execution.ts",
     "integrated:issue:100": "tsx scripts/integrated/issue-100-execution.ts",
     "integrated:issue:101": "tsx scripts/integrated/issue-101-execution.ts",
-    "integrated:issue:102": "tsx scripts/integrated/issue-102-execution.ts"
+    "integrated:issue:102": "tsx scripts/integrated/issue-102-execution.ts",
+    "prepare": "husky"
   },
   "keywords": [
     "ai",
@@ -168,6 +169,8 @@
     "dotenv": "^16.3.1",
     "eslint": "^8.54.0",
     "express": "^4.18.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.4",
     "playwright": "^1.56.0",
     "tsx": "^4.7.0",
     "typescript": "^5.8.3",
@@ -190,5 +193,10 @@
     "ora": "^8.0.1",
     "p-retry": "^7.1.0",
     "terminal-link": "^3.0.0"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix"
+    ]
   }
 }
