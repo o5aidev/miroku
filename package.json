@@ -195,7 +195,7 @@
     "terminal-link": "^3.0.0"
   },
   "lint-staged": {
-    "*.ts": [
+    "!(tests)/**/*.ts": [
       "eslint --fix"
     ]
   }
