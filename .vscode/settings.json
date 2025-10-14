@@ -1,0 +1,6 @@
+{
+  "miyabi.serverUrl": "http://localhost:3001",
+  "miyabi.autoRefresh": true,
+  "miyabi.refreshInterval": 60000,
+  "miyabi.enableNotifications": true
+}
