@@ -30,24 +30,18 @@ import {
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { DAGManager } from '../utils/dag-manager.js';
 import { PlansGenerator } from '../utils/plans-generator.js';
-import { IssueTraceLogger, initGlobalLogger, createDefaultConfig } from '../logging/issue-trace-logger.js';
+import { IssueTraceLogger } from '../logging/issue-trace-logger.js';
+import { TaskToolExecutor } from '../../scripts/operations/task-tool-executor.js';
 import { WorktreeManager } from '../worktree/worktree-manager.js';
 import { GitHubClient } from '../utils/github-client.js';
 import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {
-  private traceLogger: IssueTraceLogger;
   private worktreeManager?: WorktreeManager;
   private githubClient?: GitHubClient;
 
   constructor(config: AgentConfig) {
     super('CoordinatorAgent', config);
-
-    // Initialize Issue Trace Logger
-    const logConfig = createDefaultConfig(
-      path.join(process.cwd(), '.ai', 'logs', 'traces')
-    );
-    this.traceLogger = initGlobalLogger(logConfig);
 
     // Initialize GitHubClient if GITHUB_TOKEN is available
     const githubToken = process.env.GITHUB_TOKEN || config.githubToken;
@@ -83,8 +77,6 @@ export class CoordinatorAgent extends BaseAgent {
   async execute(task: Task): Promise<AgentResult> {
     this.log('🎯 CoordinatorAgent starting orchestration');
 
-    let traceId: string | null = null;
-
     try {
       // 1. If task has issue reference, decompose it
       const issue = await this.fetchIssue(task);
@@ -95,35 +87,26 @@ export class CoordinatorAgent extends BaseAgent {
         };
       }
 
-      // 1.5. Start trace logging
-      const sessionId = `session-${Date.now()}`;
-      const deviceIdentifier = this.config.deviceIdentifier || 'unknown';
-      traceId = await this.traceLogger.startTrace(issue, sessionId, deviceIdentifier);
-      this.log(`📋 Trace started: ${traceId}`);
+      // Initialize Issue Trace Logger for this Issue
+      const issueLogger = new IssueTraceLogger(
+        issue.number,
+        issue.title,
+        issue.url,
+        this.config.deviceIdentifier || 'unknown'
+      );
+      issueLogger.startTrace();
+
+      // Set logger for this agent and future specialist agents
+      this.setTraceLogger(issueLogger);
 
       // Record state transition: pending → analyzing
-      await this.traceLogger.recordStateTransition(
-        issue.number,
-        'pending',
-        'analyzing',
-        'CoordinatorAgent',
-        'Starting task decomposition'
-      );
+      this.recordStateTransition('pending', 'analyzing', 'Starting Issue decomposition');
 
       // 2. Decompose Issue into Tasks
       const decomposition = await this.decomposeIssue(issue);
 
-      // Record task decomposition
-      await this.traceLogger.recordTaskDecomposition(issue.number, decomposition);
-
-      // Record state transition: analyzing → implementing
-      await this.traceLogger.recordStateTransition(
-        issue.number,
-        'analyzing',
-        'implementing',
-        'CoordinatorAgent',
-        `Decomposed into ${decomposition.tasks.length} tasks`
-      );
+      // Update task statistics
+      issueLogger.updateTaskStats(decomposition.tasks.length, 0, 0);
 
       // 3. Build DAG and check for cycles
       const dag = decomposition.dag;
@@ -134,16 +117,10 @@ export class CoordinatorAgent extends BaseAgent {
           'Sev.2-High',
           { cycle: decomposition.tasks.map((t) => t.id) }
         );
-
-        // Record escalation
-        await this.traceLogger.recordEscalation(issue.number, {
-          timestamp: new Date().toISOString(),
-          target: 'TechLead',
-          severity: 'Sev.2-High',
-          reason: `Circular dependency detected in Issue #${issue.number}`,
-          context: { cycle: decomposition.tasks.map((t) => t.id) },
-        });
       }
+
+      // Record state transition: analyzing → implementing
+      this.recordStateTransition('analyzing', 'implementing', 'Starting task execution');
 
       // 4. Create execution plan
       const plan = await this.createExecutionPlan(decomposition.tasks, dag);
@@ -152,19 +129,16 @@ export class CoordinatorAgent extends BaseAgent {
       await this.generatePlansFile(decomposition, plan);
 
       // 5. Execute tasks in parallel (respecting dependencies)
-      const report = await this.executeParallel(plan, issue.number);
+      // Use Task Tool executor if enabled in config
+      const report = this.config.useTaskTool
+        ? await this.executeWithTaskTool(decomposition.tasks, dag, issueLogger)
+        : await this.executeParallel(plan, issueLogger);
 
       // Record state transition: implementing → done
-      await this.traceLogger.recordStateTransition(
-        issue.number,
-        'implementing',
-        'done',
-        'CoordinatorAgent',
-        `All tasks completed. Success rate: ${report.summary.successRate}%`
-      );
+      this.recordStateTransition('implementing', 'done', 'All tasks completed');
 
-      // End trace logging
-      await this.traceLogger.endTrace(issue.number);
+      // End trace
+      issueLogger.endTrace('done', 'Issue orchestration completed successfully');
 
       this.log(`✅ Orchestration complete: ${report.summary.successRate}% success rate`);
 
@@ -181,16 +155,10 @@ export class CoordinatorAgent extends BaseAgent {
     } catch (error) {
       this.log(`❌ Orchestration failed: ${(error as Error).message}`);
 
-      // Record failure if we have a trace
-      if (traceId && task.metadata?.issueNumber) {
-        await this.traceLogger.recordStateTransition(
-          task.metadata.issueNumber,
-          'implementing',
-          'failed',
-          'CoordinatorAgent',
-          `Error: ${(error as Error).message}`
-        );
-        await this.traceLogger.endTrace(task.metadata.issueNumber);
+      // Record failure in trace
+      if (this.traceLogger) {
+        this.recordStateTransition('implementing', 'failed', (error as Error).message);
+        this.traceLogger.endTrace('failed', (error as Error).message);
       }
 
       throw error;
@@ -218,7 +186,7 @@ export class CoordinatorAgent extends BaseAgent {
 
     // Estimate total duration
     const estimatedTotalDuration = tasks.reduce(
-      (sum, task) => sum + (task.estimatedDuration ?? 0),
+      (sum, task) => sum + task.estimatedDuration,
       0
     );
 
@@ -359,7 +327,7 @@ export class CoordinatorAgent extends BaseAgent {
     const concurrency = Math.min(tasks.length, 5); // Max 5 parallel
 
     const estimatedDuration = tasks.reduce(
-      (sum, task) => sum + (task.estimatedDuration ?? 0),
+      (sum, task) => sum + task.estimatedDuration,
       0
     );
 
@@ -377,7 +345,7 @@ export class CoordinatorAgent extends BaseAgent {
   /**
    * Execute tasks in parallel (respecting DAG levels)
    */
-  private async executeParallel(plan: ExecutionPlan, issueNumber: number): Promise<ExecutionReport> {
+  private async executeParallel(plan: ExecutionPlan, issueLogger: IssueTraceLogger): Promise<ExecutionReport> {
     this.log(`⚡ Starting parallel execution (concurrency: ${plan.concurrency})`);
 
     const results: TaskResult[] = [];
@@ -393,10 +361,15 @@ export class CoordinatorAgent extends BaseAgent {
         level,
         plan.tasks,
         plan.concurrency,
-        issueNumber
+        issueLogger
       );
 
       results.push(...levelResults);
+
+      // Update task statistics in trace
+      const completed = results.filter((r) => r.status === 'completed').length;
+      const failed = results.filter((r) => r.status === 'failed').length;
+      issueLogger.updateTaskStats(plan.tasks.length, completed, failed);
 
       // Update progress
       this.logProgress(results, plan.tasks.length);
@@ -430,30 +403,31 @@ export class CoordinatorAgent extends BaseAgent {
   }
 
   /**
-   * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution + Worktree support)
+   * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution)
    *
    * Performance: Now calls actual specialist agents instead of simulation
-   * Worktree Mode: Creates isolated worktrees for each task when enabled
    */
   private async executeLevelParallel(
     taskIds: string[],
     allTasks: Task[],
     _concurrency: number,
-    issueNumber: number
+    issueLogger: IssueTraceLogger
   ): Promise<TaskResult[]> {
     const tasks = taskIds
       .map((id) => allTasks.find((t) => t.id === id))
       .filter((t): t is Task => t !== undefined);
 
-    // Fetch Issue for worktree creation
-    const issue = await this.fetchIssueForWorktree(issueNumber);
+    // Fetch Issue for worktree creation (if enabled)
+    let issue: Issue | null = null;
+    if (this.worktreeManager && tasks.length > 0 && tasks[0].metadata?.issueNumber) {
+      issue = await this.fetchIssueForWorktree(tasks[0].metadata.issueNumber);
+    }
 
     // Execute real agents in parallel
     const results = await Promise.all(
       tasks.map(async (task) => {
         const startTime = Date.now();
-        const agentType = task.assignedAgent || 'CodeGenAgent';
-        this.log(`   🏃 Executing: ${task.id} (${agentType})`);
+        this.log(`   🏃 Executing: ${task.id} (${task.assignedAgent})`);
 
         // Create worktree if worktree mode is enabled
         if (this.worktreeManager && issue) {
@@ -463,66 +437,58 @@ export class CoordinatorAgent extends BaseAgent {
               task,
               issue,
               config: this.config,
-              promptPath: this.getAgentPromptPath(agentType),
+              promptPath: this.getAgentPromptPath(task.assignedAgent),
             };
 
             // Create worktree with agent assignment
             const worktreeInfo = await this.worktreeManager.createWorktree(issue, {
-              agentType,
+              agentType: task.assignedAgent,
               executionContext,
             });
 
             this.log(`   🌳 Created worktree for task ${task.id}: ${worktreeInfo.path}`);
 
             // Write execution context files to worktree
-            await this.worktreeManager.writeExecutionContext(issueNumber);
+            await this.worktreeManager.writeExecutionContext(issue.number);
             this.log(`   📄 Wrote execution context to worktree`);
 
             // Update agent status to executing
-            this.worktreeManager.updateAgentStatus(issueNumber, 'executing');
+            this.worktreeManager.updateAgentStatus(issue.number, 'executing');
           } catch (error) {
             this.log(`   ⚠️  Failed to create worktree: ${(error as Error).message}`);
             // Continue without worktree
           }
         }
 
-        // Start agent execution tracking
-        const executionId = await this.traceLogger.startAgentExecution(
-          issueNumber,
-          agentType
-        );
-
         try {
           // Instantiate and execute the appropriate specialist agent
-          const agent = await this.createSpecialistAgent(agentType);
+          const agent = await this.createSpecialistAgent(task.assignedAgent);
+
+          // Pass Issue Trace Logger to specialist agent
+          agent.setTraceLogger(issueLogger);
+
           const result = await agent.execute(task);
           const durationMs = Date.now() - startTime;
 
-          // Update agent status in worktree
-          if (this.worktreeManager) {
-            this.worktreeManager.updateAgentStatus(
-              issueNumber,
-              result.status === 'success' ? 'completed' : 'failed'
-            );
-          }
-
-          // End agent execution tracking
-          await this.traceLogger.endAgentExecution(
-            issueNumber,
-            executionId,
-            result,
-            {
-              taskId: task.id,
-              agentType,
-              durationMs,
-              timestamp: new Date().toISOString(),
+          // Update task completed count
+          if (result.status === 'success') {
+            issueLogger.incrementCompletedTasks();
+            // Update worktree agent status to completed
+            if (this.worktreeManager && issue) {
+              this.worktreeManager.updateAgentStatus(issue.number, 'completed');
             }
-          );
+          } else {
+            issueLogger.incrementFailedTasks();
+            // Update worktree agent status to failed
+            if (this.worktreeManager && issue) {
+              this.worktreeManager.updateAgentStatus(issue.number, 'failed');
+            }
+          }
 
           return {
             taskId: task.id,
             status: result.status === 'success' ? ('completed' as AgentStatus) : ('failed' as AgentStatus),
-            agentType,
+            agentType: task.assignedAgent,
             durationMs,
             result,
           };
@@ -530,41 +496,70 @@ export class CoordinatorAgent extends BaseAgent {
           const durationMs = Date.now() - startTime;
           this.log(`   ❌ Task ${task.id} failed: ${(error as Error).message}`);
 
-          // Update agent status in worktree
-          if (this.worktreeManager) {
-            this.worktreeManager.updateAgentStatus(issueNumber, 'failed');
+          // Update failed task count
+          issueLogger.incrementFailedTasks();
+
+          // Update worktree agent status to failed
+          if (this.worktreeManager && issue) {
+            this.worktreeManager.updateAgentStatus(issue.number, 'failed');
           }
-
-          // End agent execution tracking with error
-          const failedResult: AgentResult = {
-            status: 'failed' as const,
-            error: (error as Error).message,
-          };
-
-          await this.traceLogger.endAgentExecution(
-            issueNumber,
-            executionId,
-            failedResult,
-            {
-              taskId: task.id,
-              agentType,
-              durationMs,
-              timestamp: new Date().toISOString(),
-            }
-          );
 
           return {
             taskId: task.id,
             status: 'failed' as AgentStatus,
-            agentType,
+            agentType: task.assignedAgent,
             durationMs,
-            result: failedResult,
+            result: {
+              status: 'failed' as const,
+              error: (error as Error).message,
+            },
           };
         }
       })
     );
 
     return results;
+  }
+
+  /**
+   * Execute tasks using Task Tool parallel executor (NEW)
+   *
+   * Uses Claude Code Task tool for true parallel execution across
+   * multiple isolated Git worktrees.
+   *
+   * Benefits:
+   * - True parallel execution (not limited by single process)
+   * - Isolated worktrees prevent conflicts
+   * - Leverages Claude Code's Task tool
+   * - Better scalability for large task sets
+   */
+  private async executeWithTaskTool(
+    tasks: Task[],
+    dag: DAG,
+    _issueLogger: IssueTraceLogger
+  ): Promise<ExecutionReport> {
+    this.log('🚀 Starting Task Tool parallel execution');
+    this.log(`   Using Task Tool executor for ${tasks.length} tasks`);
+
+    // Create Task Tool executor
+    const executor = new TaskToolExecutor({
+      worktreeBasePath: this.config.worktreeBasePath || '.worktrees',
+      maxConcurrentGroups: 5,
+      sessionTimeoutMs: 3600000,  // 1 hour
+      enableProgressReporting: true,
+      progressReportIntervalMs: 30000,  // 30 seconds
+    });
+
+    // Execute tasks in parallel
+    const report = await executor.execute(tasks, dag);
+
+    this.log(`✅ Task Tool execution completed`);
+    this.log(`   Success rate: ${report.summary.successRate.toFixed(1)}%`);
+
+    // Save report
+    await this.saveExecutionReport(report);
+
+    return report;
   }
 
   /**
@@ -688,8 +683,7 @@ export class CoordinatorAgent extends BaseAgent {
 
     try {
       // Read existing content
-      const fs = await import('fs/promises');
-      const existingContent = await fs.readFile(plansPath, 'utf-8');
+      const existingContent = await this.readFile(plansPath);
 
       // Update with report data
       const updatedContent = PlansGenerator.updateWithProgress(existingContent, report);

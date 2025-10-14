@@ -47,8 +47,35 @@ TEMPLATE_INSTRUCTIONS.md:82
 VERIFICATION_REPORT_JP.md:20
 VERIFICATION_REPORT_JP.md:355
 
+# Test files - mock credentials only
+**/__tests__/**:*
+**/test/**:*
+*.test.ts:*
+*.test.js:*
+
+# Build artifacts and generated files
+docs/assets/**/*.js:*
+playwright-report/**:*
+
+# Claude plugin templates (example credentials)
+.claude-plugin/**:*
+packages/cli/templates/**:*
+
+# Database documentation (example passwords)
+database/README.md:437
+
+# Dashboard server documentation (example credentials)
+packages/dashboard-server/.env.example:*
+packages/dashboard-server/README.md:*
+
+# Marketplace deployment guide
+docs/MARKETPLACE_DEPLOYMENT_GUIDE.md:104
+
 # Pattern-based ignores
 # Ignore lines with placeholder patterns like ghp_xxxx, sk-ant-xxxx
 *:*ghp_xxxxxxxxxxxx*
 *:*sk-ant-xxxxxxxxxxxx*
 *:*github_pat_xxxxxxxxxxxx*
+*:*example-token*
+*:*your-token*
+*:*YOUR_TOKEN*

@@ -312,160 +312,6 @@ export interface LDDLog {
 }
 
 // ============================================================================
-// Issue Trace Log Types (E14)
-// ============================================================================
-
-/**
- * Issue Trace Log - Complete lifecycle tracking for Issues
- *
- * Tracks the entire journey of an Issue through the agent system:
- * - State transitions (pending → analyzing → implementing → reviewing → done)
- * - Agent executions (Coordinator, CodeGen, Review, PR, Deployment)
- * - Quality reports (100-point scoring system)
- * - Pull requests (Conventional Commits)
- * - Deployments (Firebase/Vercel/AWS)
- * - Escalations (TechLead/PO/CISO/CTO)
- *
- * This enables:
- * - Full audit trail for each Issue
- * - Performance analysis across agents
- * - Debugging and troubleshooting
- * - Dashboard visualization
- * - Compliance and reporting
- */
-export interface IssueTraceLog {
-  // Issue identification
-  issueNumber: number;
-  issueTitle: string;
-  issueUrl: string;
-  issueBody: string;
-
-  // Trace metadata
-  traceId: string; // Unique trace ID (UUID)
-  sessionId: string; // Session ID for this trace
-  deviceIdentifier: string;
-
-  // Timing
-  startTime: string; // ISO 8601
-  endTime?: string; // ISO 8601
-  durationMs?: number;
-
-  // Current state
-  currentState: IssueState;
-
-  // State transition history
-  stateTransitions: StateTransition[];
-
-  // Agent execution history
-  agentExecutions: AgentExecution[];
-
-  // Task decomposition (from CoordinatorAgent)
-  taskDecomposition?: TaskDecomposition;
-
-  // Quality reports (from ReviewAgent)
-  qualityReports: QualityReport[];
-
-  // Pull Requests (from PRAgent)
-  pullRequests: PRResult[];
-
-  // Deployments (from DeploymentAgent)
-  deployments: DeploymentResult[];
-
-  // Escalations
-  escalations: EscalationInfo[];
-
-  // Labels history
-  labelHistory: LabelChange[];
-
-  // Comments/notes
-  notes: TraceNote[];
-
-  // Worktree info (if using worktree execution)
-  worktreeInfo?: {
-    path: string;
-    branch: string;
-    createdAt: string;
-    removedAt?: string;
-  };
-}
-
-/**
- * Issue state in the lifecycle
- * Maps to the STATE label category in the 53-label system
- */
-export type IssueState =
-  | 'pending'      // 📥 state:pending
-  | 'analyzing'    // 🔍 state:analyzing
-  | 'implementing' // 🏗️ state:implementing
-  | 'reviewing'    // 👀 state:reviewing
-  | 'deploying'    // 🚀 state:deploying
-  | 'done'         // ✅ state:done
-  | 'escalated'    // 🚨 escalated to human
-  | 'failed';      // ❌ failed
-
-/**
- * State transition record
- */
-export interface StateTransition {
-  from: IssueState;
-  to: IssueState;
-  timestamp: string; // ISO 8601
-  triggeredBy: AgentType | 'manual' | 'system';
-  reason?: string;
-  metadata?: Record<string, any>;
-}
-
-/**
- * Agent execution record with full details
- */
-export interface AgentExecution {
-  executionId: string; // Unique execution ID
-  agentType: AgentType;
-  startTime: string; // ISO 8601
-  endTime?: string; // ISO 8601
-  durationMs?: number;
-  status: 'running' | 'completed' | 'failed' | 'escalated';
-  result?: AgentResult;
-  metrics?: AgentMetrics;
-  error?: string;
-  logs?: string[]; // Log messages
-  worktreePath?: string; // If executed in worktree
-}
-
-/**
- * Label change record
- */
-export interface LabelChange {
-  timestamp: string; // ISO 8601
-  action: 'added' | 'removed';
-  label: string;
-  changedBy: AgentType | 'manual' | 'system';
-  reason?: string;
-}
-
-/**
- * Trace note/comment
- */
-export interface TraceNote {
-  timestamp: string; // ISO 8601
-  author: AgentType | 'human' | 'system';
-  content: string;
-  severity?: 'info' | 'warning' | 'error' | 'critical';
-  metadata?: Record<string, any>;
-}
-
-/**
- * Issue Trace Log Storage Configuration
- */
-export interface IssueTraceLogConfig {
-  logDirectory: string; // Base directory for trace logs
-  enableFileLogging: boolean; // Write to file system
-  enableDashboardSync: boolean; // Sync to dashboard
-  retentionDays: number; // How long to keep logs
-  compressionEnabled: boolean; // Compress old logs
-}
-
-// ============================================================================
 // Parallel Execution Types
 // ============================================================================
 
@@ -618,301 +464,128 @@ export interface BotCommand {
 }
 
 // ============================================================================
-// Goal-Oriented TDD + Consumption-Driven + Infinite Feedback Loop Types
+// Issue Trace Log Types (E14)
 // ============================================================================
 
 /**
- * Goal-Oriented TDD: テストゴール定義
- * 各セッションが達成すべきゴールを明確に定義
+ * Issue State - 8 types covering complete lifecycle
  */
-export interface GoalDefinition {
-  id: string;
-  title: string;
-  description: string;
+export type IssueState =
+  | 'pending'      // Issue created, awaiting triage
+  | 'analyzing'    // CoordinatorAgent analyzing
+  | 'implementing' // Specialist Agents working
+  | 'reviewing'    // ReviewAgent checking quality
+  | 'deploying'    // DeploymentAgent deploying
+  | 'done'         // Completed successfully
+  | 'blocked'      // Blocked - requires intervention
+  | 'failed';      // Execution failed
 
-  // Success criteria
-  successCriteria: SuccessCriteria;
+/**
+ * State Transition - tracks state changes
+ */
+export interface StateTransition {
+  from: IssueState;
+  to: IssueState;
+  timestamp: string;
+  triggeredBy: string; // Agent or user
+  reason?: string;
+}
 
-  // Test specifications
-  testSpecs: TestSpecification[];
+/**
+ * Agent Execution Record - tracks individual agent runs
+ */
+export interface AgentExecution {
+  agentType: AgentType;
+  taskId?: string;
+  startTime: string;
+  endTime?: string;
+  durationMs?: number;
+  status: AgentStatus;
+  result?: AgentResult;
+  error?: string;
+}
 
-  // Acceptance criteria
-  acceptanceCriteria: string[];
+/**
+ * Label Change Record - tracks label modifications
+ */
+export interface LabelChange {
+  timestamp: string;
+  action: 'added' | 'removed';
+  label: string;
+  performedBy: string; // Agent or user
+}
 
-  // Metrics thresholds
-  metricsThresholds: MetricsThreshold;
+/**
+ * Trace Note - manual annotations
+ */
+export interface TraceNote {
+  timestamp: string;
+  author: string; // Agent or user
+  content: string;
+  tags?: string[];
+}
 
-  // Priority & deadline
-  priority: number;
-  deadline?: string;
+/**
+ * Issue Trace Log - complete lifecycle tracking
+ */
+export interface IssueTraceLog {
+  // Identification
+  issueNumber: number;
+  issueTitle: string;
+  issueUrl: string;
 
-  // Context
-  context: {
-    issueNumber?: number;
-    taskId?: string;
-    previousAttempts: number;
-    feedbackHistory: FeedbackRecord[];
+  // Lifecycle tracking
+  createdAt: string;
+  closedAt?: string;
+  currentState: IssueState;
+  stateTransitions: StateTransition[];
+
+  // Agent execution tracking
+  agentExecutions: AgentExecution[];
+
+  // Task decomposition
+  totalTasks: number;
+  completedTasks: number;
+  failedTasks: number;
+
+  // Label tracking
+  labelChanges: LabelChange[];
+  currentLabels: string[];
+
+  // Quality & metrics
+  qualityReports: QualityReport[];
+  finalQualityScore?: number;
+
+  // Pull Request tracking
+  pullRequests: PRResult[];
+
+  // Deployment tracking
+  deployments: DeploymentResult[];
+
+  // Escalations
+  escalations: EscalationInfo[];
+
+  // Notes & annotations
+  notes: TraceNote[];
+
+  // Metadata
+  metadata: {
+    deviceIdentifier: string;
+    sessionIds: string[];
+    totalDurationMs?: number;
+    lastUpdated: string;
   };
 }
 
-/**
- * Success criteria for goal validation
- */
-export interface SuccessCriteria {
-  // Code quality
-  minQualityScore: number; // 0-100
-  maxEslintErrors: number;
-  maxTypeScriptErrors: number;
-  maxSecurityIssues: number;
+// ============================================================================
+// Performance Metrics Types (E15)
+// ============================================================================
 
-  // Test coverage
-  minTestCoverage: number; // 0-100
-  minTestsPassed: number;
-
-  // Performance
-  maxBuildTimeMs?: number;
-  maxResponseTimeMs?: number;
-
-  // Business metrics
-  customMetrics?: Array<{
-    name: string;
-    threshold: number;
-    operator: 'gte' | 'lte' | 'eq';
-  }>;
-}
-
-/**
- * Test specification for TDD
- */
-export interface TestSpecification {
-  id: string;
-  name: string;
-  description: string;
-  type: 'unit' | 'integration' | 'e2e' | 'snapshot' | 'performance';
-
-  // Test details
-  testFile: string;
-  testFunction: string;
-  expectedBehavior: string;
-
-  // Dependencies
-  dependencies: string[];
-
-  // Status
-  status: 'pending' | 'passed' | 'failed' | 'skipped';
-  failureCount?: number;
-  lastRun?: string;
-}
-
-/**
- * Metrics thresholds for goal validation
- */
-export interface MetricsThreshold {
-  qualityScore: number;
-  testCoverage: number;
-  buildTime: number;
-  codeSize: number;
-  cyclomaticComplexity: number;
-}
-
-/**
- * Consumption-Driven: 成果消費・検証レポート
- * 実行結果を消費し、ゴールに対する達成度を評価
- */
-export interface ConsumptionReport {
-  goalId: string;
-  sessionId: string;
-  timestamp: string;
-
-  // Validation results
-  validationResults: ValidationResult[];
-
-  // Overall assessment
-  overallScore: number; // 0-100
-  goalAchieved: boolean;
-
-  // Metrics
-  actualMetrics: ActualMetrics;
-
-  // Gap analysis
-  gaps: GapAnalysis[];
-
-  // Recommendations
-  recommendations: string[];
-
-  // Next actions
-  nextActions: NextAction[];
-}
-
-/**
- * Validation result for each success criterion
- */
-export interface ValidationResult {
-  criterion: string;
-  expected: number | string;
-  actual: number | string;
-  passed: boolean;
-  scoreImpact: number;
-  feedback: string;
-}
-
-/**
- * Actual metrics collected from execution
- */
-export interface ActualMetrics {
-  qualityScore: number;
-  eslintErrors: number;
-  typeScriptErrors: number;
-  securityIssues: number;
-  testCoverage: number;
-  testsPassed: number;
-  testsFailed: number;
-  buildTimeMs: number;
-  responseTimeMs?: number;
-  linesOfCode: number;
-  cyclomaticComplexity: number;
-  customMetrics?: Record<string, number>;
-}
-
-/**
- * Gap analysis between expected and actual
- */
-export interface GapAnalysis {
-  metric: string;
-  expected: number;
-  actual: number;
-  gap: number;
-  gapPercentage: number;
-  severity: 'critical' | 'high' | 'medium' | 'low';
-  rootCause?: string;
-}
-
-/**
- * Next action to close the gap
- */
-export interface NextAction {
-  id: string;
-  type: 'refactor' | 'fix' | 'improve' | 'optimize' | 'test' | 'refine_goal';
-  description: string;
-  priority: number;
-  estimatedImpact: number; // Expected score improvement
-  targetMetric: string;
-}
-
-/**
- * Infinite Feedback Loop: フィードバックループ制御
- */
-export interface FeedbackLoop {
-  loopId: string;
-  goalId: string;
-
-  // Loop state
-  iteration: number;
-  maxIterations: number;
-  startTime: string;
-  lastIterationTime: string;
-
-  // Loop status
-  status: 'running' | 'converged' | 'diverged' | 'max_iterations_reached' | 'escalated';
-
-  // Iteration history
-  iterations: IterationRecord[];
-
-  // Convergence tracking
-  convergenceMetrics: ConvergenceMetrics;
-
-  // Auto-refinement
-  autoRefinementEnabled: boolean;
-  refinementHistory: GoalRefinement[];
-}
-
-/**
- * Record of each iteration
- */
-export interface IterationRecord {
-  iteration: number;
-  timestamp: string;
-  goalDefinition: GoalDefinition;
-  consumptionReport: ConsumptionReport;
-  feedback: FeedbackRecord;
-  durationMs: number;
-  scoreImprovement: number;
-}
-
-/**
- * Feedback record for continuous improvement
- */
-export interface FeedbackRecord {
-  timestamp: string;
-  type: 'positive' | 'constructive' | 'corrective' | 'escalation';
-  score: number;
-
-  // Feedback content
-  summary: string;
-  details: string[];
-  codeExamples?: Array<{
-    issue: string;
-    current: string;
-    suggested: string;
-  }>;
-
-  // Action items
-  actionItems: NextAction[];
-
-  // References
-  references?: string[];
-}
-
-/**
- * Convergence metrics for loop control
- */
-export interface ConvergenceMetrics {
-  scoreHistory: number[];
-  scoreVariance: number;
-  improvementRate: number; // Score improvement per iteration
-  isConverging: boolean;
-  estimatedIterationsToConverge?: number;
-}
-
-/**
- * Goal refinement for continuous improvement
- */
-export interface GoalRefinement {
-  timestamp: string;
-  reason: string;
-
-  // Original goal
-  originalGoal: GoalDefinition;
-
-  // Refined goal
-  refinedGoal: GoalDefinition;
-
-  // Changes
-  changes: Array<{
-    field: string;
-    before: any;
-    after: any;
-    reason: string;
-  }>;
-
-  // Expected impact
-  expectedImpact: string;
-}
-
-/**
- * Escalation information for error handling
- */
-export interface Escalation {
-  loopId: string;
-  reason: string;
-  escalationLevel: EscalationTarget;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  context: Record<string, any>;
-}
+export * from './performance-metrics.js';
 
 // ============================================================================
 // Re-exports from other modules
 // ============================================================================
 
+// Worktree types (conditional export - only if module exists)
 export type { WorktreeInfo, WorktreeManagerConfig, WorktreeExecutionContext } from '../worktree/worktree-manager.js';
-export type { ExecutionProgress } from '../execution/parallel-execution-manager.js';

@@ -21,9 +21,11 @@ import {
   EscalationError,
   CodexPromptChain,
   ToolInvocation,
+  IssueState,
 } from './types/index.js';
 import { logger, type AgentName } from './ui/index.js';
 import { PerformanceMonitor } from './monitoring/performance-monitor.js';
+import { IssueTraceLogger } from './logging/issue-trace-logger.js';
 import { writeFileAsync, appendFileAsync } from '../utils/async-file-writer.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -34,10 +36,18 @@ export abstract class BaseAgent {
   protected currentTask?: Task;
   protected startTime: number = 0;
   protected logs: ToolInvocation[] = [];
+  protected traceLogger?: IssueTraceLogger;
 
   constructor(agentType: AgentType, config: AgentConfig) {
     this.agentType = agentType;
     this.config = config;
+  }
+
+  /**
+   * Set Issue Trace Logger for lifecycle tracking
+   */
+  public setTraceLogger(logger: IssueTraceLogger): void {
+    this.traceLogger = logger;
   }
 
   /**
@@ -78,6 +88,11 @@ export abstract class BaseAgent {
     const agentName = this.getAgentName();
     logger.agent(agentName, `Starting task: ${task.id}`);
 
+    // Start Issue Trace tracking
+    if (this.traceLogger) {
+      this.traceLogger.startAgentExecution(this.agentType, task.id);
+    }
+
     // Send agent:started event to dashboard
     await this.sendAgentEvent('started', {
       parameters: {
@@ -110,6 +125,11 @@ export abstract class BaseAgent {
       logger.agent(agentName, `Completed task: ${task.id}`);
       logger.success(`Task ${task.id} completed successfully`);
 
+      // End Issue Trace tracking (success)
+      if (this.traceLogger) {
+        this.traceLogger.endAgentExecution(this.agentType, 'completed', result);
+      }
+
       // Send agent:completed event to dashboard
       await this.sendAgentEvent('completed', {
         result: {
@@ -126,6 +146,16 @@ export abstract class BaseAgent {
 
       return result;
     } catch (error) {
+      // End Issue Trace tracking (failed)
+      if (this.traceLogger) {
+        this.traceLogger.endAgentExecution(
+          this.agentType,
+          'failed',
+          undefined,
+          (error as Error).message
+        );
+      }
+
       // Send agent:error event to dashboard
       await this.sendAgentEvent('error', {
         error: (error as Error).message,
@@ -185,7 +215,12 @@ export abstract class BaseAgent {
     logger.error(`Severity: ${severity}`);
     logger.muted(`Context: ${JSON.stringify(context, null, 2)}`);
 
-    // Record escalation
+    // Record escalation to Issue Trace
+    if (this.traceLogger) {
+      this.traceLogger.recordEscalation(escalationInfo);
+    }
+
+    // Record escalation to file
     await this.recordEscalation(escalationInfo);
 
     // Create GitHub Issue comment or new Issue
@@ -461,6 +496,24 @@ ${JSON.stringify(invocations, null, 2)}
   protected log(message: string): void {
     const agentName = this.getAgentName();
     logger.agent(agentName, message);
+  }
+
+  /**
+   * Add note to Issue Trace Log
+   */
+  protected addTraceNote(content: string, tags?: string[]): void {
+    if (this.traceLogger) {
+      this.traceLogger.addNote(this.agentType, content, tags);
+    }
+  }
+
+  /**
+   * Record state transition in Issue Trace
+   */
+  protected recordStateTransition(from: IssueState, to: IssueState, reason?: string): void {
+    if (this.traceLogger) {
+      this.traceLogger.recordStateTransition(from, to, this.agentType, reason);
+    }
   }
 
   /**

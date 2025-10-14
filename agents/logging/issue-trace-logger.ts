@@ -1,192 +1,130 @@
 /**
  * Issue Trace Logger
  *
- * Complete lifecycle tracking for GitHub Issues through the agent system.
+ * Complete lifecycle tracking for GitHub Issues.
+ * Tracks state transitions, agent executions, label changes, quality reports,
+ * PRs, deployments, escalations, and manual annotations.
  *
- * Features:
- * - State transition tracking (pending → analyzing → implementing → reviewing → done)
- * - Agent execution recording (Coordinator, CodeGen, Review, PR, Deployment)
- * - Quality report aggregation (100-point scoring)
- * - Pull request tracking (Conventional Commits)
- * - Deployment history (Firebase/Vercel/AWS)
- * - Escalation tracking (TechLead/PO/CISO/CTO)
- * - Label change history (53-label system)
- * - File-based persistence (JSON)
- * - Dashboard synchronization (optional)
+ * Usage:
+ *   const logger = new IssueTraceLogger(issueNumber, issueTitle, issueUrl, deviceIdentifier);
+ *   logger.startTrace();
+ *   logger.recordStateTransition('pending', 'analyzing', 'CoordinatorAgent');
+ *   logger.startAgentExecution('CoordinatorAgent', 'task-123');
+ *   logger.endAgentExecution('CoordinatorAgent', 'success');
+ *   logger.saveTrace();
  */
 
-import { randomUUID } from 'crypto';
-import { promises as fs } from 'fs';
+import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
 import type {
   IssueTraceLog,
-  IssueTraceLogConfig,
   IssueState,
   StateTransition,
   AgentExecution,
   LabelChange,
   TraceNote,
-  Issue,
-  AgentType,
-  TaskDecomposition,
   QualityReport,
   PRResult,
   DeploymentResult,
   EscalationInfo,
+  AgentType,
+  AgentStatus,
   AgentResult,
-  AgentMetrics,
 } from '../types/index.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 /**
- * Issue Trace Logger - Main class for tracking Issue lifecycle
+ * IssueTraceLogger - Complete Issue lifecycle tracker
  */
 export class IssueTraceLogger {
-  private config: IssueTraceLogConfig;
-  private activeLogs: Map<number, IssueTraceLog>; // issueNumber -> log
+  private trace: IssueTraceLog;
+  private traceDir: string;
+  private traceFilePath: string;
+  private activeAgentExecutions: Map<AgentType, AgentExecution>;
+  private sessionId: string;
 
-  constructor(config: IssueTraceLogConfig) {
-    this.config = config;
-    this.activeLogs = new Map();
-  }
-
-  // ============================================================================
-  // Core Lifecycle Methods
-  // ============================================================================
-
-  /**
-   * Start tracing an Issue
-   * @param issue GitHub Issue to trace
-   * @param sessionId Session ID for this trace
-   * @param deviceIdentifier Device identifier
-   * @returns Trace ID (UUID)
-   */
-  async startTrace(
-    issue: Issue,
-    sessionId: string,
-    deviceIdentifier: string
-  ): Promise<string> {
-    const traceId = randomUUID();
-    const now = new Date().toISOString();
-
-    const log: IssueTraceLog = {
-      // Issue identification
-      issueNumber: issue.number,
-      issueTitle: issue.title,
-      issueUrl: issue.url,
-      issueBody: issue.body,
-
-      // Trace metadata
-      traceId,
-      sessionId,
-      deviceIdentifier,
-
-      // Timing
-      startTime: now,
-      endTime: undefined,
-      durationMs: undefined,
-
-      // Current state
-      currentState: 'pending',
-
-      // Initialize arrays
-      stateTransitions: [],
-      agentExecutions: [],
-      qualityReports: [],
-      pullRequests: [],
-      deployments: [],
-      escalations: [],
-      labelHistory: [],
-      notes: [],
-
-      // Optional fields
-      taskDecomposition: undefined,
-      worktreeInfo: undefined,
-    };
-
-    // Record initial state transition
-    log.stateTransitions.push({
-      from: 'pending',
-      to: 'pending',
-      timestamp: now,
-      triggeredBy: 'system',
-      reason: 'Issue trace started',
-    });
-
-    // Store in memory
-    this.activeLogs.set(issue.number, log);
-
-    // Save to file if enabled
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
-
-    return traceId;
-  }
-
-  /**
-   * End tracing an Issue
-   * @param issueNumber Issue number
-   */
-  async endTrace(issueNumber: number): Promise<void> {
-    const log = this.activeLogs.get(issueNumber);
-    if (!log) {
-      throw new Error(`No active trace found for issue #${issueNumber}`);
-    }
-
-    const now = new Date().toISOString();
-    log.endTime = now;
-    log.durationMs = new Date(now).getTime() - new Date(log.startTime).getTime();
-
-    // Save final state
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
-
-    // Remove from active logs
-    this.activeLogs.delete(issueNumber);
-  }
-
-  /**
-   * Get trace log for an Issue
-   * @param issueNumber Issue number
-   * @returns IssueTraceLog or null if not found
-   */
-  async getTrace(issueNumber: number): Promise<IssueTraceLog | null> {
-    // Check active logs first
-    const activeLog = this.activeLogs.get(issueNumber);
-    if (activeLog) {
-      return activeLog;
-    }
-
-    // Try loading from file
-    if (this.config.enableFileLogging) {
-      return await this.loadFromFile(issueNumber);
-    }
-
-    return null;
-  }
-
-  // ============================================================================
-  // State Management
-  // ============================================================================
-
-  /**
-   * Record a state transition
-   * @param issueNumber Issue number
-   * @param from Previous state
-   * @param to New state
-   * @param triggeredBy Who/what triggered the transition
-   * @param reason Optional reason
-   */
-  async recordStateTransition(
+  constructor(
     issueNumber: number,
+    issueTitle: string,
+    issueUrl: string,
+    deviceIdentifier: string,
+    sessionId?: string
+  ) {
+    this.sessionId = sessionId || this.generateSessionId();
+    this.activeAgentExecutions = new Map();
+
+    // Initialize trace directory
+    this.traceDir = path.resolve(__dirname, '../../.ai/trace-logs');
+    this.traceFilePath = path.join(this.traceDir, `issue-${issueNumber}.json`);
+
+    // Ensure trace directory exists
+    if (!fs.existsSync(this.traceDir)) {
+      fs.mkdirSync(this.traceDir, { recursive: true });
+    }
+
+    // Load existing trace or create new one
+    if (fs.existsSync(this.traceFilePath)) {
+      this.trace = this.loadTrace();
+      this.trace.metadata.sessionIds.push(this.sessionId);
+    } else {
+      this.trace = this.createNewTrace(issueNumber, issueTitle, issueUrl, deviceIdentifier);
+    }
+  }
+
+  // ============================================================================
+  // Lifecycle Management
+  // ============================================================================
+
+  /**
+   * Start tracking the Issue
+   */
+  public startTrace(): void {
+    if (this.trace.stateTransitions.length === 0) {
+      // First transition - pending state
+      this.recordStateTransition('pending', 'pending', 'System', 'Issue created');
+    }
+    this.saveTrace();
+  }
+
+  /**
+   * End tracking - mark Issue as completed
+   */
+  public endTrace(finalState: IssueState = 'done', reason?: string): void {
+    this.trace.closedAt = new Date().toISOString();
+    this.trace.currentState = finalState;
+
+    if (this.trace.stateTransitions.length > 0) {
+      const lastTransition = this.trace.stateTransitions[this.trace.stateTransitions.length - 1];
+      this.recordStateTransition(lastTransition.to, finalState, 'System', reason);
+    }
+
+    this.calculateTotalDuration();
+    this.saveTrace();
+  }
+
+  /**
+   * Get current trace
+   */
+  public getTrace(): IssueTraceLog {
+    return { ...this.trace };
+  }
+
+  // ============================================================================
+  // State Transition Tracking
+  // ============================================================================
+
+  /**
+   * Record state transition
+   */
+  public recordStateTransition(
     from: IssueState,
     to: IssueState,
-    triggeredBy: AgentType | 'manual' | 'system',
+    triggeredBy: string,
     reason?: string
-  ): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-
+  ): void {
     const transition: StateTransition = {
       from,
       to,
@@ -195,12 +133,10 @@ export class IssueTraceLogger {
       reason,
     };
 
-    log.stateTransitions.push(transition);
-    log.currentState = to;
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
+    this.trace.stateTransitions.push(transition);
+    this.trace.currentState = to;
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
   // ============================================================================
@@ -208,287 +144,360 @@ export class IssueTraceLogger {
   // ============================================================================
 
   /**
-   * Start tracking an agent execution
-   * @param issueNumber Issue number
-   * @param agentType Agent type
-   * @param worktreePath Optional worktree path
-   * @returns Execution ID (UUID)
+   * Start agent execution
    */
-  async startAgentExecution(
-    issueNumber: number,
-    agentType: AgentType,
-    worktreePath?: string
-  ): Promise<string> {
-    const log = this.ensureLogExists(issueNumber);
-    const executionId = randomUUID();
-
+  public startAgentExecution(agentType: AgentType, taskId?: string): void {
     const execution: AgentExecution = {
-      executionId,
       agentType,
+      taskId,
       startTime: new Date().toISOString(),
-      endTime: undefined,
-      durationMs: undefined,
       status: 'running',
-      result: undefined,
-      metrics: undefined,
-      error: undefined,
-      logs: [],
-      worktreePath,
     };
 
-    log.agentExecutions.push(execution);
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
-
-    return executionId;
+    this.activeAgentExecutions.set(agentType, execution);
+    this.trace.agentExecutions.push(execution);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
   /**
-   * End tracking an agent execution
-   * @param issueNumber Issue number
-   * @param executionId Execution ID
-   * @param result Agent result
-   * @param metrics Optional metrics
+   * End agent execution
    */
-  async endAgentExecution(
-    issueNumber: number,
-    executionId: string,
-    result: AgentResult,
-    metrics?: AgentMetrics
-  ): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-
-    const execution = log.agentExecutions.find((e) => e.executionId === executionId);
+  public endAgentExecution(
+    agentType: AgentType,
+    status: AgentStatus,
+    result?: AgentResult,
+    error?: string
+  ): void {
+    const execution = this.activeAgentExecutions.get(agentType);
     if (!execution) {
-      throw new Error(`Execution ${executionId} not found for issue #${issueNumber}`);
+      throw new Error(`No active execution found for agent: ${agentType}`);
     }
 
-    const now = new Date().toISOString();
-    execution.endTime = now;
-    execution.durationMs = new Date(now).getTime() - new Date(execution.startTime).getTime();
-    execution.status = result.status === 'success' ? 'completed' : result.status;
+    execution.endTime = new Date().toISOString();
+    execution.status = status;
     execution.result = result;
-    execution.metrics = metrics;
-    execution.error = result.error;
+    execution.error = error;
 
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
+    // Calculate duration
+    const startMs = new Date(execution.startTime).getTime();
+    const endMs = new Date(execution.endTime).getTime();
+    execution.durationMs = endMs - startMs;
+
+    this.activeAgentExecutions.delete(agentType);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
   // ============================================================================
-  // Data Recording
+  // Task Management
   // ============================================================================
 
   /**
-   * Record task decomposition
+   * Update task statistics
    */
-  async recordTaskDecomposition(
-    issueNumber: number,
-    decomposition: TaskDecomposition
-  ): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-    log.taskDecomposition = decomposition;
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
+  public updateTaskStats(total: number, completed: number, failed: number): void {
+    this.trace.totalTasks = total;
+    this.trace.completedTasks = completed;
+    this.trace.failedTasks = failed;
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
   /**
-   * Record quality report
+   * Increment completed tasks
    */
-  async recordQualityReport(issueNumber: number, report: QualityReport): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-    log.qualityReports.push(report);
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
+  public incrementCompletedTasks(): void {
+    this.trace.completedTasks++;
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
   /**
-   * Record pull request
+   * Increment failed tasks
    */
-  async recordPullRequest(issueNumber: number, pr: PRResult): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-    log.pullRequests.push(pr);
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
+  public incrementFailedTasks(): void {
+    this.trace.failedTasks++;
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
-  /**
-   * Record deployment
-   */
-  async recordDeployment(issueNumber: number, deployment: DeploymentResult): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-    log.deployments.push(deployment);
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
-  }
-
-  /**
-   * Record escalation
-   */
-  async recordEscalation(issueNumber: number, escalation: EscalationInfo): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-    log.escalations.push(escalation);
-
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
-    }
-  }
+  // ============================================================================
+  // Label Tracking
+  // ============================================================================
 
   /**
    * Record label change
    */
-  async recordLabelChange(
-    issueNumber: number,
+  public recordLabelChange(
     action: 'added' | 'removed',
     label: string,
-    changedBy: AgentType | 'manual' | 'system',
-    reason?: string
-  ): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
-
+    performedBy: string
+  ): void {
     const change: LabelChange = {
       timestamp: new Date().toISOString(),
       action,
       label,
-      changedBy,
-      reason,
+      performedBy,
     };
 
-    log.labelHistory.push(change);
+    this.trace.labelChanges.push(change);
 
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
+    // Update current labels
+    if (action === 'added' && !this.trace.currentLabels.includes(label)) {
+      this.trace.currentLabels.push(label);
+    } else if (action === 'removed') {
+      this.trace.currentLabels = this.trace.currentLabels.filter(l => l !== label);
     }
+
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
   }
 
-  /**
-   * Add a note/comment
-   */
-  async addNote(
-    issueNumber: number,
-    author: AgentType | 'human' | 'system',
-    content: string,
-    severity?: 'info' | 'warning' | 'error' | 'critical'
-  ): Promise<void> {
-    const log = this.ensureLogExists(issueNumber);
+  // ============================================================================
+  // Quality Tracking
+  // ============================================================================
 
+  /**
+   * Record quality report
+   */
+  public recordQualityReport(report: QualityReport): void {
+    this.trace.qualityReports.push(report);
+
+    // Update final quality score (latest report)
+    this.trace.finalQualityScore = report.score;
+
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
+  }
+
+  // ============================================================================
+  // PR Tracking
+  // ============================================================================
+
+  /**
+   * Record pull request
+   */
+  public recordPullRequest(pr: PRResult): void {
+    this.trace.pullRequests.push(pr);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
+  }
+
+  // ============================================================================
+  // Deployment Tracking
+  // ============================================================================
+
+  /**
+   * Record deployment
+   */
+  public recordDeployment(deployment: DeploymentResult): void {
+    this.trace.deployments.push(deployment);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
+  }
+
+  // ============================================================================
+  // Escalation Tracking
+  // ============================================================================
+
+  /**
+   * Record escalation
+   */
+  public recordEscalation(escalation: EscalationInfo): void {
+    this.trace.escalations.push(escalation);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
+  }
+
+  // ============================================================================
+  // Notes & Annotations
+  // ============================================================================
+
+  /**
+   * Add note
+   */
+  public addNote(author: string, content: string, tags?: string[]): void {
     const note: TraceNote = {
       timestamp: new Date().toISOString(),
       author,
       content,
-      severity,
+      tags,
     };
 
-    log.notes.push(note);
+    this.trace.notes.push(note);
+    this.trace.metadata.lastUpdated = new Date().toISOString();
+    this.saveTrace();
+  }
 
-    if (this.config.enableFileLogging) {
-      await this.saveToFile(log);
+  // ============================================================================
+  // Persistence
+  // ============================================================================
+
+  /**
+   * Save trace to disk
+   */
+  public saveTrace(): void {
+    try {
+      const json = JSON.stringify(this.trace, null, 2);
+      fs.writeFileSync(this.traceFilePath, json, 'utf-8');
+    } catch (error) {
+      console.error(`Failed to save trace log: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Load trace from disk
+   */
+  private loadTrace(): IssueTraceLog {
+    try {
+      const json = fs.readFileSync(this.traceFilePath, 'utf-8');
+      return JSON.parse(json) as IssueTraceLog;
+    } catch (error) {
+      throw new Error(`Failed to load trace log: ${error}`);
     }
   }
 
   // ============================================================================
-  // Storage
+  // Utility Methods
   // ============================================================================
 
   /**
-   * Save trace log to file
+   * Create new trace
    */
-  private async saveToFile(log: IssueTraceLog): Promise<void> {
-    const filePath = this.getLogFilePath(log.issueNumber);
-    const dir = path.dirname(filePath);
-
-    // Ensure directory exists
-    await fs.mkdir(dir, { recursive: true });
-
-    // Write log file
-    await fs.writeFile(filePath, JSON.stringify(log, null, 2), 'utf-8');
+  private createNewTrace(
+    issueNumber: number,
+    issueTitle: string,
+    issueUrl: string,
+    deviceIdentifier: string
+  ): IssueTraceLog {
+    return {
+      issueNumber,
+      issueTitle,
+      issueUrl,
+      createdAt: new Date().toISOString(),
+      currentState: 'pending',
+      stateTransitions: [],
+      agentExecutions: [],
+      totalTasks: 0,
+      completedTasks: 0,
+      failedTasks: 0,
+      labelChanges: [],
+      currentLabels: [],
+      qualityReports: [],
+      pullRequests: [],
+      deployments: [],
+      escalations: [],
+      notes: [],
+      metadata: {
+        deviceIdentifier,
+        sessionIds: [this.sessionId],
+        lastUpdated: new Date().toISOString(),
+      },
+    };
   }
 
   /**
-   * Load trace log from file
+   * Generate session ID
    */
-  private async loadFromFile(issueNumber: number): Promise<IssueTraceLog | null> {
-    const filePath = this.getLogFilePath(issueNumber);
+  private generateSessionId(): string {
+    return `session-${new Date().toISOString()}`;
+  }
+
+  /**
+   * Calculate total duration
+   */
+  private calculateTotalDuration(): void {
+    if (!this.trace.closedAt) {
+      return;
+    }
+
+    const startMs = new Date(this.trace.createdAt).getTime();
+    const endMs = new Date(this.trace.closedAt).getTime();
+    this.trace.metadata.totalDurationMs = endMs - startMs;
+  }
+
+  // ============================================================================
+  // Static Methods
+  // ============================================================================
+
+  /**
+   * Load existing trace log
+   */
+  public static load(issueNumber: number): IssueTraceLogger | null {
+    const traceDir = path.resolve(__dirname, '../../.ai/trace-logs');
+    const traceFilePath = path.join(traceDir, `issue-${issueNumber}.json`);
+
+    if (!fs.existsSync(traceFilePath)) {
+      return null;
+    }
 
     try {
-      const data = await fs.readFile(filePath, 'utf-8');
-      return JSON.parse(data) as IssueTraceLog;
+      const json = fs.readFileSync(traceFilePath, 'utf-8');
+      const trace = JSON.parse(json) as IssueTraceLog;
+
+      // Create logger instance from existing trace
+      const logger = new IssueTraceLogger(
+        trace.issueNumber,
+        trace.issueTitle,
+        trace.issueUrl,
+        trace.metadata.deviceIdentifier
+      );
+
+      return logger;
     } catch (error) {
-      // File doesn't exist or is invalid
+      console.error(`Failed to load trace log for issue ${issueNumber}: ${error}`);
       return null;
     }
   }
 
   /**
-   * Get file path for a log
+   * Get all trace logs
    */
-  private getLogFilePath(issueNumber: number): string {
-    return path.join(this.config.logDirectory, `issue-${issueNumber}.json`);
-  }
+  public static getAllTraces(): IssueTraceLog[] {
+    const traceDir = path.resolve(__dirname, '../../.ai/trace-logs');
 
-  // ============================================================================
-  // Utility
-  // ============================================================================
-
-  /**
-   * Ensure log exists for an issue (load from file if needed)
-   */
-  private ensureLogExists(issueNumber: number): IssueTraceLog {
-    let log = this.activeLogs.get(issueNumber);
-
-    if (!log) {
-      throw new Error(
-        `No active trace found for issue #${issueNumber}. Call startTrace() first.`
-      );
+    if (!fs.existsSync(traceDir)) {
+      return [];
     }
 
-    return log;
+    const files = fs.readdirSync(traceDir);
+    const traces: IssueTraceLog[] = [];
+
+    for (const file of files) {
+      if (file.startsWith('issue-') && file.endsWith('.json')) {
+        try {
+          const filePath = path.join(traceDir, file);
+          const json = fs.readFileSync(filePath, 'utf-8');
+          const trace = JSON.parse(json) as IssueTraceLog;
+          traces.push(trace);
+        } catch (error) {
+          console.error(`Failed to load trace log ${file}: ${error}`);
+        }
+      }
+    }
+
+    return traces;
   }
-}
 
-/**
- * Create a default configuration for IssueTraceLogger
- */
-export function createDefaultConfig(logDirectory: string): IssueTraceLogConfig {
-  return {
-    logDirectory,
-    enableFileLogging: true,
-    enableDashboardSync: false,
-    retentionDays: 90,
-    compressionEnabled: false,
-  };
-}
+  /**
+   * Delete trace log
+   */
+  public static deleteTrace(issueNumber: number): boolean {
+    const traceDir = path.resolve(__dirname, '../../.ai/trace-logs');
+    const traceFilePath = path.join(traceDir, `issue-${issueNumber}.json`);
 
-/**
- * Singleton instance for global access
- */
-let globalLogger: IssueTraceLogger | null = null;
+    if (!fs.existsSync(traceFilePath)) {
+      return false;
+    }
 
-/**
- * Initialize the global logger
- */
-export function initGlobalLogger(config: IssueTraceLogConfig): IssueTraceLogger {
-  globalLogger = new IssueTraceLogger(config);
-  return globalLogger;
-}
-
-/**
- * Get the global logger
- */
-export function getGlobalLogger(): IssueTraceLogger {
-  if (!globalLogger) {
-    throw new Error('Global logger not initialized. Call initGlobalLogger() first.');
+    try {
+      fs.unlinkSync(traceFilePath);
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete trace log for issue ${issueNumber}: ${error}`);
+      return false;
+    }
   }
-  return globalLogger;
 }
