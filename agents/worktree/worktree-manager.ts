@@ -110,6 +110,23 @@ export class WorktreeManager {
     const branchName = `${this.config.branchPrefix}${issueNumber}`;
     const worktreePath = path.join(this.config.basePath, `issue-${issueNumber}`);
 
+    // Create placeholder to reserve the slot (prevents race condition)
+    const placeholderInfo: WorktreeInfo = {
+      issueNumber,
+      path: worktreePath,
+      branch: branchName,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
+      sessionId: `worktree-${issueNumber}-${Date.now()}`,
+      agentType: options?.agentType,
+      agentStatus: options?.agentType ? 'idle' : undefined,
+      executionContext: options?.executionContext,
+    };
+
+    // Reserve the slot immediately to prevent race condition
+    this.activeWorktrees.set(issueNumber, placeholderInfo);
+
     try {
       // Check if branch exists remotely
       const remoteBranchExists = this.checkRemoteBranch(branchName);
@@ -130,25 +147,6 @@ export class WorktreeManager {
         });
       }
 
-      const worktreeInfo: WorktreeInfo = {
-        issueNumber,
-        path: worktreePath,
-        branch: branchName,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        lastActivityAt: new Date().toISOString(),
-        sessionId: `worktree-${issueNumber}-${Date.now()}`,
-
-        // Agent assignment
-        agentType: options?.agentType,
-        agentStatus: options?.agentType ? 'idle' : undefined,
-
-        // Execution context
-        executionContext: options?.executionContext,
-      };
-
-      this.activeWorktrees.set(issueNumber, worktreeInfo);
-
       // Log agent assignment if provided
       if (options?.agentType) {
         this.log(`🤖 Assigned ${options.agentType} to worktree for issue #${issueNumber}`);
@@ -156,8 +154,10 @@ export class WorktreeManager {
 
       this.log(`✅ Created worktree for issue #${issueNumber}: ${worktreePath}`);
 
-      return worktreeInfo;
+      return placeholderInfo;
     } catch (error: any) {
+      // Remove placeholder on failure
+      this.activeWorktrees.delete(issueNumber);
       this.log(`❌ Failed to create worktree for issue #${issueNumber}: ${error.message}`);
       throw new Error(`Failed to create worktree: ${error.message}`);
     }
@@ -283,11 +283,12 @@ export class WorktreeManager {
    */
   private checkRemoteBranch(branchName: string): boolean {
     try {
-      execSync(`git ls-remote --heads origin ${branchName}`, {
+      const output = execSync(`git ls-remote --heads origin ${branchName}`, {
         cwd: this.config.repoRoot,
         encoding: 'utf-8',
       });
-      return true;
+      // git ls-remote returns empty string if branch doesn't exist
+      return output.trim().length > 0;
     } catch {
       return false;
     }

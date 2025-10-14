@@ -67,6 +67,15 @@
       },
       "disabled": false,
       "description": "Gemini 2.5 Flash Image - テキストから画像生成（note.com記事用）"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "disabled": true,
+      "description": "Chrome DevTools Protocol - Browser debugging (requires Chrome/Brave with --remote-debugging-port=9222)"
     }
   }
 }

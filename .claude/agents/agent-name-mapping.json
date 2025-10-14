@@ -61,6 +61,14 @@
         "parallel": true,
         "description": "UI/UXを検証するデザイン検証スタッフ！dev3000でデバッグ、Lighthouseでパフォーマンス測定、アクセシビリティチェックをするよ"
       },
+      "ひーろー": {
+        "technicalName": "HeroUIAgent",
+        "englishName": "Hero",
+        "color": "🟢",
+        "role": "実行役",
+        "parallel": true,
+        "description": "HeroUIコンポーネントを作る UI開発の達人！美しくてアクセシブルなコンポーネントを高速に作るよ"
+      },
       "つなぐん": {
         "technicalName": "HooksIntegration",
         "englishName": "Tsunagun",
@@ -196,7 +204,7 @@
       "name": "緑色 - 実行役",
       "role": "実際に作業する、動く",
       "parallel": true,
-      "count": 13
+      "count": 14
     },
     "🔵": {
       "name": "青色 - 分析役",

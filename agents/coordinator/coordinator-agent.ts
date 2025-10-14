@@ -655,7 +655,8 @@ export class CoordinatorAgent extends BaseAgent {
         this.config.worktreeBasePath,
         `issue-${issueNumber}`
       );
-      await this.ensureDirectory(worktreePath);
+      // DON'T create the worktree directory manually - git worktree will do it
+      // Just set the path, the file will be written after worktree creation
       plansPath = path.join(worktreePath, 'plans.md');
     } else {
       // Save in reports directory
@@ -664,12 +665,18 @@ export class CoordinatorAgent extends BaseAgent {
       plansPath = path.join(reportsDir, `plans-session-${plan.sessionId}.md`);
     }
 
-    // Write file
-    await this.appendToFile(plansPath, plansContent);
-
-    this.log(`📋 Plans.md generated: ${plansPath}`);
-    this.log(`   Pattern: Feler's 7-hour session (OpenAI Dev Day)`);
-    this.log(`   Purpose: Maintain trajectory during autonomous execution`);
+    // Write file (skip for worktrees - will be written after worktree creation)
+    if (!this.config.useWorktree) {
+      await this.appendToFile(plansPath, plansContent);
+      this.log(`📋 Plans.md generated: ${plansPath}`);
+      this.log(`   Pattern: Feler's 7-hour session (OpenAI Dev Day)`);
+      this.log(`   Purpose: Maintain trajectory during autonomous execution`);
+    } else {
+      // For worktrees, Plans.md will be generated after worktree creation
+      this.log(`📋 Plans.md will be generated in worktree after creation`);
+      this.log(`   Pattern: Feler's 7-hour session (OpenAI Dev Day)`);
+      this.log(`   Purpose: Maintain trajectory during autonomous execution`);
+    }
   }
 
   /**

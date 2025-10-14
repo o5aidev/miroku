@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2025-10-14
+
+### Added
+
+**HeroUIAgent - 9th Coding Agent**
+- New specialized agent for HeroUI component development
+- Component generation, integration, and theme customization
+- Character name: ひーろー (Hero) - 🟢実行役
+- Spec: `.claude/agents/specs/coding/heroui-agent.md`
+- Prompt: `.claude/agents/prompts/coding/heroui-agent-prompt.md`
+- Parallel execution capable with other execution agents
+
+**UI/UX Debugging Integration**
+- Chrome DevTools Protocol MCP server integration
+- `chrome-devtools-mcp` added to `.claude/mcp.json` (disabled by default)
+- Browser automation support for Claude Code
+- Alternative to dev3000 MCP orchestrator
+
+**Comprehensive dev3000 Documentation**
+- `docs/DEV3000_FINAL_STATUS.md` - Complete integration guide and recommendations
+- `docs/DEV3000_TEST_REPORT.md` - Detailed test results and findings
+- `docs/DEV3000_INTEGRATION_SUMMARY.md` - Technical analysis
+- `docs/DEV3000_MCP_INTEGRATION.md` - Architecture and setup guide
+- `.claude/mcp-servers/dev3000-proxy.cjs` - HTTP-to-stdio bridge (reference)
+
+**Agent System Updates**
+- Total agent count: 23 (9 Coding + 14 Business)
+- Updated character mapping with ひーろー
+- Enhanced parallel execution rules documentation
+- Office metaphor extended with UI component development staff
+
+### Changed
+
+**MCP Configuration**
+- Replaced dev3000 MCP orchestrator with chrome-devtools-mcp
+- Direct MCP tool integration for browser debugging
+- Improved compatibility with Claude Code's stdio-based MCP system
+
+**Documentation**
+- `CLAUDE.md` updated with 9 Coding Agents (added HeroUIAgent)
+- Agent character count updated to 23 across all documentation
+- Enhanced UI/UX debugging workflow recommendations
+
+### Technical Improvements
+
+**Architecture Discovery**
+- Identified dev3000 as MCP orchestrator (not direct MCP server)
+- Documented incompatibility with Claude Code's architecture
+- Validated chrome-devtools-mcp as working alternative
+- HTTP/SSE vs stdio transport protocol analysis
+
+**Testing & Validation**
+- Tested multiple MCP endpoints (/mcp, /api/mcp, /api/tools, /api/orchestrator)
+- Validated chrome-devtools-mcp stdio integration
+- Created comprehensive test scripts and logs
+- Documented all findings for future reference
+
+### Recommendations
+
+**For UI/UX Debugging:**
+1. **Automated workflows**: Use `chrome-devtools-mcp` with Claude Code
+2. **Manual debugging**: Use `dev3000` standalone mode (web UI at localhost:3684)
+3. **Combined approach**: Both tools complement each other
+
+**Setup Instructions:**
+```bash
+# Chrome DevTools MCP
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/tmp/chrome-debug
+
+# dev3000 Standalone
+cd packages/dashboard && dev3000
+# Access: http://localhost:3684
+```
+
 ## [0.8.2] - 2025-10-10
 
 ### Added

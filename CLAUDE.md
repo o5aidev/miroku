@@ -20,9 +20,9 @@
 
 ### コアコンポーネント
 
-1. **Agent System** - 全22個のAgent（Coding: 8個 | Business: 14個）
+1. **Agent System** - 全23個のAgent（Coding: 9個 | Business: 14個）
 
-   **🔧 Coding Agents（8個）** - 開発運用・自動化
+   **🔧 Coding Agents（9個）** - 開発運用・自動化
    - CoordinatorAgent: タスク統括・DAG分解
    - CodeGenAgent: AI駆動コード生成 (Claude Sonnet 4)
    - ReviewAgent: コード品質レビュー (100点満点スコアリング)
@@ -30,6 +30,7 @@
    - PRAgent: Pull Request自動作成 (Conventional Commits)
    - DeploymentAgent: CI/CDデプロイ自動化 (Firebase/Vercel/AWS)
    - UIUXAgent: フロントエンドUI/UX最適化 (dev3000統合・Lighthouse・アクセシビリティ)
+   - HeroUIAgent: HeroUIコンポーネント開発 (コンポーネント生成・統合・テーマカスタマイズ)
 
    **💼 Business Agents（14個）** - ビジネス戦略・マーケティング・営業
    - 🎯 戦略・企画系（6個）: AIEntrepreneur, ProductConcept, ProductDesign, FunnelDesign, Persona, SelfAnalysis
@@ -37,9 +38,9 @@
    - 💼 営業・顧客管理系（3個）: Sales, CRM, Analytics
 
    **Agent Directory**: `.claude/agents/` ([README](.claude/agents/README.md))
-   - `specs/coding/` - コーディング系Agent仕様（8個）
+   - `specs/coding/` - コーディング系Agent仕様（9個）
    - `specs/business/` - ビジネス系Agent仕様（14個）
-   - `prompts/coding/` - コーディング系実行プロンプト（7個）
+   - `prompts/coding/` - コーディング系実行プロンプト（8個）
    - `prompts/business/` - ビジネス系実行プロンプト（将来追加）
 
    **SDK Integration**:
@@ -49,13 +50,13 @@
 
    **🎮 キャラクター名システム - 小中学生でも分かるAgent名**
 
-   全21個のAgentには、親しみやすい日本語のキャラクター名が付けられています。
+   全23個のAgentには、親しみやすい日本語のキャラクター名が付けられています。
    技術的な名前（CoordinatorAgent等）の代わりに、「しきるん」「つくるん」といった
    覚えやすい名前で呼び出すことができます。
 
    **色分けルール（4色）**:
    - 🔴 **リーダー**（2キャラ）: しきるん, あきんどさん - 指示を出す、全体を見る
-   - 🟢 **実行役**（13キャラ）: つくるん, めだまん, みためん, かくちゃん等 - 実際に作業する、並列実行可能 ✅
+   - 🟢 **実行役**（14キャラ）: つくるん, めだまん, みためん, ひーろー, かくちゃん等 - 実際に作業する、並列実行可能 ✅
    - 🔵 **分析役**（5キャラ）: みつけるん, しらべるん, かぞえるん等 - 調べる、考える、並列実行可能 ✅
    - 🟡 **サポート役**（3キャラ）: まとめるん, はこぶん, つなぐん - 手伝う、つなぐ、条件付き実行 ⚠️
 
@@ -87,6 +88,7 @@
    - つくるん: ✍️ 作業スタッフ（実務担当者）
    - めだまん: 🔍 検査スタッフ（品質管理担当）
    - みためん: 🎨 デザイン検証スタッフ（UI/UX品質担当）
+   - ひーろー: ✨ UIコンポーネント開発スタッフ（HeroUI専門家）
    - まとめるん: ✍️ ドキュメント担当（アシスタント）
    - はこぶん: 📦 配達スタッフ（デプロイ担当）
 
@@ -301,6 +303,7 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 - `.claude/agents/prompts/coding/pr-agent-prompt.md` - PRAgent実行ガイド（PR作成）
 - `.claude/agents/prompts/coding/issue-agent-prompt.md` - IssueAgent実行ガイド（Issue分析・ラベリング）
 - `.claude/agents/prompts/coding/uiux-agent-prompt.md` - UIUXAgent実行ガイド（UI/UX検証・dev3000統合）
+- `.claude/agents/prompts/coding/heroui-agent-prompt.md` - HeroUIAgent実行ガイド（HeroUIコンポーネント開発）
 
 ### Agent Assignment & Execution Context
 
@@ -333,7 +336,7 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 
 **Agent仕様ドキュメント** (`.claude/agents/specs/coding/` | `.claude/agents/specs/business/`): 各Agentの役割・権限・エスカレーション条件を定義
 
-*Coding Agents（8個）*:
+*Coding Agents（9個）*:
 - `.claude/agents/specs/coding/coordinator-agent.md` - CoordinatorAgent仕様
 - `.claude/agents/specs/coding/codegen-agent.md` - CodeGenAgent仕様
 - `.claude/agents/specs/coding/review-agent.md` - ReviewAgent仕様
@@ -341,6 +344,7 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 - `.claude/agents/specs/coding/pr-agent.md` - PRAgent仕様
 - `.claude/agents/specs/coding/issue-agent.md` - IssueAgent仕様
 - `.claude/agents/specs/coding/uiux-agent.md` - UIUXAgent仕様（dev3000統合・パフォーマンス・アクセシビリティ）
+- `.claude/agents/specs/coding/heroui-agent.md` - HeroUIAgent仕様（HeroUIコンポーネント開発・統合・テーマカスタマイズ）
 - `.claude/agents/specs/coding/hooks-integration.md` - Hooks統合ガイド
 
 *Business Agents（14個）*:
@@ -471,13 +475,13 @@ npm run agents:parallel:exec -- --issues=270,271,272,273,274 --concurrency=5
 
 **詳細**: [ENTITY_RELATION_MODEL.md](docs/ENTITY_RELATION_MODEL.md)
 
-### 📁 88ファイルの統合テンプレート
+### 📁 90ファイルの統合テンプレート
 
 すべてのテンプレートはEntity-Relationモデルに基づいて整合的に管理されています：
 
-- **Coding Agent仕様** (8ファイル): `.claude/agents/specs/coding/\*-agent.md`
+- **Coding Agent仕様** (9ファイル): `.claude/agents/specs/coding/\*-agent.md`
 - **Business Agent仕様** (14ファイル): `.claude/agents/specs/business/\*-agent.md`
-- **Coding Agent実行プロンプト** (7ファイル): `.claude/agents/prompts/coding/\*-agent-prompt.md`
+- **Coding Agent実行プロンプト** (8ファイル): `.claude/agents/prompts/coding/\*-agent-prompt.md`
 - **Business Agent実行プロンプト** (将来追加): `.claude/agents/prompts/business/\*-agent-prompt.md`
 - **Claude Codeコマンド** (9ファイル): `.claude/commands/\*.md`
 - **型定義** (5ファイル): `agents/types/\*.ts`

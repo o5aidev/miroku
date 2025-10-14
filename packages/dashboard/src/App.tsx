@@ -6,11 +6,13 @@ import { IssueDependencyView } from './components/IssueDependencyView';
 import { ImprovementsPanel } from './components/ImprovementsPanel';
 import { DevicePanel } from './components/DevicePanel';
 import { SessionGraphView } from './components/SessionGraphView';
+import { HeroUIDemo } from './components/HeroUIDemo';
+import { JonathanDesign } from './components/JonathanDesign';
 import { Login } from './components/Login';
 import { useAccessibilityPreferences } from './hooks/useAccessibilityPreferences';
 import { authService, User } from './services/auth';
 
-type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements' | 'session-graph';
+type ViewMode = 'flow' | 'flow-mock' | 'er' | 'issue-dependencies' | 'improvements' | 'session-graph' | 'heroui-demo' | 'jonathan';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('flow');
@@ -133,6 +135,28 @@ function App() {
               >
                 🌸
               </button>
+              <button
+                onClick={() => setViewMode('heroui-demo')}
+                title="HeroUI Demo"
+                className={`rounded px-2 py-0.5 text-xs transition-all ${
+                  viewMode === 'heroui-demo'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-white/90 hover:bg-white/10'
+                }`}
+              >
+                ✨
+              </button>
+              <button
+                onClick={() => setViewMode('jonathan')}
+                title="Jonathan Design"
+                className={`rounded px-2 py-0.5 text-xs transition-all ${
+                  viewMode === 'jonathan'
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-white/90 hover:bg-white/10'
+                }`}
+              >
+                🍎
+              </button>
             </div>
           </div>
 
@@ -197,6 +221,26 @@ function App() {
               }`}
             >
               🌸
+            </button>
+            <button
+              onClick={() => setViewMode('heroui-demo')}
+              className={`rounded px-1.5 py-0.5 text-xs transition ${
+                viewMode === 'heroui-demo'
+                  ? 'bg-white text-purple-600 shadow'
+                  : 'text-white/90 hover:bg-white/10'
+              }`}
+            >
+              ✨
+            </button>
+            <button
+              onClick={() => setViewMode('jonathan')}
+              className={`rounded px-1.5 py-0.5 text-xs transition ${
+                viewMode === 'jonathan'
+                  ? 'bg-white text-purple-600 shadow'
+                  : 'text-white/90 hover:bg-white/10'
+              }`}
+            >
+              🍎
             </button>
           </div>
 
@@ -266,6 +310,8 @@ function App() {
             </div>
           )}
           {viewMode === 'session-graph' && <SessionGraphView />}
+          {viewMode === 'heroui-demo' && <HeroUIDemo />}
+          {viewMode === 'jonathan' && <JonathanDesign />}
         </div>
 
         {/* Device Panel Sidebar */}
