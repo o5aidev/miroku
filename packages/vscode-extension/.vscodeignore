@@ -1,0 +1,46 @@
+# VS Code Extension Packaging - Exclude these files/folders
+
+# Source files (only include compiled .js files)
+src/**
+!out/**
+
+# TypeScript
+tsconfig.json
+*.ts
+*.ts.map
+
+# Development files
+.vscode/**
+.vscode-test/**
+node_modules/**
+.git/**
+.gitignore
+
+# Documentation (include README.md but exclude others)
+*.md
+!README.md
+!CHANGELOG.md
+
+# Test files
+test/**
+tests/**
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Build artifacts
+*.log
+*.lock
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# IDE
+.idea/**
+.DS_Store
+
+# Misc
+.eslintrc*
+.prettierrc*
+*.vsix
