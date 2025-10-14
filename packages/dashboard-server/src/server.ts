@@ -468,6 +468,110 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Get project status (for VS Code extension)
+app.get('/api/status', async (req, res) => {
+  try {
+    // Check if rate limited
+    if (isRateLimited()) {
+      console.log('⚠️  Rate limited - returning mock status');
+      const mockData = getMockGraph();
+      const mockIssues = mockData.nodes.filter(n => n.type === 'issue');
+
+      return res.json({
+        repository: {
+          owner: REPO_OWNER,
+          name: REPO_NAME,
+          url: `https://github.com/${REPO_OWNER}/${REPO_NAME}`,
+        },
+        issues: {
+          total: mockIssues.length,
+          byState: {
+            'pending': mockIssues.filter(i => i.data.state === '📥 state:pending').length,
+          },
+        },
+        summary: {
+          totalOpen: mockIssues.length,
+          activeAgents: 0,
+          blocked: 0,
+        },
+      });
+    }
+
+    const graph = await graphBuilder.buildFullGraph();
+    const issues = graph.nodes.filter(n => n.type === 'issue');
+
+    // Count issues by state
+    const byState: Record<string, number> = {};
+    issues.forEach(issue => {
+      const state = issue.data.state || 'unknown';
+      byState[state] = (byState[state] || 0) + 1;
+    });
+
+    // Calculate summary metrics
+    const totalOpen = issues.filter(i =>
+      i.data.state !== 'done' &&
+      i.data.state !== '✅ state:done' &&
+      i.data.state !== 'closed'
+    ).length;
+
+    const blocked = issues.filter(i =>
+      i.data.state === 'blocked' ||
+      i.data.state === '🚫 state:blocked'
+    ).length;
+
+    // TODO: Track active agents from real-time events
+    // For now, return 0 as we don't have a live agent tracker yet
+    const activeAgents = 0;
+
+    res.json({
+      repository: {
+        owner: REPO_OWNER,
+        name: REPO_NAME,
+        url: `https://github.com/${REPO_OWNER}/${REPO_NAME}`,
+      },
+      issues: {
+        total: issues.length,
+        byState,
+      },
+      summary: {
+        totalOpen,
+        activeAgents,
+        blocked,
+      },
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching status:', error);
+
+    const { useMock, error: handledError } = handleGitHubError(error);
+
+    if (useMock) {
+      const mockData = getMockGraph();
+      const mockIssues = mockData.nodes.filter(n => n.type === 'issue');
+
+      return res.json({
+        repository: {
+          owner: REPO_OWNER,
+          name: REPO_NAME,
+          url: `https://github.com/${REPO_OWNER}/${REPO_NAME}`,
+        },
+        issues: {
+          total: mockIssues.length,
+          byState: {
+            'pending': mockIssues.length,
+          },
+        },
+        summary: {
+          totalOpen: mockIssues.length,
+          activeAgents: 0,
+          blocked: 0,
+        },
+      });
+    }
+
+    res.status(500).json({ error: handledError.message });
+  }
+});
+
 // Get full graph
 app.get('/api/graph', async (req, res) => {
   try {

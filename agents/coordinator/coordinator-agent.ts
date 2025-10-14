@@ -32,11 +32,13 @@ import { DAGManager } from '../utils/dag-manager.js';
 import { PlansGenerator } from '../utils/plans-generator.js';
 import { IssueTraceLogger, initGlobalLogger, createDefaultConfig } from '../logging/issue-trace-logger.js';
 import { WorktreeManager } from '../worktree/worktree-manager.js';
+import { GitHubClient } from '../utils/github-client.js';
 import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {
   private traceLogger: IssueTraceLogger;
   private worktreeManager?: WorktreeManager;
+  private githubClient?: GitHubClient;
 
   constructor(config: AgentConfig) {
     super('CoordinatorAgent', config);
@@ -46,6 +48,19 @@ export class CoordinatorAgent extends BaseAgent {
       path.join(process.cwd(), '.ai', 'logs', 'traces')
     );
     this.traceLogger = initGlobalLogger(logConfig);
+
+    // Initialize GitHubClient if GITHUB_TOKEN is available
+    const githubToken = process.env.GITHUB_TOKEN || config.githubToken;
+    if (githubToken) {
+      this.githubClient = new GitHubClient({
+        token: githubToken,
+        cacheTTL: 5 * 60 * 1000, // 5 minutes
+        debug: false,
+      });
+      this.log('🐙 GitHubClient initialized');
+    } else {
+      this.log('⚠️  GITHUB_TOKEN not found, GitHub API features disabled');
+    }
 
     // Initialize WorktreeManager if worktree mode is enabled
     if (config.useWorktree && config.worktreeBasePath) {
@@ -719,12 +734,34 @@ export class CoordinatorAgent extends BaseAgent {
    * Fetch Issue by issue number for worktree creation
    */
   private async fetchIssueForWorktree(issueNumber: number): Promise<Issue | null> {
-    // TODO: Fetch from GitHub API using this.config.githubToken
-    // For now, return a basic issue structure
+    // If GitHubClient is available, fetch from GitHub API
+    if (this.githubClient) {
+      try {
+        const { owner, repo } = this.githubClient.extractOwnerRepo();
+        this.log(`🔍 Fetching Issue #${issueNumber} from ${owner}/${repo}`);
+
+        const issue = await this.githubClient.fetchIssue(owner, repo, issueNumber);
+
+        if (issue) {
+          this.log(`✅ Issue #${issueNumber} fetched from GitHub API`);
+        } else {
+          this.log(`⚠️  Issue #${issueNumber} not found on GitHub`);
+        }
+
+        return issue;
+      } catch (error) {
+        this.log(`❌ Failed to fetch Issue #${issueNumber}: ${(error as Error).message}`);
+        this.log(`⚠️  Falling back to mock issue data`);
+        // Fall through to mock data
+      }
+    }
+
+    // Fallback: return mock issue if GitHubClient is unavailable or fetch failed
+    this.log(`⚠️  Using mock issue data for Issue #${issueNumber}`);
     return {
       number: issueNumber,
       title: `Issue #${issueNumber}`,
-      body: 'Issue body placeholder',
+      body: 'Issue body placeholder (GitHub API unavailable)',
       state: 'open',
       labels: [],
       createdAt: new Date().toISOString(),
