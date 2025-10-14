@@ -15,6 +15,8 @@ let miyabiClient: MiyabiClient;
 let issueTreeProvider: IssueTreeProvider;
 let agentTreeProvider: AgentTreeProvider;
 let statusTreeProvider: StatusTreeProvider;
+let statusBarItem: vscode.StatusBarItem;
+let connectionStatusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Miyabi extension is now active!');
@@ -23,6 +25,20 @@ export function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration('miyabi');
   const serverUrl = config.get<string>('serverUrl') || 'http://localhost:3001';
   miyabiClient = new MiyabiClient(serverUrl);
+
+  // Create status bar items
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBarItem.command = 'miyabi.showStatus';
+  statusBarItem.tooltip = 'Click to view Miyabi project status';
+  context.subscriptions.push(statusBarItem);
+
+  connectionStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+  connectionStatusBarItem.command = 'miyabi.openDashboard';
+  connectionStatusBarItem.tooltip = 'Miyabi Dashboard Connection';
+  context.subscriptions.push(connectionStatusBarItem);
+
+  // Initialize status bar
+  updateStatusBar();
 
   // Register Tree View Providers
   issueTreeProvider = new IssueTreeProvider(miyabiClient);
@@ -143,6 +159,75 @@ export function activate(context: vscode.ExtensionContext) {
           `Failed to open repository: ${error instanceof Error ? error.message : String(error)}`
         );
       }
+    }),
+
+    // Issues filter & sort commands
+    vscode.commands.registerCommand('miyabi.issues.filterByState', async () => {
+      const states = [
+        { label: '🌐 All Issues', value: 'all' },
+        { label: '⏸️ Pending', value: 'pending' },
+        { label: '⚙️ Implementing', value: 'implementing' },
+        { label: '🔍 Reviewing', value: 'reviewing' },
+        { label: '✅ Done', value: 'done' },
+        { label: '🚫 Blocked', value: 'blocked' },
+      ];
+
+      const selected = await vscode.window.showQuickPick(states, {
+        placeHolder: 'Filter issues by state',
+      });
+
+      if (selected) {
+        issueTreeProvider.setFilter(selected.value as any);
+        vscode.window.showInformationMessage(`Filtered by state: ${selected.label}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('miyabi.issues.filterByPriority', async () => {
+      const priorities = [
+        { label: '🌐 All Priorities', value: null },
+        { label: '🔥 P0 - Critical', value: 'P0' },
+        { label: '🔴 P1 - High', value: 'P1' },
+        { label: '🟡 P2 - Medium', value: 'P2' },
+        { label: '🟢 P3 - Low', value: 'P3' },
+      ];
+
+      const selected = await vscode.window.showQuickPick(priorities, {
+        placeHolder: 'Filter issues by priority',
+      });
+
+      if (selected) {
+        issueTreeProvider.setPriorityFilter(selected.value);
+        vscode.window.showInformationMessage(
+          `Filtered by priority: ${selected.label}`
+        );
+      }
+    }),
+
+    vscode.commands.registerCommand('miyabi.issues.sortBy', async () => {
+      const sortOptions = [
+        { label: '🔥 Priority (High to Low)', value: 'priority' },
+        { label: '🔢 Issue Number (Newest first)', value: 'number' },
+        { label: '📊 State (Blocked first)', value: 'state' },
+      ];
+
+      const selected = await vscode.window.showQuickPick(sortOptions, {
+        placeHolder: 'Sort issues by',
+      });
+
+      if (selected) {
+        issueTreeProvider.setSortBy(selected.value as any);
+        vscode.window.showInformationMessage(`Sorted by: ${selected.label}`);
+      }
+    }),
+
+    vscode.commands.registerCommand('miyabi.issues.clearFilters', () => {
+      issueTreeProvider.clearFilters();
+      vscode.window.showInformationMessage('All filters cleared');
+    }),
+
+    vscode.commands.registerCommand('miyabi.issues.showFilterInfo', () => {
+      const info = issueTreeProvider.getFilterInfo();
+      vscode.window.showInformationMessage(`Current filters: ${info}`);
     })
   );
 
@@ -159,17 +244,116 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Connect to WebSocket for real-time updates
   miyabiClient.connect();
-  miyabiClient.on('issue:update', () => issueTreeProvider.refresh());
-  miyabiClient.on('agent:update', () => agentTreeProvider.refresh());
-  miyabiClient.on('status:update', () => statusTreeProvider.refresh());
+
+  // Connection status events
+  miyabiClient.on('connected', () => {
+    connectionStatusBarItem.text = '$(check) Miyabi';
+    connectionStatusBarItem.backgroundColor = undefined;
+    connectionStatusBarItem.show();
+    showNotification('Connected to Miyabi Dashboard', 'info');
+  });
+
+  miyabiClient.on('disconnected', () => {
+    connectionStatusBarItem.text = '$(x) Miyabi Disconnected';
+    connectionStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+    connectionStatusBarItem.show();
+  });
+
+  // Real-time update events with notifications
+  miyabiClient.on('issue:update', (data: any) => {
+    issueTreeProvider.refresh();
+    updateStatusBar();
+    if (data?.message) {
+      showNotification(`Issue Updated: ${data.message}`, 'info');
+    }
+  });
+
+  miyabiClient.on('agent:update', (data: any) => {
+    agentTreeProvider.refresh();
+    updateStatusBar();
+
+    if (data?.agentId && data?.status) {
+      const emoji = data.status === 'completed' ? '✅' : data.status === 'error' ? '❌' : '🤖';
+      showNotification(
+        `${emoji} Agent ${data.agentId}: ${data.status}`,
+        data.status === 'error' ? 'warning' : 'info'
+      );
+    }
+  });
+
+  miyabiClient.on('status:update', (data: any) => {
+    statusTreeProvider.refresh();
+    updateStatusBar();
+  });
 
   // Show welcome message
   vscode.window.showInformationMessage('Miyabi extension activated!');
 }
 
+// Helper function to show notifications based on settings
+function showNotification(message: string, type: 'info' | 'warning' | 'error' = 'info') {
+  const config = vscode.workspace.getConfiguration('miyabi');
+  const enableNotifications = config.get<boolean>('enableNotifications', true);
+
+  if (!enableNotifications) {
+    return;
+  }
+
+  switch (type) {
+    case 'warning':
+      vscode.window.showWarningMessage(message);
+      break;
+    case 'error':
+      vscode.window.showErrorMessage(message);
+      break;
+    case 'info':
+    default:
+      vscode.window.showInformationMessage(message);
+      break;
+  }
+}
+
+// Helper function to update status bar
+async function updateStatusBar() {
+  try {
+    const status = await miyabiClient.getStatus();
+
+    // Update main status bar item
+    const activeAgents = status.summary.activeAgents;
+    const openIssues = status.summary.totalOpen;
+    const blocked = status.summary.blocked;
+
+    let statusText = `$(rocket) Miyabi: ${openIssues} issues`;
+
+    if (activeAgents > 0) {
+      statusText += ` • $(sync~spin) ${activeAgents} active`;
+    }
+
+    if (blocked > 0) {
+      statusText += ` • $(warning) ${blocked} blocked`;
+      statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+    } else {
+      statusBarItem.backgroundColor = undefined;
+    }
+
+    statusBarItem.text = statusText;
+    statusBarItem.show();
+  } catch (error) {
+    statusBarItem.text = '$(warning) Miyabi: Connection Error';
+    statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+    statusBarItem.show();
+  }
+}
+
 export function deactivate() {
   if (miyabiClient) {
     miyabiClient.disconnect();
+  }
+  if (statusBarItem) {
+    statusBarItem.dispose();
+  }
+  if (connectionStatusBarItem) {
+    connectionStatusBarItem.dispose();
   }
 }
 

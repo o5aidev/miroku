@@ -104,6 +104,31 @@
         "command": "miyabi.status.openRepository",
         "title": "Open Repository in Browser",
         "icon": "$(github)"
+      },
+      {
+        "command": "miyabi.issues.filterByState",
+        "title": "Filter Issues by State",
+        "icon": "$(filter)"
+      },
+      {
+        "command": "miyabi.issues.filterByPriority",
+        "title": "Filter Issues by Priority",
+        "icon": "$(flame)"
+      },
+      {
+        "command": "miyabi.issues.sortBy",
+        "title": "Sort Issues",
+        "icon": "$(sort-precedence)"
+      },
+      {
+        "command": "miyabi.issues.clearFilters",
+        "title": "Clear All Filters",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "miyabi.issues.showFilterInfo",
+        "title": "Show Filter Info",
+        "icon": "$(info)"
       }
     ],
     "viewsContainers": {
@@ -171,9 +196,29 @@
     "menus": {
       "view/title": [
         {
+          "command": "miyabi.issues.filterByState",
+          "when": "view == miyabiIssues",
+          "group": "navigation@1"
+        },
+        {
+          "command": "miyabi.issues.filterByPriority",
+          "when": "view == miyabiIssues",
+          "group": "navigation@2"
+        },
+        {
+          "command": "miyabi.issues.sortBy",
+          "when": "view == miyabiIssues",
+          "group": "navigation@3"
+        },
+        {
+          "command": "miyabi.issues.clearFilters",
+          "when": "view == miyabiIssues",
+          "group": "navigation@4"
+        },
+        {
           "command": "miyabi.refreshIssues",
           "when": "view == miyabiIssues",
-          "group": "navigation"
+          "group": "navigation@5"
         },
         {
           "command": "miyabi.openDashboard",
