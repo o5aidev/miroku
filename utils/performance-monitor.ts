@@ -12,7 +12,6 @@ import type {
   ResourceMetrics,
   QualityMetrics,
   CostMetrics,
-  MetricsSnapshot,
   MetricsHistory,
   PerformanceAlert,
   PerformanceReport,

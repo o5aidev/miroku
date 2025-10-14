@@ -41,10 +41,10 @@ async function main() {
     console.log(`   Security Issues:        ${metrics.securityIssues}`);
     console.log(`   Test Coverage:          ${metrics.testCoverage.toFixed(1)}%`);
     console.log(`   Tests Passed:           ${metrics.testsPassed}`);
-    console.log(`   Tests Failed:           ${metrics.testsFailed}`);
+    console.log(`   Tests Failed:           ${metrics.testsFailed ?? 0}`);
     console.log(`   Build Time:             ${metrics.buildTimeMs}ms`);
-    console.log(`   Lines of Code:          ${metrics.linesOfCode.toLocaleString()}`);
-    console.log(`   Cyclomatic Complexity:  ${metrics.cyclomaticComplexity}`);
+    console.log(`   Lines of Code:          ${(metrics.linesOfCode ?? 0).toLocaleString()}`);
+    console.log(`   Cyclomatic Complexity:  ${metrics.cyclomaticComplexity ?? 0}`);
     console.log('');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('');
@@ -81,7 +81,7 @@ async function main() {
       issues.push(`Low test coverage (${metrics.testCoverage.toFixed(1)}%)`);
     }
 
-    if (metrics.testsFailed > 0) {
+    if ((metrics.testsFailed ?? 0) > 0) {
       issues.push(`${metrics.testsFailed} failing test(s)`);
     }
 
@@ -112,7 +112,7 @@ async function main() {
       );
     }
 
-    if (metrics.testsFailed > 0) {
+    if ((metrics.testsFailed ?? 0) > 0) {
       recommendations.push('Fix failing tests before proceeding');
     }
 

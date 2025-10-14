@@ -528,6 +528,18 @@ ${JSON.stringify(invocations, null, 2)}
   }
 
   /**
+   * Read file content
+   */
+  protected async readFile(filePath: string): Promise<string> {
+    try {
+      return await fs.promises.readFile(filePath, 'utf-8');
+    } catch (error) {
+      logger.warning(`Failed to read ${filePath}: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
    * Append content to file (using async batched writer for 96% improvement)
    */
   protected async appendToFile(filePath: string, content: string): Promise<void> {

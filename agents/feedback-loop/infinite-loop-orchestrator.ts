@@ -384,7 +384,7 @@ export class InfiniteLoopOrchestrator {
     } else if (type === 'constructive') {
       return `👍 Good progress! Score: ${report.overallScore}/100. ${report.gaps.length} gap(s) remaining.`;
     } else if (type === 'corrective') {
-      return `⚠️  Needs improvement. Score: ${report.overallScore}/100. Focus on ${report.gaps.filter((g) => g.severity === 'critical' || g.severity === 'high').length} high-priority gap(s).`;
+      return `⚠️  Needs improvement. Score: ${report.overallScore}/100. Focus on ${report.gaps.filter((g: import('../types/index.js').GapAnalysis) => g.severity === 'critical' || g.severity === 'high').length} high-priority gap(s).`;
     } else {
       return `🚨 Critical issues detected. Score: ${report.overallScore}/100. Immediate action required.`;
     }
@@ -394,7 +394,7 @@ export class InfiniteLoopOrchestrator {
     const details: string[] = [];
 
     // Failed validations
-    const failures = report.validationResults.filter((v) => !v.passed);
+    const failures = report.validationResults.filter((v: import('../types/index.js').ValidationResult) => !v.passed);
     if (failures.length > 0) {
       details.push(`Failed ${failures.length} criterion/criteria:`);
       for (const failure of failures) {
@@ -467,12 +467,12 @@ export class InfiniteLoopOrchestrator {
   }
 
   private updateConvergenceMetrics(loop: FeedbackLoop): ConvergenceMetrics {
-    const scoreHistory = loop.iterations.map((it) => it.consumptionReport.overallScore);
+    const scoreHistory = loop.iterations.map((it: IterationRecord) => it.consumptionReport.overallScore);
 
     // Calculate variance
-    const mean = scoreHistory.reduce((sum, s) => sum + s, 0) / scoreHistory.length;
+    const mean = scoreHistory.reduce((sum: number, s: number) => sum + s, 0) / scoreHistory.length;
     const variance =
-      scoreHistory.reduce((sum, s) => sum + Math.pow(s - mean, 2), 0) /
+      scoreHistory.reduce((sum: number, s: number) => sum + Math.pow(s - mean, 2), 0) /
       scoreHistory.length;
 
     // Calculate improvement rate
@@ -766,12 +766,13 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   private async escalateToSlack(escalation: Escalation): Promise<void> {
     const webhookUrl = process.env.SLACK_WEBHOOK_URL!;
 
-    const severityEmoji = {
+    const severityEmojiMap: Record<string, string> = {
       low: '🟢',
       medium: '🟡',
       high: '🟠',
       critical: '🔴',
-    }[escalation.severity];
+    };
+    const severityEmoji = severityEmojiMap[escalation.severity] || '⚪';
 
     const payload = {
       text: `${severityEmoji} Escalation: ${escalation.reason}`,

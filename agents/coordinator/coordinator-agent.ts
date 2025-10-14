@@ -186,7 +186,7 @@ export class CoordinatorAgent extends BaseAgent {
 
     // Estimate total duration
     const estimatedTotalDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration ?? 0),
       0
     );
 
@@ -327,7 +327,7 @@ export class CoordinatorAgent extends BaseAgent {
     const concurrency = Math.min(tasks.length, 5); // Max 5 parallel
 
     const estimatedDuration = tasks.reduce(
-      (sum, task) => sum + task.estimatedDuration,
+      (sum, task) => sum + (task.estimatedDuration ?? 0),
       0
     );
 
@@ -427,7 +427,8 @@ export class CoordinatorAgent extends BaseAgent {
     const results = await Promise.all(
       tasks.map(async (task) => {
         const startTime = Date.now();
-        this.log(`   🏃 Executing: ${task.id} (${task.assignedAgent})`);
+        const agentType = task.assignedAgent || 'CodeGenAgent'; // Default to CodeGenAgent if not assigned
+        this.log(`   🏃 Executing: ${task.id} (${agentType})`);
 
         // Create worktree if worktree mode is enabled
         if (this.worktreeManager && issue) {
@@ -437,12 +438,12 @@ export class CoordinatorAgent extends BaseAgent {
               task,
               issue,
               config: this.config,
-              promptPath: this.getAgentPromptPath(task.assignedAgent),
+              promptPath: this.getAgentPromptPath(agentType),
             };
 
             // Create worktree with agent assignment
             const worktreeInfo = await this.worktreeManager.createWorktree(issue, {
-              agentType: task.assignedAgent,
+              agentType,
               executionContext,
             });
 
@@ -462,7 +463,7 @@ export class CoordinatorAgent extends BaseAgent {
 
         try {
           // Instantiate and execute the appropriate specialist agent
-          const agent = await this.createSpecialistAgent(task.assignedAgent);
+          const agent = await this.createSpecialistAgent(agentType);
 
           // Pass Issue Trace Logger to specialist agent
           agent.setTraceLogger(issueLogger);
@@ -488,7 +489,7 @@ export class CoordinatorAgent extends BaseAgent {
           return {
             taskId: task.id,
             status: result.status === 'success' ? ('completed' as AgentStatus) : ('failed' as AgentStatus),
-            agentType: task.assignedAgent,
+            agentType,
             durationMs,
             result,
           };
@@ -507,7 +508,7 @@ export class CoordinatorAgent extends BaseAgent {
           return {
             taskId: task.id,
             status: 'failed' as AgentStatus,
-            agentType: task.assignedAgent,
+            agentType,
             durationMs,
             result: {
               status: 'failed' as const,

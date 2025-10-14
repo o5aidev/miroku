@@ -191,9 +191,9 @@ export class GoalManager {
     }
 
     const totalTests = goal.testSpecs.length;
-    const passedTests = goal.testSpecs.filter((t) => t.status === 'passed').length;
-    const failedTests = goal.testSpecs.filter((t) => t.status === 'failed').length;
-    const pendingTests = goal.testSpecs.filter((t) => t.status === 'pending').length;
+    const passedTests = goal.testSpecs.filter((t: TestSpecification) => t.status === 'passed').length;
+    const failedTests = goal.testSpecs.filter((t: TestSpecification) => t.status === 'failed').length;
+    const pendingTests = goal.testSpecs.filter((t: TestSpecification) => t.status === 'pending').length;
 
     const progress = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
 
