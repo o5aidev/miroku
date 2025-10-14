@@ -95,6 +95,12 @@ export class ReviewLoop {
 
       finalReport = result.data.qualityReport;
 
+      // Check if finalReport is null
+      if (!finalReport) {
+        this.log(`\n❌ Review failed: No quality report returned\n`);
+        break;
+      }
+
       // Display results
       this.displayResults(finalReport, iteration);
 
@@ -162,7 +168,7 @@ export class ReviewLoop {
       assignedAgent: 'ReviewAgent',
       dependencies: [],
       estimatedDuration: 15,
-      status: 'in-progress',
+      status: 'running',
       metadata: {
         iteration,
         skipTests: this.skipTests,
@@ -221,11 +227,6 @@ export class ReviewLoop {
 
       this.log(`${index + 1}. [${typeEmoji} ${issue.type.toUpperCase()}] ${severityBadge} ${issue.file}:${issue.line}`);
       this.log(`   ${issue.message}`);
-
-      if (issue.suggestion) {
-        this.log(`   💡 Suggestion: ${issue.suggestion}`);
-      }
-
       this.log('');
     });
 
