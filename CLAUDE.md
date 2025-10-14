@@ -299,6 +299,35 @@ DEVICE_IDENTIFIER=MacBook   # デバイス識別子
 - `.claude/agents/prompts/coding/pr-agent-prompt.md` - PRAgent実行ガイド（PR作成）
 - `.claude/agents/prompts/coding/issue-agent-prompt.md` - IssueAgent実行ガイド（Issue分析・ラベリング）
 
+### Agent Assignment & Execution Context
+
+**自動Agent割り当て**: CoordinatorAgentがWorktree作成時に各Taskに最適なAgentを自動割り当て
+
+**実行コンテキストファイル**（各Worktreeに自動生成）:
+1. **`.agent-context.json`** - 機械可読コンテキスト
+   ```json
+   {
+     "agentType": "CodeGenAgent",
+     "agentStatus": "executing",
+     "task": { /* Task詳細 */ },
+     "issue": { /* Issue詳細 */ },
+     "config": { /* Agent設定 */ },
+     "promptPath": ".claude/agents/prompts/coding/codegen-agent-prompt.md",
+     "worktreeInfo": { /* Worktree情報 */ }
+   }
+   ```
+
+2. **`EXECUTION_CONTEXT.md`** - 人間可読コンテキスト
+   - Issue情報（タイトル、URL、ラベル）
+   - Task情報（依存関係、推定時間）
+   - Agent情報（種別、ステータス、プロンプトパス）
+   - Worktree情報（パス、ブランチ、セッションID）
+
+**Agent状態管理**:
+- `idle` → `executing` → `completed` / `failed`
+- WorktreeManagerがリアルタイムで状態を追跡
+- Agent統計情報の取得可能（byAgent, byStatus）
+
 **Agent仕様ドキュメント** (`.claude/agents/specs/coding/` | `.claude/agents/specs/business/`): 各Agentの役割・権限・エスカレーション条件を定義
 
 *Coding Agents（7個）*:

@@ -914,5 +914,5 @@ export interface Escalation {
 // Re-exports from other modules
 // ============================================================================
 
-export type { WorktreeInfo, WorktreeManagerConfig } from '../worktree/worktree-manager.js';
+export type { WorktreeInfo, WorktreeManagerConfig, WorktreeExecutionContext } from '../worktree/worktree-manager.js';
 export type { ExecutionProgress } from '../execution/parallel-execution-manager.js';

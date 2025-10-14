@@ -8,7 +8,19 @@
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import type { Issue } from '../types/index.js';
+import type { Issue, AgentType, Task, AgentConfig } from '../types/index.js';
+
+/**
+ * Worktree execution context
+ * Contains all information needed for Claude Code execution within a worktree
+ */
+export interface WorktreeExecutionContext {
+  task: Task;
+  issue: Issue;
+  config: Partial<AgentConfig>;
+  promptPath?: string; // Path to agent-specific Claude Code prompt
+  metadata?: Record<string, any>;
+}
 
 /**
  * Worktree information
@@ -21,7 +33,13 @@ export interface WorktreeInfo {
   createdAt: string;
   lastActivityAt: string;
   sessionId: string;
-  agentType?: string;
+
+  // Agent assignment
+  agentType?: AgentType;
+  agentStatus?: 'idle' | 'executing' | 'completed' | 'failed';
+
+  // Execution context
+  executionContext?: WorktreeExecutionContext;
 }
 
 /**
@@ -68,8 +86,18 @@ export class WorktreeManager {
 
   /**
    * Create a new worktree for an issue
+   *
+   * @param issue - GitHub Issue to create worktree for
+   * @param options - Optional configuration including agent assignment
+   * @returns WorktreeInfo with all metadata
    */
-  async createWorktree(issue: Issue): Promise<WorktreeInfo> {
+  async createWorktree(
+    issue: Issue,
+    options?: {
+      agentType?: AgentType;
+      executionContext?: WorktreeExecutionContext;
+    }
+  ): Promise<WorktreeInfo> {
     const issueNumber = issue.number;
 
     // Check if worktree already exists
@@ -110,9 +138,22 @@ export class WorktreeManager {
         createdAt: new Date().toISOString(),
         lastActivityAt: new Date().toISOString(),
         sessionId: `worktree-${issueNumber}-${Date.now()}`,
+
+        // Agent assignment
+        agentType: options?.agentType,
+        agentStatus: options?.agentType ? 'idle' : undefined,
+
+        // Execution context
+        executionContext: options?.executionContext,
       };
 
       this.activeWorktrees.set(issueNumber, worktreeInfo);
+
+      // Log agent assignment if provided
+      if (options?.agentType) {
+        this.log(`🤖 Assigned ${options.agentType} to worktree for issue #${issueNumber}`);
+      }
+
       this.log(`✅ Created worktree for issue #${issueNumber}: ${worktreePath}`);
 
       return worktreeInfo;
@@ -308,6 +349,105 @@ export class WorktreeManager {
   }
 
   /**
+   * Update agent execution status
+   *
+   * @param issueNumber - Issue number
+   * @param agentStatus - New agent status
+   */
+  updateAgentStatus(
+    issueNumber: number,
+    agentStatus: WorktreeInfo['agentStatus']
+  ): void {
+    const worktree = this.activeWorktrees.get(issueNumber);
+    if (worktree) {
+      worktree.agentStatus = agentStatus;
+      worktree.lastActivityAt = new Date().toISOString();
+      this.activeWorktrees.set(issueNumber, worktree);
+      this.log(`🤖 Updated agent status for issue #${issueNumber}: ${agentStatus}`);
+    }
+  }
+
+  /**
+   * Set execution context for a worktree
+   *
+   * @param issueNumber - Issue number
+   * @param context - Execution context
+   */
+  setExecutionContext(
+    issueNumber: number,
+    context: WorktreeExecutionContext
+  ): void {
+    const worktree = this.activeWorktrees.get(issueNumber);
+    if (worktree) {
+      worktree.executionContext = context;
+      worktree.lastActivityAt = new Date().toISOString();
+      this.activeWorktrees.set(issueNumber, worktree);
+      this.log(`📋 Set execution context for issue #${issueNumber}`);
+    }
+  }
+
+  /**
+   * Get all worktrees assigned to a specific agent type
+   *
+   * @param agentType - Agent type to filter by
+   * @returns Array of worktrees assigned to this agent
+   */
+  getWorktreesByAgent(agentType: AgentType): WorktreeInfo[] {
+    return this.getAllWorktrees().filter((w) => w.agentType === agentType);
+  }
+
+  /**
+   * Get all worktrees with a specific agent status
+   *
+   * @param agentStatus - Agent status to filter by
+   * @returns Array of worktrees with this agent status
+   */
+  getWorktreesByAgentStatus(
+    agentStatus: WorktreeInfo['agentStatus']
+  ): WorktreeInfo[] {
+    return this.getAllWorktrees().filter((w) => w.agentStatus === agentStatus);
+  }
+
+  /**
+   * Get worktree statistics including agent information
+   */
+  getAgentStatistics(): {
+    byAgent: Record<string, number>;
+    byAgentStatus: Record<string, number>;
+    totalWithAgent: number;
+    totalWithoutAgent: number;
+  } {
+    const worktrees = this.getAllWorktrees();
+
+    const byAgent: Record<string, number> = {};
+    const byAgentStatus: Record<string, number> = {};
+
+    let totalWithAgent = 0;
+    let totalWithoutAgent = 0;
+
+    for (const worktree of worktrees) {
+      if (worktree.agentType) {
+        byAgent[worktree.agentType] = (byAgent[worktree.agentType] || 0) + 1;
+        totalWithAgent++;
+      } else {
+        totalWithoutAgent++;
+      }
+
+      if (worktree.agentStatus) {
+        byAgentStatus[worktree.agentStatus] =
+          (byAgentStatus[worktree.agentStatus] || 0) + 1;
+      }
+    }
+
+    return {
+      byAgent,
+      byAgentStatus,
+      totalWithAgent,
+      totalWithoutAgent,
+    };
+  }
+
+  /**
    * Check for idle worktrees and cleanup if needed
    */
   async cleanupIdleWorktrees(): Promise<void> {
@@ -408,6 +548,132 @@ export class WorktreeManager {
       failed: worktrees.filter((w) => w.status === 'failed').length,
       cleanup: worktrees.filter((w) => w.status === 'cleanup').length,
     };
+  }
+
+  /**
+   * Write execution context files to worktree
+   *
+   * Creates:
+   * - .agent-context.json: Machine-readable context
+   * - EXECUTION_CONTEXT.md: Human-readable context
+   *
+   * @param issueNumber - Issue number
+   */
+  async writeExecutionContext(issueNumber: number): Promise<void> {
+    const worktree = this.activeWorktrees.get(issueNumber);
+
+    if (!worktree || !worktree.executionContext) {
+      this.log(`⚠️  No execution context found for issue #${issueNumber}`);
+      return;
+    }
+
+    const { executionContext } = worktree;
+
+    try {
+      // Write JSON context file
+      const jsonPath = path.join(worktree.path, '.agent-context.json');
+      const jsonContent = JSON.stringify(
+        {
+          agentType: worktree.agentType,
+          agentStatus: worktree.agentStatus,
+          task: executionContext.task,
+          issue: executionContext.issue,
+          config: {
+            deviceIdentifier: executionContext.config.deviceIdentifier,
+            useWorktree: executionContext.config.useWorktree,
+            worktreeBasePath: executionContext.config.worktreeBasePath,
+            logDirectory: executionContext.config.logDirectory,
+            reportDirectory: executionContext.config.reportDirectory,
+          },
+          promptPath: executionContext.promptPath,
+          metadata: executionContext.metadata,
+          worktreeInfo: {
+            path: worktree.path,
+            branch: worktree.branch,
+            sessionId: worktree.sessionId,
+            createdAt: worktree.createdAt,
+          },
+        },
+        null,
+        2
+      );
+
+      fs.writeFileSync(jsonPath, jsonContent, 'utf-8');
+      this.log(`📄 Wrote .agent-context.json to ${jsonPath}`);
+
+      // Write Markdown context file
+      const mdPath = path.join(worktree.path, 'EXECUTION_CONTEXT.md');
+      const mdContent = this.generateContextMarkdown(worktree, executionContext);
+      fs.writeFileSync(mdPath, mdContent, 'utf-8');
+      this.log(`📄 Wrote EXECUTION_CONTEXT.md to ${mdPath}`);
+    } catch (error: any) {
+      this.log(`❌ Failed to write execution context: ${error.message}`);
+      throw new Error(`Failed to write execution context: ${error.message}`);
+    }
+  }
+
+  /**
+   * Generate human-readable Markdown context
+   */
+  private generateContextMarkdown(
+    worktree: WorktreeInfo,
+    context: WorktreeExecutionContext
+  ): string {
+    return `# Agent Execution Context
+
+## Issue Information
+
+- **Number**: #${context.issue.number}
+- **Title**: ${context.issue.title}
+- **URL**: ${context.issue.url}
+- **State**: ${context.issue.state}
+- **Labels**: ${context.issue.labels.join(', ') || 'None'}
+
+## Task Information
+
+- **ID**: ${context.task.id}
+- **Title**: ${context.task.title}
+- **Type**: ${context.task.type}
+- **Priority**: ${context.task.priority}
+- **Assigned Agent**: ${context.task.assignedAgent || 'Not assigned'}
+- **Status**: ${context.task.status || 'Unknown'}
+- **Estimated Duration**: ${context.task.estimatedDuration || 'N/A'} minutes
+- **Dependencies**: ${context.task.dependencies.length > 0 ? context.task.dependencies.join(', ') : 'None'}
+
+## Agent Information
+
+- **Agent Type**: ${worktree.agentType || 'Not assigned'}
+- **Agent Status**: ${worktree.agentStatus || 'Unknown'}
+- **Prompt Path**: ${context.promptPath || 'N/A'}
+
+## Worktree Information
+
+- **Path**: ${worktree.path}
+- **Branch**: ${worktree.branch}
+- **Session ID**: ${worktree.sessionId}
+- **Created At**: ${worktree.createdAt}
+- **Last Activity**: ${worktree.lastActivityAt}
+
+## Configuration
+
+- **Device Identifier**: ${context.config.deviceIdentifier || 'Unknown'}
+- **Use Worktree**: ${context.config.useWorktree ? 'Yes' : 'No'}
+- **Log Directory**: ${context.config.logDirectory || 'N/A'}
+- **Report Directory**: ${context.config.reportDirectory || 'N/A'}
+
+## Task Description
+
+${context.task.description}
+
+## Issue Body
+
+${context.issue.body}
+
+---
+
+*This file was generated automatically by WorktreeManager*
+*Generated at: ${new Date().toISOString()}*
+`;
   }
 
   /**

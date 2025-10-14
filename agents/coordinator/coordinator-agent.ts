@@ -25,15 +25,18 @@ import {
   ExecutionReport,
   TaskResult,
   AgentStatus,
+  WorktreeExecutionContext,
 } from '../types/index.js';
 import { IssueAnalyzer } from '../utils/issue-analyzer.js';
 import { DAGManager } from '../utils/dag-manager.js';
 import { PlansGenerator } from '../utils/plans-generator.js';
 import { IssueTraceLogger, initGlobalLogger, createDefaultConfig } from '../logging/issue-trace-logger.js';
+import { WorktreeManager } from '../worktree/worktree-manager.js';
 import * as path from 'path';
 
 export class CoordinatorAgent extends BaseAgent {
   private traceLogger: IssueTraceLogger;
+  private worktreeManager?: WorktreeManager;
 
   constructor(config: AgentConfig) {
     super('CoordinatorAgent', config);
@@ -43,6 +46,20 @@ export class CoordinatorAgent extends BaseAgent {
       path.join(process.cwd(), '.ai', 'logs', 'traces')
     );
     this.traceLogger = initGlobalLogger(logConfig);
+
+    // Initialize WorktreeManager if worktree mode is enabled
+    if (config.useWorktree && config.worktreeBasePath) {
+      this.worktreeManager = new WorktreeManager({
+        basePath: config.worktreeBasePath,
+        repoRoot: process.cwd(),
+        mainBranch: 'main',
+        branchPrefix: 'issue-',
+        autoCleanup: true,
+        maxIdleTime: 3600000, // 1 hour
+        enableLogging: true,
+      });
+      this.log('🌳 WorktreeManager initialized for parallel execution');
+    }
   }
 
   /**
@@ -398,9 +415,10 @@ export class CoordinatorAgent extends BaseAgent {
   }
 
   /**
-   * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution)
+   * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution + Worktree support)
    *
    * Performance: Now calls actual specialist agents instead of simulation
+   * Worktree Mode: Creates isolated worktrees for each task when enabled
    */
   private async executeLevelParallel(
     taskIds: string[],
@@ -412,12 +430,46 @@ export class CoordinatorAgent extends BaseAgent {
       .map((id) => allTasks.find((t) => t.id === id))
       .filter((t): t is Task => t !== undefined);
 
+    // Fetch Issue for worktree creation
+    const issue = await this.fetchIssueForWorktree(issueNumber);
+
     // Execute real agents in parallel
     const results = await Promise.all(
       tasks.map(async (task) => {
         const startTime = Date.now();
         const agentType = task.assignedAgent || 'CodeGenAgent';
         this.log(`   🏃 Executing: ${task.id} (${agentType})`);
+
+        // Create worktree if worktree mode is enabled
+        if (this.worktreeManager && issue) {
+          try {
+            // Create execution context
+            const executionContext: WorktreeExecutionContext = {
+              task,
+              issue,
+              config: this.config,
+              promptPath: this.getAgentPromptPath(agentType),
+            };
+
+            // Create worktree with agent assignment
+            const worktreeInfo = await this.worktreeManager.createWorktree(issue, {
+              agentType,
+              executionContext,
+            });
+
+            this.log(`   🌳 Created worktree for task ${task.id}: ${worktreeInfo.path}`);
+
+            // Write execution context files to worktree
+            await this.worktreeManager.writeExecutionContext(issueNumber);
+            this.log(`   📄 Wrote execution context to worktree`);
+
+            // Update agent status to executing
+            this.worktreeManager.updateAgentStatus(issueNumber, 'executing');
+          } catch (error) {
+            this.log(`   ⚠️  Failed to create worktree: ${(error as Error).message}`);
+            // Continue without worktree
+          }
+        }
 
         // Start agent execution tracking
         const executionId = await this.traceLogger.startAgentExecution(
@@ -430,6 +482,14 @@ export class CoordinatorAgent extends BaseAgent {
           const agent = await this.createSpecialistAgent(agentType);
           const result = await agent.execute(task);
           const durationMs = Date.now() - startTime;
+
+          // Update agent status in worktree
+          if (this.worktreeManager) {
+            this.worktreeManager.updateAgentStatus(
+              issueNumber,
+              result.status === 'success' ? 'completed' : 'failed'
+            );
+          }
 
           // End agent execution tracking
           await this.traceLogger.endAgentExecution(
@@ -454,6 +514,11 @@ export class CoordinatorAgent extends BaseAgent {
         } catch (error) {
           const durationMs = Date.now() - startTime;
           this.log(`   ❌ Task ${task.id} failed: ${(error as Error).message}`);
+
+          // Update agent status in worktree
+          if (this.worktreeManager) {
+            this.worktreeManager.updateAgentStatus(issueNumber, 'failed');
+          }
 
           // End agent execution tracking with error
           const failedResult: AgentResult = {
@@ -648,5 +713,43 @@ export class CoordinatorAgent extends BaseAgent {
     }
 
     return null;
+  }
+
+  /**
+   * Fetch Issue by issue number for worktree creation
+   */
+  private async fetchIssueForWorktree(issueNumber: number): Promise<Issue | null> {
+    // TODO: Fetch from GitHub API using this.config.githubToken
+    // For now, return a basic issue structure
+    return {
+      number: issueNumber,
+      title: `Issue #${issueNumber}`,
+      body: 'Issue body placeholder',
+      state: 'open',
+      labels: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      url: `https://github.com/owner/repo/issues/${issueNumber}`,
+    };
+  }
+
+  /**
+   * Get agent-specific prompt path for Claude Code execution
+   *
+   * Maps agent types to their corresponding prompt files in .claude/agents/prompts/
+   */
+  private getAgentPromptPath(agentType: AgentType): string {
+    const promptMap: Record<AgentType, string> = {
+      CoordinatorAgent: '.claude/agents/prompts/coding/coordinator-agent-prompt.md',
+      CodeGenAgent: '.claude/agents/prompts/coding/codegen-agent-prompt.md',
+      ReviewAgent: '.claude/agents/prompts/coding/review-agent-prompt.md',
+      IssueAgent: '.claude/agents/prompts/coding/issue-agent-prompt.md',
+      PRAgent: '.claude/agents/prompts/coding/pr-agent-prompt.md',
+      DeploymentAgent: '.claude/agents/prompts/coding/deployment-agent-prompt.md',
+      AutoFixAgent: '.claude/agents/prompts/coding/autofix-agent-prompt.md',
+      WaterSpiderAgent: '.claude/prompts/worktree-agent-execution.md', // Generic prompt
+    };
+
+    return promptMap[agentType] || '.claude/prompts/worktree-agent-execution.md';
   }
 }
