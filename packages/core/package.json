@@ -29,7 +29,7 @@
     "@octokit/rest": "^20.0.0",
     "@octokit/graphql": "^7.0.2",
     "chalk": "^5.3.0",
-    "ora": "^8.0.1",
+    "ora": "^9.0.0",
     "cli-table3": "^0.6.5",
     "boxen": "^7.1.1"
   },

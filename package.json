@@ -181,7 +181,7 @@
     "gradient-string": "^2.0.2",
     "log-symbols": "^6.0.0",
     "lru-cache": "^11.2.2",
-    "ora": "^8.0.1",
+    "ora": "^9.0.0",
     "p-retry": "^7.1.0",
     "terminal-link": "^3.0.0"
   }
