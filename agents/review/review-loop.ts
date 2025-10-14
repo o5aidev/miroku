@@ -1,28 +1,31 @@
 /**
  * ReviewLoop - Interactive Code Review Loop
  *
- * Implements Daniel's Review Loop from OpenAI Dev Day:
- * - Iterative review → fix → re-review cycle
- * - Goal: Achieve quality score ≥ 80 before PR
- * - Max 10 iterations with auto-escalation
- * - Interactive user prompts for "pls fix", "continue", "skip"
+ * Implements Daniel's Review Loop pattern from OpenAI Dev Day:
+ * - Iterate until quality threshold met (default: 80/100)
+ * - Maximum 10 iterations
+ * - Auto-fix safe issues (ESLint only)
+ * - Escalate if critical issues or max iterations reached
  *
- * Expected outcomes:
- * - PR quality improvement (OpenAI: 70% more PRs)
- * - Reduced human reviewer burden
- * - Higher first-time approval rate
+ * OpenAI Results: 70% increase in PR count due to pre-PR quality assurance
  */
 
 import { ReviewAgent } from './review-agent.js';
-import { AgentConfig, Task, QualityReport, QualityIssue } from '../types/index.js';
-import { createInterface } from 'readline';
+import {
+  Task,
+  QualityReport,
+  QualityIssue,
+  AgentConfig,
+} from '../types/index.js';
 import { execSync } from 'child_process';
+import * as readline from 'readline';
 
 export interface ReviewLoopOptions {
-  threshold?: number; // Passing score threshold (default: 80)
-  maxIterations?: number; // Max review iterations (default: 10)
-  autoFix?: boolean; // Enable auto-fix mode (default: false)
-  verbose?: boolean; // Verbose logging (default: false)
+  threshold?: number;        // Default: 80
+  maxIterations?: number;    // Default: 10
+  autoFix?: boolean;         // Default: false
+  skipTests?: boolean;       // Default: false
+  verbose?: boolean;         // Default: false
 }
 
 export interface ReviewLoopResult {
@@ -30,74 +33,95 @@ export interface ReviewLoopResult {
   iterations: number;
   finalScore: number;
   finalReport: QualityReport;
-  exitReason: 'SUCCESS' | 'MAX_ITERATIONS' | 'USER_SKIP';
 }
 
+export interface AutoFixResult {
+  fixed: number;
+  manual: number;
+  fixedIssues: QualityIssue[];
+  manualIssues: QualityIssue[];
+}
+
+/**
+ * ReviewLoop - Main interactive review loop implementation
+ */
 export class ReviewLoop {
   private agent: ReviewAgent;
   private threshold: number;
   private maxIterations: number;
   private autoFix: boolean;
+  private skipTests: boolean;
   private verbose: boolean;
 
-  constructor(config: AgentConfig, options: ReviewLoopOptions = {}) {
-    this.agent = new ReviewAgent(config);
+  constructor(
+    agent: ReviewAgent,
+    options: ReviewLoopOptions = {}
+  ) {
+    this.agent = agent;
     this.threshold = options.threshold ?? 80;
     this.maxIterations = options.maxIterations ?? 10;
     this.autoFix = options.autoFix ?? false;
+    this.skipTests = options.skipTests ?? false;
     this.verbose = options.verbose ?? false;
   }
 
   /**
    * Execute interactive review loop
+   *
+   * Main loop that iterates until:
+   * - Quality threshold met (score >= threshold)
+   * - Maximum iterations reached
+   * - User skips review
+   * - Critical security issues escalated
    */
   async execute(): Promise<ReviewLoopResult> {
-    console.log('\n🔍 ReviewAgent starting interactive review loop...\n');
-    console.log(`📊 Configuration:`);
-    console.log(`   - Threshold: ${this.threshold}/100`);
-    console.log(`   - Max iterations: ${this.maxIterations}`);
-    console.log(`   - Auto-fix: ${this.autoFix ? 'enabled' : 'disabled'}\n`);
+    this.log('\n🔍 Starting interactive code review (Daniel\'s Review Loop)\n');
 
     let iteration = 0;
     let passed = false;
     let finalReport: QualityReport | null = null;
-    let exitReason: 'SUCCESS' | 'MAX_ITERATIONS' | 'USER_SKIP' = 'MAX_ITERATIONS';
 
     while (iteration < this.maxIterations && !passed) {
       iteration++;
-      console.log(`\n${'='.repeat(60)}`);
-      console.log(`🔄 Review iteration ${iteration}/${this.maxIterations}`);
-      console.log(`${'='.repeat(60)}\n`);
+      this.log(`\n━━━ Review Iteration ${iteration}/${this.maxIterations} ━━━\n`);
 
       // Run review
-      finalReport = await this.runReview(iteration);
+      const result = await this.agent.execute(this.createReviewTask(iteration));
+
+      if (result.status === 'failed' && result.error) {
+        this.log(`\n❌ Review execution failed: ${result.error}\n`);
+        break;
+      }
+
+      finalReport = result.data.qualityReport;
+
+      // Display results
+      this.displayResults(finalReport, iteration);
 
       // Check if passed
-      if (finalReport.score >= this.threshold) {
+      if (finalReport.passed && finalReport.score >= this.threshold) {
         passed = true;
-        exitReason = 'SUCCESS';
-        this.displaySuccess(finalReport);
+        this.log(`\n✅ Review PASSED (score: ${finalReport.score}/100)\n`);
+        this.displaySuccessMessage(finalReport);
         break;
       }
 
       // Display issues
-      this.displayResults(finalReport, false);
+      this.log(`\n❌ Review FAILED (score: ${finalReport.score}/100, threshold: ${this.threshold})\n`);
+      this.displayIssues(finalReport);
 
-      // Check if max iterations reached
-      if (iteration >= this.maxIterations) {
-        this.displayEscalation(finalReport);
-        exitReason = 'MAX_ITERATIONS';
-        break;
+      // If auto-fix enabled, attempt fixes automatically
+      if (this.autoFix) {
+        await this.attemptAutoFix(finalReport);
+        this.log('\n🔄 Re-running review after auto-fix...\n');
+        continue; // Re-review immediately after auto-fix
       }
 
-      // Prompt user for action
+      // Wait for user action
       const action = await this.promptUser();
 
       if (action === 'skip') {
-        console.log('\n⏭️  Review skipped by user.\n');
-        console.log(`⚠️  WARNING: Quality score is below threshold (${finalReport.score}/${this.threshold}).`);
-        console.log('Proceeding without passing review may lead to PR rejections.\n');
-        exitReason = 'USER_SKIP';
+        this.log('\n⏭️  Review skipped by user\n');
         break;
       }
 
@@ -105,7 +129,14 @@ export class ReviewLoop {
         await this.attemptAutoFix(finalReport);
       }
 
-      // Continue to next iteration
+      // If action is 'continue', user will manually fix and we'll re-review
+    }
+
+    // Check for max iterations
+    if (iteration >= this.maxIterations && !passed) {
+      this.log(`\n⚠️  Maximum iterations (${this.maxIterations}) reached.\n`);
+      this.log(`\n🚨 Escalating to human reviewer.\n`);
+      this.displayEscalationSummary(finalReport!);
     }
 
     return {
@@ -113,18 +144,17 @@ export class ReviewLoop {
       iterations: iteration,
       finalScore: finalReport?.score ?? 0,
       finalReport: finalReport!,
-      exitReason,
     };
   }
 
   /**
-   * Run review using ReviewAgent
+   * Create review task
    */
-  private async runReview(iteration: number): Promise<QualityReport> {
-    const task: Task = {
-      id: `review-loop-${iteration}`,
-      title: 'Interactive Code Review',
-      description: 'Comprehensive code quality review',
+  private createReviewTask(iteration: number): Task {
+    return {
+      id: `review-${Date.now()}-${iteration}`,
+      title: `Interactive Review (Iteration ${iteration})`,
+      description: 'Comprehensive code review before PR submission',
       type: 'test',
       priority: 1,
       severity: 'Sev.3-Medium',
@@ -132,177 +162,156 @@ export class ReviewLoop {
       assignedAgent: 'ReviewAgent',
       dependencies: [],
       estimatedDuration: 15,
-      status: 'running',
+      status: 'in-progress',
+      metadata: {
+        iteration,
+        skipTests: this.skipTests,
+      },
     };
-
-    try {
-      const result = await this.agent.execute(task);
-
-      if (result.status === 'success' || result.status === 'escalated') {
-        return result.data.qualityReport;
-      } else {
-        throw new Error(`Review failed: ${result.error}`);
-      }
-    } catch (error) {
-      console.error(`❌ Review execution failed: ${(error as Error).message}`);
-      // Return a failing report
-      return {
-        score: 0,
-        passed: false,
-        issues: [{
-          type: 'eslint',
-          severity: 'critical',
-          message: `Review execution error: ${(error as Error).message}`,
-          scoreImpact: 100,
-        }],
-        recommendations: ['Fix review execution error'],
-        breakdown: {
-          eslintScore: 0,
-          typeScriptScore: 0,
-          securityScore: 0,
-          testCoverageScore: 0,
-        },
-      };
-    }
   }
 
   /**
    * Display review results
    */
-  private displayResults(report: QualityReport, isSuccess: boolean): void {
-    console.log('📊 Analysis Results:');
-    console.log('┌─────────────────┬───────┐');
-    console.log('│ Metric          │ Score │');
-    console.log('├─────────────────┼───────┤');
-    console.log(`│ ESLint          │ ${this.formatScore(report.breakdown.eslintScore)}/100│`);
-    console.log(`│ TypeScript      │ ${this.formatScore(report.breakdown.typeScriptScore)}/100│`);
-    console.log(`│ Security        │ ${this.formatScore(report.breakdown.securityScore)}/100│`);
-    console.log(`│ Test Coverage   │ ${this.formatScore(report.breakdown.testCoverageScore)}/100│`);
-    console.log('├─────────────────┼───────┤');
-    console.log(`│ Overall Quality │ ${this.formatScore(report.score)}/100│`);
-    console.log('└─────────────────┴───────┘\n');
+  private displayResults(report: QualityReport, iteration: number): void {
+    this.log(`📊 Analysis Results (Iteration ${iteration}):\n`);
 
-    if (isSuccess) {
-      console.log(`✅ Review PASSED (threshold: ${this.threshold})\n`);
-    } else {
-      console.log(`❌ Review FAILED (threshold: ${this.threshold})\n`);
-      this.displayIssues(report);
+    // Display table
+    const maxWidth = 20;
+    const separator = '─'.repeat(maxWidth * 2 + 7);
+
+    this.log(`┌${separator}┐`);
+    this.log(`│ ${'Metric'.padEnd(maxWidth)} │ ${'Score'.padEnd(7)} │`);
+    this.log(`├${separator}┤`);
+
+    if (report.breakdown) {
+      if (report.breakdown.eslintScore !== undefined) {
+        this.log(`│ ${'ESLint'.padEnd(maxWidth)} │ ${(report.breakdown.eslintScore + '/100').padEnd(7)} │`);
+      }
+      if (report.breakdown.typeScriptScore !== undefined) {
+        this.log(`│ ${'TypeScript'.padEnd(maxWidth)} │ ${(report.breakdown.typeScriptScore + '/100').padEnd(7)} │`);
+      }
+      if (report.breakdown.securityScore !== undefined) {
+        this.log(`│ ${'Security'.padEnd(maxWidth)} │ ${(report.breakdown.securityScore + '/100').padEnd(7)} │`);
+      }
+      if (report.breakdown.testCoverageScore !== undefined) {
+        this.log(`│ ${'Test Coverage'.padEnd(maxWidth)} │ ${(report.breakdown.testCoverageScore + '/100').padEnd(7)} │`);
+      }
     }
+
+    this.log(`├${separator}┤`);
+    this.log(`│ ${'Overall Quality'.padEnd(maxWidth)} │ ${(report.score + '/100').padEnd(7)} │`);
+    this.log(`└${separator}┘\n`);
   }
 
   /**
-   * Display issues in readable format
+   * Display issues
    */
   private displayIssues(report: QualityReport): void {
     if (report.issues.length === 0) {
-      console.log('✨ No issues found!\n');
+      this.log('No issues found.\n');
       return;
     }
 
-    console.log(`🔍 Found ${report.issues.length} issues:\n`);
+    this.log(`🔍 Found ${report.issues.length} issue(s):\n`);
 
-    // Group issues by severity
-    const critical = report.issues.filter(i => i.severity === 'critical');
-    const high = report.issues.filter(i => i.severity === 'high');
-    const medium = report.issues.filter(i => i.severity === 'medium');
-    const low = report.issues.filter(i => i.severity === 'low');
+    report.issues.forEach((issue, index) => {
+      const typeEmoji = this.getTypeEmoji(issue.type);
+      const severityBadge = this.getSeverityBadge(issue.severity);
 
-    let index = 1;
+      this.log(`${index + 1}. [${typeEmoji} ${issue.type.toUpperCase()}] ${severityBadge} ${issue.file}:${issue.line}`);
+      this.log(`   ${issue.message}`);
 
-    const displayGroup = (issues: QualityIssue[], _label: string) => {
-      if (issues.length === 0) return;
-
-      for (const issue of issues) {
-        const location = issue.file && issue.line ? ` ${issue.file}:${issue.line}` : '';
-        console.log(`${index}. [${issue.type.toUpperCase()}]${location}`);
-        console.log(`   ${issue.message}`);
-        if (this.verbose && issue.column) {
-          console.log(`   Column: ${issue.column}`);
-        }
-        console.log('');
-        index++;
+      if (issue.suggestion) {
+        this.log(`   💡 Suggestion: ${issue.suggestion}`);
       }
-    };
 
-    if (critical.length > 0) {
-      console.log('🚨 Critical Issues:');
-      displayGroup(critical, 'CRITICAL');
+      this.log('');
+    });
+
+    // Display recommendations
+    if (report.recommendations && report.recommendations.length > 0) {
+      this.log('💡 Recommendations:\n');
+      report.recommendations.forEach((rec, index) => {
+        this.log(`   ${index + 1}. ${rec}`);
+      });
+      this.log('');
     }
 
-    if (high.length > 0) {
-      console.log('⚠️  High Priority Issues:');
-      displayGroup(high, 'HIGH');
-    }
-
-    if (medium.length > 0 && this.verbose) {
-      console.log('📋 Medium Priority Issues:');
-      displayGroup(medium, 'MEDIUM');
-    }
-
-    if (low.length > 0 && this.verbose) {
-      console.log('📝 Low Priority Issues:');
-      displayGroup(low, 'LOW');
-    }
-
-    console.log('💡 Next steps:');
-    console.log('1. Fix the issues above manually');
-    console.log('2. Type "continue" to re-review after your fixes');
-    console.log('3. Or type "pls fix" for automatic fixes (where possible)');
-    console.log('4. Or type "skip" to skip review and proceed anyway\n');
+    // Display next steps
+    this.log('📋 Next steps:\n');
+    this.log('   1. Fix the issues above');
+    this.log('   2. Type "continue" to re-review');
+    this.log('   3. Or type "pls fix" for automatic fixes (where possible)');
+    this.log('   4. Or type "skip" to skip review\n');
   }
 
   /**
    * Display success message
    */
-  private displaySuccess(report: QualityReport): void {
-    this.displayResults(report, true);
+  private displaySuccessMessage(report: QualityReport): void {
+    this.log('🎉 Excellent! All checks passed.\n');
 
-    console.log('🎉 All checks passed! Your code is ready for PR.\n');
-    console.log('📊 Final Breakdown:');
-    console.log(`   - ESLint: ${report.breakdown.eslintScore}/100`);
-    console.log(`   - TypeScript: ${report.breakdown.typeScriptScore}/100`);
-    console.log(`   - Security: ${report.breakdown.securityScore}/100`);
-    console.log(`   - Test Coverage: ${report.breakdown.testCoverageScore}/100\n`);
+    this.log('📊 Quality Breakdown:\n');
 
-    console.log('💡 Suggested next steps:');
-    console.log('1. Create PR: gh pr create');
-    console.log('2. Or continue working on additional changes\n');
+    if (report.breakdown) {
+      if (report.breakdown.eslintScore === 100 && report.breakdown.typeScriptScore === 100) {
+        this.log('   - Code Quality: ✅ Perfect (ESLint + TypeScript)');
+      } else {
+        this.log('   - Code Quality: ✅ Good');
+      }
+
+      if (report.breakdown.securityScore === 100) {
+        this.log('   - Security: ✅ No vulnerabilities');
+      } else if (report.breakdown.securityScore >= 80) {
+        this.log('   - Security: ✅ Acceptable');
+      }
+
+      if (report.breakdown.testCoverageScore !== undefined) {
+        this.log(`   - Test Coverage: ✅ ${report.breakdown.testCoverageScore}% (target: 80%)`);
+      }
+    }
+
+    this.log('\n✨ Ready to create PR!\n');
   }
 
   /**
-   * Display escalation message
+   * Display escalation summary
    */
-  private displayEscalation(report: QualityReport): void {
-    console.log(`\n⚠️  Max iterations (${this.maxIterations}) reached without passing review.\n`);
-    console.log(`Current score: ${report.score}/100 (threshold: ${this.threshold})\n`);
-    console.log('🚨 Escalating to human reviewer.\n');
+  private displayEscalationSummary(report: QualityReport): void {
+    this.log('📊 Issues Summary:\n');
 
-    const criticalIssues = report.issues.filter(i => i.severity === 'critical');
-    if (criticalIssues.length > 0) {
-      console.log('Outstanding critical issues:');
-      criticalIssues.forEach((issue, i) => {
-        console.log(`${i + 1}. [${issue.type.toUpperCase()}] ${issue.message}`);
-        if (issue.file && issue.line) {
-          console.log(`   Location: ${issue.file}:${issue.line}`);
-        }
-      });
-      console.log('');
+    const securityIssues = report.issues.filter(i => i.type === 'security');
+    const typeScriptIssues = report.issues.filter(i => i.type === 'typescript');
+    const eslintIssues = report.issues.filter(i => i.type === 'eslint');
+
+    if (securityIssues.length > 0) {
+      this.log(`   - ${securityIssues.length} security issue(s)`);
+    }
+    if (typeScriptIssues.length > 0) {
+      this.log(`   - ${typeScriptIssues.length} TypeScript error(s)`);
+    }
+    if (eslintIssues.length > 0) {
+      this.log(`   - ${eslintIssues.length} ESLint warning(s)`);
     }
 
-    console.log('Please address these issues manually or consult with your team lead.\n');
+    this.log('\n💡 Recommendations:\n');
+    this.log('   1. Review security issues with CISO (if applicable)');
+    this.log('   2. Refactor code to fix TypeScript errors');
+    this.log('   3. Consider breaking down this PR into smaller chunks\n');
   }
 
   /**
    * Prompt user for action
    */
   private async promptUser(): Promise<'continue' | 'fix' | 'skip'> {
-    const rl = createInterface({
+    const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
     return new Promise((resolve) => {
-      rl.question('> ', (answer) => {
+      rl.question('\n> ', (answer) => {
         rl.close();
 
         const input = answer.trim().toLowerCase();
@@ -312,7 +321,6 @@ export class ReviewLoop {
         } else if (input === 'skip') {
           resolve('skip');
         } else {
-          // Default to continue
           resolve('continue');
         }
       });
@@ -322,53 +330,122 @@ export class ReviewLoop {
   /**
    * Attempt automatic fixes
    */
-  private async attemptAutoFix(report: QualityReport): Promise<void> {
-    console.log('\n🔧 Attempting automatic fixes...\n');
+  async attemptAutoFix(report: QualityReport): Promise<AutoFixResult> {
+    this.log('\n🔧 Attempting automatic fixes...\n');
 
-    let fixedCount = 0;
-    let manualCount = 0;
+    const fixedIssues: QualityIssue[] = [];
+    const manualIssues: QualityIssue[] = [];
 
-    // Only auto-fix ESLint issues (safe)
-    const eslintIssues = report.issues.filter(i => i.type === 'eslint');
-
-    if (eslintIssues.length > 0) {
-      try {
-        // Run eslint --fix
-        execSync('npx eslint --fix "src/**/*.ts" "agents/**/*.ts" "tests/**/*.test.ts"', {
-          stdio: 'inherit',
-          cwd: process.cwd(),
-        });
-
-        fixedCount += eslintIssues.length;
-        console.log(`✅ Fixed ${eslintIssues.length} ESLint issues automatically\n`);
-      } catch (error) {
-        console.log(`⚠️  ESLint auto-fix encountered errors (some issues may be fixed)\n`);
+    for (const issue of report.issues) {
+      // Only auto-fix ESLint issues
+      if (issue.type === 'eslint' && issue.severity !== 'critical') {
+        try {
+          // Run ESLint with --fix
+          execSync(`npx eslint --fix "${issue.file}"`, {
+            cwd: process.cwd(),
+            encoding: 'utf-8',
+          });
+          fixedIssues.push(issue);
+          this.log(`✅ Fixed: [${issue.type.toUpperCase()}] ${issue.message}`);
+          this.log(`   - File: ${issue.file}:${issue.line}\n`);
+        } catch (error) {
+          manualIssues.push(issue);
+          this.log(`⚠️  Could not auto-fix: [${issue.type.toUpperCase()}] ${issue.message}`);
+          this.log(`   - File: ${issue.file}:${issue.line}\n`);
+        }
+      } else {
+        // TypeScript and Security issues require manual fix
+        manualIssues.push(issue);
+        this.log(`⚠️  Manual fix required: [${issue.type.toUpperCase()}] ${issue.message}`);
+        this.log(`   - File: ${issue.file}:${issue.line}`);
+        this.log(`   - Reason: ${this.getManualFixReason(issue)}\n`);
       }
     }
 
-    // Count issues that require manual fixes
-    const securityIssues = report.issues.filter(i => i.type === 'security');
-    const typeScriptIssues = report.issues.filter(i => i.type === 'typescript');
+    // Display summary
+    this.log('📊 Auto-fix Summary:\n');
+    this.log(`   - Fixed: ${fixedIssues.length}/${report.issues.length} issue(s)`);
+    this.log(`   - Manual: ${manualIssues.length}/${report.issues.length} issue(s)\n`);
 
-    manualCount = securityIssues.length + typeScriptIssues.length;
-
-    if (securityIssues.length > 0) {
-      console.log(`⚠️  ${securityIssues.length} security issues require manual fixes`);
-    }
-    if (typeScriptIssues.length > 0) {
-      console.log(`⚠️  ${typeScriptIssues.length} TypeScript issues require manual fixes`);
+    if (manualIssues.length > 0) {
+      this.log(`Please fix remaining ${manualIssues.length} issue(s) manually and re-run review.\n`);
     }
 
-    console.log(`\n${fixedCount}/${report.issues.length} issues fixed automatically.`);
-    if (manualCount > 0) {
-      console.log(`Please fix remaining ${manualCount} issues manually.\n`);
-    }
+    return {
+      fixed: fixedIssues.length,
+      manual: manualIssues.length,
+      fixedIssues,
+      manualIssues,
+    };
   }
 
   /**
-   * Format score with proper padding
+   * Get manual fix reason
    */
-  private formatScore(score: number): string {
-    return score.toString().padStart(2, ' ');
+  private getManualFixReason(issue: QualityIssue): string {
+    if (issue.type === 'typescript') {
+      return 'Type errors require code logic changes';
+    }
+    if (issue.type === 'security') {
+      if (issue.severity === 'critical') {
+        return 'Critical security issues require careful review';
+      }
+      return 'Security issues require design decisions';
+    }
+    return 'Requires manual intervention';
   }
+
+  /**
+   * Get type emoji
+   */
+  private getTypeEmoji(type: string): string {
+    const emojiMap: Record<string, string> = {
+      eslint: '🔧',
+      typescript: '📘',
+      security: '🔒',
+      test: '🧪',
+    };
+    return emojiMap[type] || '❓';
+  }
+
+  /**
+   * Get severity badge
+   */
+  private getSeverityBadge(severity: string): string {
+    const badgeMap: Record<string, string> = {
+      critical: '🚨',
+      high: '⚠️',
+      medium: '⚡',
+      low: 'ℹ️',
+    };
+    return badgeMap[severity] || '•';
+  }
+
+  /**
+   * Log message (respects verbose flag)
+   */
+  private log(message: string): void {
+    if (this.verbose || !message.startsWith('   ')) {
+      console.log(message);
+    }
+  }
+}
+
+/**
+ * Standalone function to run review loop
+ *
+ * Usage:
+ * ```typescript
+ * import { runReviewLoop } from './agents/review/review-loop.js';
+ *
+ * const result = await runReviewLoop(config, options);
+ * ```
+ */
+export async function runReviewLoop(
+  config: AgentConfig,
+  options: ReviewLoopOptions = {}
+): Promise<ReviewLoopResult> {
+  const agent = new ReviewAgent(config);
+  const loop = new ReviewLoop(agent, options);
+  return await loop.execute();
 }
