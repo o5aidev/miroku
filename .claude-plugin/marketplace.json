@@ -6,12 +6,12 @@
     "url": "https://github.com/ShunsukeHayashi"
   },
   "repository": "https://github.com/ShunsukeHayashi/Miyabi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "plugins": [
     {
       "name": "miyabi",
       "source": ".",
-      "version": "0.8.2",
+      "version": "0.14.0",
       "description": "Miyabi 完全パッケージ - 7つのAgent、7つのコマンド、4つのHook",
       "category": "automation",
       "tags": ["ai", "agents", "devops", "automation", "github"],
@@ -22,7 +22,7 @@
     {
       "name": "miyabi-core",
       "source": "./plugins/miyabi-core",
-      "version": "0.8.2",
+      "version": "0.14.0",
       "description": "Miyabi コア機能のみ（init, status, auto）",
       "category": "productivity",
       "tags": ["ai", "automation"],
@@ -32,7 +32,7 @@
     {
       "name": "miyabi-agents-only",
       "source": "./plugins/miyabi-agents",
-      "version": "0.8.2",
+      "version": "0.14.0",
       "description": "Miyabi の7つのAgent定義のみ",
       "category": "agents",
       "tags": ["ai", "agents"],
