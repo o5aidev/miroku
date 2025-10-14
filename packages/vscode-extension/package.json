@@ -4,6 +4,11 @@
   "description": "Real-time Agent visualization and project management for Miyabi autonomous development platform",
   "version": "0.1.0",
   "publisher": "miyabi",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShunsukeHayashi/Miyabi.git",
+    "directory": "packages/vscode-extension"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
