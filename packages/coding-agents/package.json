@@ -75,7 +75,7 @@
     "yaml": "^2.7.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.5",
+    "@types/node": "^24.9.0",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
   },
