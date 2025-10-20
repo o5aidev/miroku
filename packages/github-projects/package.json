@@ -28,7 +28,7 @@
   "dependencies": {
     "@miyabi/agent-sdk": "workspace:*",
     "@octokit/graphql": "^7.0.2",
-    "@octokit/rest": "^20.0.0"
+    "@octokit/rest": "^22.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
