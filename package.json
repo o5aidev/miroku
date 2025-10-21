@@ -180,7 +180,7 @@
     "@anthropic-ai/sdk": "^0.65.0",
     "@modelcontextprotocol/sdk": "^1.20.0",
     "@octokit/graphql": "^7.0.2",
-    "@octokit/rest": "^20.1.2",
+    "@octokit/rest": "^22.0.0",
     "ansi-escapes": "^7.0.0",
     "boxen": "^8.0.1",
     "chalk": "^5.3.0",

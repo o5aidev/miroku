@@ -27,7 +27,7 @@
   "dependencies": {
     "@miyabi/coding-agents": "workspace:*",
     "@anthropic-ai/sdk": "^0.30.0",
-    "@octokit/rest": "^20.0.0",
+    "@octokit/rest": "^22.0.0",
     "@octokit/graphql": "^7.0.2",
     "chalk": "^5.3.0",
     "ora": "^9.0.0",
