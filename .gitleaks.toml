@@ -1,0 +1,135 @@
+# Gitleaks Configuration for Miyabi Project
+# ============================================
+# This configuration prevents false positives from documentation examples
+
+title = "Gitleaks Configuration for Miyabi"
+
+# Global allowlist for documentation patterns
+[allowlist]
+description = "Allowlist for documentation and example code"
+paths = [
+  '''.claude/.*\.md$''',
+  '''.claude-plugin/.*\.md$''',
+  '''packages/cli/.*\.md$''',
+  '''docs/.*\.md$''',
+  '''README\.md$''',
+  '''CLAUDE\.md$''',
+  '''.*_GUIDE\.md$''',
+  '''.*_MANUAL\.md$'''
+]
+
+# Allowlist for example tokens and API keys in documentation
+regexes = [
+  '''(GITHUB_TOKEN|ANTHROPIC_API_KEY|API_KEY)=[a-z0-9_-]*x{10,}[a-z0-9_-]*''',
+  '''(ghp|github_pat)_[x]{20,}''',
+  '''sk-ant-[x]{20,}''',
+  '''your[_-]?token[_-]?here''',
+  '''replace[_-]?with[_-]?your''',
+  '''example[_-]?token''',
+  '''dummy[_-]?key''',
+  '''placeholder''',
+  '''xxx+''',
+  '''yyy+''',
+  '''zzz+'''
+]
+
+# Additional stopwords for false positive reduction
+stopwords = [
+  "example",
+  "sample",
+  "placeholder",
+  "your_token_here",
+  "replace_with_your",
+  "dummy",
+  "test",
+  "mock"
+]
+
+# GitHub Token Rule Override
+[[rules]]
+id = "github-pat-override"
+description = "Override GitHub PAT detection for documentation"
+regex = '''github_pat_[a-zA-Z0-9_]{82}'''
+paths = [
+  '''.claude/.*\.md$''',
+  '''.claude-plugin/.*\.md$''',
+  '''packages/cli/.*\.md$''',
+  '''docs/.*\.md$'''
+]
+[rules.allowlist]
+description = "Allow example GitHub tokens in documentation"
+regexes = [
+  '''github_pat_[x]{82}''',
+  '''ghp_[x]{40}'''
+]
+
+# Anthropic API Key Rule Override
+[[rules]]
+id = "anthropic-api-key-override"
+description = "Override Anthropic API key detection for documentation"
+regex = '''sk-ant-api03-[a-zA-Z0-9_-]{93}'''
+paths = [
+  '''.claude/.*\.md$''',
+  '''.claude-plugin/.*\.md$''',
+  '''packages/cli/.*\.md$''',
+  '''docs/.*\.md$'''
+]
+[rules.allowlist]
+description = "Allow example Anthropic API keys in documentation"
+regexes = [
+  '''sk-ant-[a-z0-9_-]*x{20,}[a-z0-9_-]*'''
+]
+
+# Generic API Key Rule Override
+[[rules]]
+id = "generic-api-key-override"
+description = "Override generic API key detection for documentation"
+regex = '''(?i)(api[_-]?key|apikey|api[_-]?token)\s*[:=]\s*['""]?[a-z0-9_-]{20,}['""]?'''
+paths = [
+  '''.claude/.*\.md$''',
+  '''.claude-plugin/.*\.md$''',
+  '''packages/cli/.*\.md$''',
+  '''docs/.*\.md$'''
+]
+[rules.allowlist]
+description = "Allow example API keys in documentation"
+regexes = [
+  '''[a-z0-9_-]*x{10,}[a-z0-9_-]*'''
+]
+
+# Password Rule Override
+[[rules]]
+id = "password-override"
+description = "Override password detection in example configurations"
+regex = '''(?i)password\s*[:=]\s*['""]?[a-z0-9_-]{8,}['""]?'''
+paths = [
+  '''.claude/.*\.md$''',
+  '''docs/.*\.md$''',
+  '''packages/cli/.*\.md$'''
+]
+[rules.allowlist]
+description = "Allow example passwords in documentation"
+regexes = [
+  '''password\s*[:=]\s*['""]?[a-z0-9_-]*x{3,}[a-z0-9_-]*['""]?''',
+  '''password\s*[:=]\s*['""]?your[_-]?password[_-]?here['""]?''',
+  '''password\s*[:=]\s*['""]?example['""]?'''
+]
+
+# Environment Variable Examples
+[[rules]]
+id = "env-var-examples"
+description = "Allow environment variable examples in documentation"
+regex = '''(?i)(export\s+)?[A-Z_]+=['""]?[a-z0-9_-]+['""]?'''
+paths = [
+  '''.claude/.*\.md$''',
+  '''docs/.*\.md$''',
+  '''packages/cli/.*\.md$'''
+]
+[rules.allowlist]
+description = "Allow env var examples"
+regexes = [
+  '''=['""]?[a-z0-9_-]*x{5,}[a-z0-9_-]*['""]?''',
+  '''=['""]?your[_-]''',
+  '''=['""]?example''',
+  '''=['""]?placeholder'''
+]
