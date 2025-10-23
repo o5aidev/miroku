@@ -604,11 +604,11 @@ ${JSON.stringify(invocations, null, 2)}
       let stdout = '';
       let stderr = '';
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout.on('data', (data: any) => {
         stdout += data.toString();
       });
 
-      proc.stderr.on('data', (data) => {
+      proc.stderr.on('data', (data: any) => {
         stderr += data.toString();
       });
 

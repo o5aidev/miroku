@@ -312,7 +312,7 @@ export class ReviewLoop {
     });
 
     return new Promise((resolve) => {
-      rl.question('\n> ', (answer) => {
+      rl.question('\n> ', (answer: string) => {
         rl.close();
 
         const input = answer.trim().toLowerCase();

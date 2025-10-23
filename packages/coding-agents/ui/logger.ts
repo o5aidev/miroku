@@ -247,7 +247,7 @@ export class RichLogger {
           horizontalLayout: 'default',
           verticalLayout: 'default',
         },
-        (err, data) => {
+        (err: Error | null, data?: string) => {
           if (err) {
             reject(err);
             return;

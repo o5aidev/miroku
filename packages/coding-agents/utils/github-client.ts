@@ -77,7 +77,7 @@ export class GitHubClient {
         title: data.title,
         body: data.body || '',
         state: data.state as 'open' | 'closed',
-        labels: data.labels.map((l) =>
+        labels: data.labels.map((l: string | { name?: string }) =>
           typeof l === 'string' ? l : l.name || ''
         ),
         assignee: data.assignee?.login,

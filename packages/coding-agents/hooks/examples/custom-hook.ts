@@ -30,7 +30,7 @@ export class GitWorkingTreeCheckHook implements PreHook {
 
       let output = '';
 
-      proc.stdout.on('data', (data) => {
+      proc.stdout.on('data', (data: any) => {
         output += data.toString();
       });
 
