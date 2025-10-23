@@ -184,4 +184,59 @@ export class IssueAnalyzer {
   static extractDependenciesFromIssue(issue: Issue): string[] {
     return this.extractDependencies(issue.body);
   }
+
+  /**
+   * Determine priority from labels or content
+   *
+   * Priority levels (lower = higher priority):
+   * - P0 (0): Critical - immediate attention required
+   * - P1 (1): High - important, should be done soon
+   * - P2 (2): Normal - regular priority (default)
+   * - P3 (3): Low - nice to have
+   *
+   * Maps GitHub Label System:
+   * - 🔥 priority:P0-Critical → 0
+   * - 🚨 priority:P1-High → 1
+   * - 📌 priority:P2-Normal → 2
+   * - 📝 priority:P3-Low → 3
+   */
+  static determinePriority(
+    labels: string[],
+    title: string,
+    body: string = ''
+  ): number {
+    const text = (title + ' ' + body).toLowerCase();
+
+    // Check existing labels first (GitHub Label System)
+    for (const label of labels) {
+      if (label.includes('priority:P0') || label.includes('P0-Critical')) return 0;
+      if (label.includes('priority:P1') || label.includes('P1-High')) return 1;
+      if (label.includes('priority:P2') || label.includes('P2-Normal')) return 2;
+      if (label.includes('priority:P3') || label.includes('P3-Low')) return 3;
+    }
+
+    // Keyword-based detection
+    // P0: Critical urgency
+    if (text.match(/\b(critical|urgent|emergency|blocking|blocker|production down|p0)\b/)) {
+      return 0;
+    }
+    // P1: High priority
+    if (text.match(/\b(high priority|asap|important|major|p1|soon)\b/)) {
+      return 1;
+    }
+    // P3: Low priority
+    if (text.match(/\b(low priority|nice to have|enhancement|p3|someday|later)\b/)) {
+      return 3;
+    }
+
+    // P2: Normal priority (default)
+    return 2;
+  }
+
+  /**
+   * Determine priority from Issue object
+   */
+  static determinePriorityFromIssue(issue: Issue): number {
+    return this.determinePriority(issue.labels, issue.title, issue.body);
+  }
 }

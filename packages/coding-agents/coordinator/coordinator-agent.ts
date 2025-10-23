@@ -263,6 +263,12 @@ export class CoordinatorAgent extends BaseAgent {
     const impact = IssueAnalyzer.determineImpact(issue.labels, title, issue.body);
     const estimatedDuration = IssueAnalyzer.estimateDuration(title, issue.body, type);
 
+    // Determine priority from Issue labels/content (P0=0, P1=1, P2=2, P3=3)
+    // If multiple tasks from same Issue, inherit Issue priority but use index as tiebreaker
+    const basePriority = IssueAnalyzer.determinePriority(issue.labels, title, issue.body);
+    // Scale: P0.0, P0.1, P0.2... P1.0, P1.1, P1.2... etc.
+    const priority = basePriority + (index / 100);
+
     // Assign agent based on task type
     const assignedAgent = this.assignAgent(type);
 
@@ -271,7 +277,7 @@ export class CoordinatorAgent extends BaseAgent {
       title: title.trim(),
       description: `Task from Issue #${issue.number}`,
       type,
-      priority: index,
+      priority,
       severity,
       impact,
       assignedAgent,
@@ -405,6 +411,11 @@ export class CoordinatorAgent extends BaseAgent {
    * Execute all tasks in a level in parallel (OPTIMIZED: Real agent execution)
    *
    * Performance: Now calls actual specialist agents instead of simulation
+   *
+   * Priority-based execution:
+   * - Tasks within the same DAG level are sorted by priority (lower = higher priority)
+   * - P0 (Critical) tasks execute before P1 (High) tasks, etc.
+   * - Respects DAG dependencies across levels
    */
   private async executeLevelParallel(
     taskIds: string[],
@@ -414,7 +425,17 @@ export class CoordinatorAgent extends BaseAgent {
   ): Promise<TaskResult[]> {
     const tasks = taskIds
       .map((id) => allTasks.find((t) => t.id === id))
-      .filter((t): t is Task => t !== undefined);
+      .filter((t): t is Task => t !== undefined)
+      .sort((a, b) => a.priority - b.priority); // Sort by priority (lower = higher priority)
+
+    // Log priority-based execution order
+    if (tasks.length > 1) {
+      this.log('   📊 Priority-based execution order:');
+      tasks.forEach((task, idx) => {
+        const priorityLabel = this.getPriorityLabel(task.priority);
+        this.log(`      ${idx + 1}. ${task.id} - ${priorityLabel} (${task.priority.toFixed(2)})`);
+      });
+    }
 
     // Fetch Issue for worktree creation (if enabled)
     let issue: Issue | null = null;
@@ -786,5 +807,27 @@ export class CoordinatorAgent extends BaseAgent {
     };
 
     return promptMap[agentType] || '.claude/prompts/worktree-agent-execution.md';
+  }
+
+  /**
+   * Get human-readable priority label from numeric priority
+   *
+   * Maps priority numbers to GitHub Label System labels:
+   * - 0 → P0-Critical
+   * - 1 → P1-High
+   * - 2 → P2-Normal
+   * - 3 → P3-Low
+   */
+  private getPriorityLabel(priority: number): string {
+    const baseLevel = Math.floor(priority);
+
+    const labels: Record<number, string> = {
+      0: '🔥 P0-Critical',
+      1: '🚨 P1-High',
+      2: '📌 P2-Normal',
+      3: '📝 P3-Low',
+    };
+
+    return labels[baseLevel] || '❓ Unknown';
   }
 }
