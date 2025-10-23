@@ -26,8 +26,12 @@
     "build": "tsc",
     "clean": "rm -rf dist"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@octokit/rest": "^21.0.2",
+    "lru-cache": "^10.0.0"
+  },
   "devDependencies": {
+    "@types/node": "^20.11.5",
     "typescript": "^5.7.2"
   }
 }

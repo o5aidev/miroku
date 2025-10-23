@@ -6,7 +6,10 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "lib": ["ES2022", "DOM"],
+    "skipLibCheck": true,
+    "noEmitOnError": false
   },
   "include": [
     "**/*.ts"
