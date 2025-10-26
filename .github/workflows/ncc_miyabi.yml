@@ -1,0 +1,40 @@
+name: NCC Miyabi Integration
+on:
+  push:
+    branches: [ main, develop, feature/** ]
+  pull_request:
+  schedule:
+    - cron: "0 0 * * 1"   # 週次
+jobs:
+  crystallography:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run NCC Heuristics
+        run: |
+          python ncc/cli.py analyze \
+            --rules ncc/ruleset.yml \
+            --out-json ncc_report.json \
+            --out-md crystallinity_score.md
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ncc-artifacts
+          path: |
+            ncc_report.json
+            crystallinity_score.md
+      - name: Post Miyabi feedback (PR/Issue)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python integration/miyabi_agent.py \
+            --report ncc_report.json \
+            --markdown crystallinity_score.md \
+            --mode pr_or_issue
