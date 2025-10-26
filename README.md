@@ -106,6 +106,47 @@ Tests:
 
 ---
 
+<div align="center">
+
+## 🎤 **COMING SOON: Voice-First Onboarding**
+
+**"Nobody reads documentation, so let voice guide teach you automatically"**
+
+[![VOICEVOX](https://img.shields.io/badge/Powered%20by-VOICEVOX-green?style=for-the-badge)](https://voicevox.hiroshiba.jp/)
+[![Docker](https://img.shields.io/badge/Auto--Setup-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+
+### 🌟 Revolutionary Approach
+
+Traditional onboarding: 30min reading → **70% drop-off** | Voice-First: 5min listening → **70%+ success**
+
+```bash
+$ miyabi
+
+🎤 VOICEVOX 自動セットアップを開始します...
+🐳 Docker確認中... ✓
+🎙️  VOICEVOX Engine確認中... ✓
+👷 Workerプロセス確認中... ✓
+
+═══════════════════════════════════════
+🎉 VOICEVOX セットアップ完了！
+═══════════════════════════════════════
+
+ずんだもんが音声でガイドします 🎤
+```
+
+**Zundamon welcomes you:**  
+> "やぁやぁ！miyabiへようこそなのだ！`gh auth login` を実行するのだ！"
+
+**No reading required - just listen!** 🎧
+
+📚 [Learn More](docs/VOICE_FIRST_ONBOARDING.md) | **Coming in v0.2.0** 🚀
+
+</div>
+
+---
+
+---
+
 ## ✨ クイックスタート
 
 ### 🦀 Rust Edition（推奨 - v0.1.1）
