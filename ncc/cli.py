@@ -1,5 +1,5 @@
 import json, argparse, pathlib
-from scoring.score_crystallinity import score_from_graph
+from .scoring.score_crystallinity import score_from_graph
 from report.emit_report import write_markdown
 
 def main():
