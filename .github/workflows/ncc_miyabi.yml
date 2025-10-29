@@ -27,7 +27,7 @@ jobs:
           python -m ncc.cli analyze \
             --rules ncc/ruleset.yml \
             --out-json out/ncc_report.json \
-            --out-md  out/crystallinity_score.md
+            --out-md   out/crystallinity_score.md
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
