@@ -7,6 +7,7 @@ on:
   workflow_dispatch: {}
   schedule:
     - cron: "0 0 * * 1"
+
 jobs:
   crystallography:
     runs-on: ubuntu-latest
@@ -22,10 +23,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run NCC Heuristics
+        env:
+          PYTHONPATH: ${{ github.workspace }}  # ← ここが重要！
         run: |
           mkdir -p out
           python -m ncc.cli analyze \
-            --rules ncc/ruleset.yml \
+            --rules ./ncc/ruleset.yml \
             --out-json out/ncc_report.json \
             --out-md   out/crystallinity_score.md
       - name: Upload artifacts
