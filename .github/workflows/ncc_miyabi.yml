@@ -1,4 +1,4 @@
-name: NCC Miyabi Integration
+name: NCC miroku Integration
 
 on:
   push:
@@ -45,7 +45,7 @@ jobs:
             ncc_report.json
             crystallinity_score.md
 
-      - name: Post Miyabi feedback (PR/Issue)
+      - name: Post miroku feedback (PR/Issue)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
