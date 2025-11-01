@@ -1,0 +1,50 @@
+version: 1.0
+
+meta:
+  name: "三六九（miroku）OS"
+  codename: "miroku"
+  description: >
+    三六九（miroku）は、マクロ（宇宙法）を先に定義し、
+    その法に沿う範囲でのみAIエージェント（粒子）と人間が動けるようにする統治OSである。
+    mainブランチは宇宙の観測軸であり、
+    三六九の方向性を変更できるのはオーナーのみである。
+
+priority:
+  # 優先順位が高いものほど override 権限を持つ
+  - .miroku/critical/00-CRITICAL.md
+  - .miroku/core/01-CORE-DEFINITIONS.md
+  - .miroku/agents/02-AGENTS-ROLES.md
+  - .miroku/workflow/03-WORKFLOW-GUIDE.md
+
+branch_protection:
+  protected_branches:
+    - main
+  direct_commit_to_main: false
+  force_push_main: false
+  require_pr_for_main: true
+  min_reviewers: 1
+  require_status_checks: true
+  allow_delete_main: false
+
+agents:
+  owner: "@o5aidev"
+  roles:
+    - FixAgent
+    - ReviewAgent
+    - WorkflowAgent
+    - ReleaseAgent
+  ai_can_create_pr: true
+  ai_can_merge_pr: false
+  ai_can_post_public: false
+
+compliance:
+  audit_report: enabled
+  evaluation_report: enabled
+  secrets_in_repo: block
+
+docs_policy:
+  thinking_log_dir: "_docs/thinking"
+  feature_specs_dir: "_docs/features"
+  deleted_log_dir: "_docs/deleted"
+
+updated: "2025-10-30"
